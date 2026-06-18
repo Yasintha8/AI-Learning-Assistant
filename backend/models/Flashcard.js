@@ -15,7 +15,6 @@ const flashcardSchema = new mongoose.Schema({
         {
             question: { type: String, required: true },
             answer: { type: String, required: true },
-            hint: { type: String, default: '' },
             difficulty: {
                 type: String,
                 enum: ['easy', 'medium', 'hard'],
