@@ -66,7 +66,14 @@ ${text.substring(0, 15000)}`;
         return flashcards.slice(0, count);
     } catch (error) {
         console.error('Gemini API error:', error);
-        throw new Error('Failed to generate flashcards');
+
+        if (error.status === 429) {
+            throw new Error(
+                'Failed to generate flashcards. Gemini API quota exceeded. Please try again later.'
+            );
+        }
+
+        throw error;
     }
 };
 
@@ -127,14 +134,27 @@ ${text.substring(0, 15000)}`;
             }
 
             if (question && options.length === 4 && correctAnswer) {
-                question.push({ question, options, correctAnswer, explanation, difficulty })
+                questions.push({
+                    question,
+                    options,
+                    correctAnswer,
+                    explanation,
+                    difficulty,
+                });
             }
         }
 
         return questions.slice(0, numQuestions);
     } catch (error) {
         console.error('Gemini API error:', error);
-        throw new Error('Failed to generate quiz');
+
+        if (error.status === 429) {
+            throw new Error(
+                'Failed to generate quizes. Gemini API quota exceeded. Please try again later.'
+            );
+        }
+
+        throw error;
     }
 };
 
@@ -160,7 +180,14 @@ ${text.substring(0, 20000)}`;
         return generatedText;
     } catch (error) {
         console.error('Gemini API error:', error);
-        throw new Error('Failed to generate summary');
+
+        if (error.status === 429) {
+            throw new Error(
+                'Failed to generate summary. Gemini API quota exceeded. Please try again later.'
+            );
+        }
+
+        throw error;
     }
 };
 

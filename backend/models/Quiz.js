@@ -22,9 +22,9 @@ const quizSchema = new mongoose.Schema({
             required: true
         },
         options: {
-            type: String,
+            type: [String],
             required: true,
-            validate: [array => array.length === 4, 'Must have sxactly 4 options']
+            validate: [array => array.length === 4, 'Must have exactly 4 options']
         },
         correctAnswer: {
             type: String,
