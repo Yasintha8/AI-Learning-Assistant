@@ -1,19 +1,19 @@
 import React from 'react'
 import AppLayout from '../layout/AppLayout'
 import { Navigate, Outlet } from 'react-router-dom'
+import { useAuth } from '../../context/AuthContext'
 
 const ProtectedRoute = () => {
-    const isAuthenticated = true;
-    const loading = false;
+  const { isAuthenticated, loading } = useAuth();
 
-    if (loading) {
-        return (
-            <div>Loading...</div>
-        )
-    }
+  if (loading) {
+    return (
+      <div>Loading...</div>
+    )
+  }
   return isAuthenticated ? (
     <AppLayout>
-      <Outlet/>
+      <Outlet />
     </AppLayout>
   ) : (
     <Navigate to="/login" replace />

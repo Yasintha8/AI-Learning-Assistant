@@ -1,18 +1,44 @@
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans:ital,wght@0,100..900;1,100..900&family=Urbanist:ital,wght@0,100..900;1,100..900&display=swap');
+@import "./styles/variables.css";
 @import "tailwindcss";
 
 @theme {
-    --font-display: 'Urbanist', sans-serif;
-    --breakpoint-3xl: 1920px;
-    --color-primary: #FF9324;
+  /* Fonts */
+  --font-display: var(--font-display);
+  --font-body: var(--font-body);
+
+  /* Colors */
+  --color-primary: var(--color-primary);
+  --color-primary-hover: var(--color-primary-hover);
+  --color-primary-light: var(--color-primary-light);
+  --color-primary-shadow: var(--color-primary-shadow);
+  
+  --color-bg-main: var(--color-bg-main);
+  --color-bg-card: var(--color-bg-card);
+  
+  --color-text-heading: var(--color-text-heading);
+  --color-text-body: var(--color-text-body);
+  --color-text-muted: var(--color-text-muted);
+  --color-text-placeholder: var(--color-text-placeholder);
+  
+  --color-border-light: var(--color-border-light);
+  --color-border-medium: var(--color-border-medium);
+  
+  --color-error: var(--color-error);
+  --color-error-bg: var(--color-error-bg);
+  --color-error-border: var(--color-error-border);
+
+  /* Layout / Breakpoints */
+  --breakpoint-3xl: 1920px;
 }
 
 @layer base {
-    html {
-        font-family: var(--font-display);
-    }
+  html {
+    font-family: var(--font-display);
+  }
 
-    body {
-        background-color: #fcfbfc;
-    }
+  body {
+    background-color: var(--color-bg-main);
+    color: var(--color-text-body);
+  }
 }
