@@ -92,7 +92,7 @@ const DashboardPage = () => {
 
   return (
     <div className="min-h-screen bg-bg-main">
-      <div className="max-w-5xl mx-auto px-6 py-10 space-y-10">
+      <div className="relative max-w-6xl mx-auto px-6 py-5 space-y-10">
 
         {/* Header */}
         <div className="space-y-1">
