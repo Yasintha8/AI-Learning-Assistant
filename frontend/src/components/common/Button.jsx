@@ -5,7 +5,7 @@ const Button = ({
     onClick,
     type = "button",
     disabled = false,
-    className = "",
+    className = "cursor-pointer",
     variant = "primary",
     size = "md",
 }) => {
@@ -15,6 +15,7 @@ const Button = ({
         primary: 'bg-gradient-to-r from-primary to-blue-400 text-white shadow-sm shadow-primary-shadow hover:from-primary-hover hover:to-cyan-400 ',
         secondary: 'bg-gradient-to-r from-border-light to-border-medium text-text-body hover:from-border-medium hover:to-slate-200 focus:ring-border-medium',
         outline: 'bg-bg-card border border-border-medium text-text-body hover:bg-gradient-to-r hover:from-border-light hover:to-white hover:border-border-medium focus:ring-border-medium',
+        danger: 'bg-gradient-to-r from-red-500 to-red-400 text-white shadow-sm hover:from-red-600 hover:to-red-500 focus:ring-red-500',
     };
 
     const sizeStyles = {

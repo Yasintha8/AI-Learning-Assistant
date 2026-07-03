@@ -54,7 +54,7 @@ const AIActions = () => {
 
     return (
         <>
-            <div className="flex flex-col h-full bg-bg-card border border-border-medium rounded-2xl overflow-hidden shadow-sm">
+            <div className="flex flex-col h-full bg-bg-card border border-border-light rounded-2xl overflow-hidden shadow-xs">
                 {/* Header */}
                 <div className="px-5 py-4 border-b border-border-light">
                     <div className="flex items-center gap-3">

@@ -32,7 +32,7 @@ const DocumentCard = ({ document, onDelete }) => {
     };
 
     return (
-        <div className='relative group bg-bg-card border border-border-medium rounded-2xl p-5 flex flex-col gap-4 cursor-pointer shadow-sm hover:shadow-md hover:border-border-medium transition-all duration-200 overflow-hidden' onClick={handleNavigate}>
+        <div className='relative group bg-bg-card border border-border-medium/50 rounded-2xl p-5 flex flex-col gap-4 cursor-pointer shadow-sm hover:shadow-md hover:border-border-medium transition-all duration-200 overflow-hidden' onClick={handleNavigate}>
             {/* Header Section */}
             <div className="flex flex-col gap-3">
                 <div className="flex items-start justify-between">

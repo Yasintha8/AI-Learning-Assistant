@@ -113,7 +113,7 @@ const ChatInterface = () => {
     }
 
     return (
-        <div className="flex flex-col h-[70vh] bg-bg-card border border-border-medium rounded-2xl shadow-sm overflow-hidden w-full">
+        <div className="flex flex-col h-[70vh] bg-bg-card border border-border-light rounded-2xl shadow-xs overflow-hidden w-full">
             {/* Messages Area */}
             <div className="flex-1 p-6 flex flex-col gap-4 bg-bg-main overflow-y-auto">
                 {history.length === 0 ? (

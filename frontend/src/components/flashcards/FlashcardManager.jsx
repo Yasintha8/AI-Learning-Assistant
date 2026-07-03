@@ -284,12 +284,12 @@ const FlashcardManager = ({ documentId }) => {
                 </div>
 
                 {/* Flashcard Sets Grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                     {flashcardSets.map((set) => (
                         <div
                             key={set._id}
                             onClick={() => handleSelectSet(set)}
-                            className="group relative bg-bg-card border-2 px-2 py-4 border-border-medium/60 rounded-2xl flex flex-col cursor-pointer hover:shadow-md hover:border-primary-hover/50 transition-all duration-200 overflow-hidden"
+                            className="group relative bg-bg-card border px-2 py-4 border-slate-200 shadow-xs rounded-2xl flex flex-col cursor-pointer hover:shadow-md hover:border-primary-hover/50 transition-all duration-200 overflow-hidden"
                         >
                             {/* Delete Button */}
                             <button
