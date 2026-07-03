@@ -36,7 +36,7 @@ const DocumentCard = ({ document, onDelete }) => {
             {/* Header Section */}
             <div className="flex flex-col gap-3">
                 <div className="flex items-start justify-between">
-                    <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-primary to-blue-400 flex items-center justify-center shadow-sm shadow-primary-shadow flex-shrink-0">
+                    <div className="w-11 h-11 rounded-xl bg-linear-to-br from-primary to-blue-400 flex items-center justify-center shadow-sm shadow-primary-shadow shrink-0">
                         <FileText className="w-5 h-5 text-white" strokeWidth={2} />
                     </div>
                     <button
@@ -89,7 +89,7 @@ const DocumentCard = ({ document, onDelete }) => {
             </div>
 
             {/*Hover Indicator*/}
-            <div className='absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-primary to-blue-400 scale-x-0 group-hover:scale-x-100 transition-transform duration-200 origin-left' />
+            <div className='absolute bottom-0 left-0 right-0 h-0.5 bg-linear-to-r from-primary to-blue-400 scale-x-0 group-hover:scale-x-100 transition-transform duration-200 origin-left' />
         </div>
     )
 };

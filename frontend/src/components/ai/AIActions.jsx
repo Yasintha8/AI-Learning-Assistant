@@ -4,7 +4,7 @@ import { Sparkles, BookOpen, Lightbulb } from "lucide-react";
 import aiService from "../../services/aiService";
 import toast from "react-hot-toast";
 import MarkdownRenderer from "../common/MarkdownRenderer";
-import Modal from "../common/Model";
+import Modal from "../common/Modal";
 
 const AIActions = () => {
 

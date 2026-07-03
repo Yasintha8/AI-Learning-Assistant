@@ -106,7 +106,7 @@ const DocumentListPage = () => {
       return (
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center max-w-md">
-            <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-br from-border-light to-bg-card border border-border-medium shadow-sm shadow-border-medium mb-6">
+            <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-linear-to-br from-border-light to-bg-card border border-border-medium shadow-sm shadow-border-medium mb-6">
               <FileText
                 className="w-10 h-10 text-text-muted"
                 strokeWidth={1.5}
@@ -121,7 +121,7 @@ const DocumentListPage = () => {
             </p>
             <button
               onClick={() => setIsUploadModalOpen(true)}
-              className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-r from-primary to-blue-400 text-white text-sm font-semibold hover:from-primary-hover hover:to-cyan-400 transition-all duration-200 shadow-md shadow-primary-shadow cursor-pointer"
+              className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-linear-to-r from-primary to-blue-400 text-white text-sm font-semibold hover:from-primary-hover hover:to-cyan-400 transition-all duration-200 shadow-md shadow-primary-shadow cursor-pointer"
             >
               <Plus className="w-4 h-4" strokeWidth={2.5} />
               Upload Document
@@ -218,7 +218,7 @@ const DocumentListPage = () => {
               <div className="relative group">
                 <input id="file-upload" type="file" accept=".pdf" onChange={handleFileChange} required className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
                 <div className={`flex flex-col items-center justify-center gap-3 px-4 py-8 rounded-xl border-2 border-dashed transition-colors duration-150 ${uploadFile ? 'border-primary bg-primary-light' : 'border-border-medium bg-bg-main group-hover:border-primary '}`}>
-                  <div className={`w-11 h-11 rounded-xl flex items-center justify-center ${uploadFile ? 'bg-gradient-to-br from-primary to-blue-400' : 'bg-border-light'}`}>
+                  <div className={`w-11 h-11 rounded-xl flex items-center justify-center ${uploadFile ? 'bg-linear-to-br from-primary to-blue-400' : 'bg-border-light'}`}>
                     <Upload className={`w-5 h-5 ${uploadFile ? 'text-white' : 'text-text-muted'}`} strokeWidth={2} />
                   </div>
                   <p className="text-sm text-center text-text-muted"> {uploadFile ? (
@@ -244,7 +244,7 @@ const DocumentListPage = () => {
                 Cancel
               </button>
 
-              <button type="submit" disabled={uploading} className="flex-1 h-11 rounded-xl bg-gradient-to-r from-primary to-blue-400 text-white text-sm font-semibold hover:from-primary-hover hover:to-cyan-400 transition-all duration-200 shadow-sm shadow-primary-shadow disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer">
+              <button type="submit" disabled={uploading} className="flex-1 h-11 rounded-xl bg-linear-to-r from-primary to-blue-400 text-white text-sm font-semibold hover:from-primary-hover hover:to-cyan-400 transition-all duration-200 shadow-sm shadow-primary-shadow disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer">
                 {uploading ? (
                   <span className="inline-flex items-center justify-center gap-2">
                     <div className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />

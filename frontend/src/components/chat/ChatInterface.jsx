@@ -103,7 +103,7 @@ const ChatInterface = () => {
     if (initialLoading) {
         return (
             <div className="flex flex-col h-[70vh] bg-white/80 backdrop-blur-xl border border-slate-200/60 rounded-2xl items-center justify-center shadow-xl shadow-slate-200/50">
-                <div className="w-14 h-14 bg-linear-to-br from-primary to-primary/30 rounded-xl flex items-center justify-center mb-4">
+                <div className="w-14 h-14 bg-linear-to-br from-violet-400 to-purple-500 rounded-xl flex items-center justify-center mb-4">
                     <MessageSquare className="w-7 h-7 text-bg-card" strokeWidth={2} />
                 </div>
                 <Spinner />
