@@ -13,7 +13,7 @@ const PageHeader = ({ title, subtitle, children }) => {
                     </p>
                 )}
             </div>
-            {children && <div className="flex-shrink-0">{children}</div>}
+            {children && <div className="shrink-0">{children}</div>}
         </div>
     )
 }

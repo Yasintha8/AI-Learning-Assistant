@@ -47,7 +47,7 @@ const Sidebar = ({ isSidebarOpen, toggleSidebar }) => {
             <div className="p-2 bg-primary/10 rounded-xl text-primary flex items-center justify-center shadow-sm">
               <BrainCircuit className="w-5 h-5" />
             </div>
-            <span className="font-display font-bold text-lg text-text-heading tracking-tight bg-gradient-to-r from-primary to-primary-hover bg-clip-text">
+            <span className="font-display font-bold text-lg text-text-heading tracking-tight bg-linear-to-r from-primary to-primary-hover bg-clip-text">
               AI Learning Assistant
             </span>
           </Link>
@@ -94,8 +94,7 @@ const Sidebar = ({ isSidebarOpen, toggleSidebar }) => {
         {/* Sidebar Footer / CTA & LogOut */}
         <div className="p-4 border-t border-border-light mt-auto shrink-0">
           {/* Upgrade Card */}
-          <div className="p-4 bg-gradient-to-br from-slate-50 to-slate-100/50 border border-border-medium rounded-2xl relative overflow-hidden group select-none">
-            {/* Background Gradient Blob */}
+          {/* <div className="p-4 bg-linear-to-br from-slate-50 to-slate-100/50 border border-border-medium rounded-2xl relative overflow-hidden group select-none">
             <div className="absolute -right-6 -bottom-6 w-20 h-20 rounded-full bg-primary/5 blur-xl group-hover:bg-primary/10 transition-all duration-300" />
 
             <h4 className="text-xs font-bold text-text-heading flex items-center gap-1.5">
@@ -108,7 +107,7 @@ const Sidebar = ({ isSidebarOpen, toggleSidebar }) => {
             <button className="w-full mt-3 py-2 px-3 rounded-xl bg-primary hover:bg-primary-hover text-white text-[11px] font-semibold transition-all duration-300 shadow-md shadow-primary-shadow/15 hover:shadow-primary-shadow/25 active:scale-[0.98] cursor-pointer">
               Explore Plans
             </button>
-          </div>
+          </div> */}
 
           {/* Log Out button in sidebar */}
           <button
