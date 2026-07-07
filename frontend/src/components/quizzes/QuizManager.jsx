@@ -104,7 +104,7 @@ const QuizManager = ({ documentId }) => {
     };
 
     return (
-        <div className='bg-white border border-border-light rounded-2xl p-6 shadow-xs'>
+        <div className=' border border-border-light rounded-2xl p-6 shadow-xs'>
             <div className='flex justify-end gap-2 mb-4'>
                 <Button onClick={() => setIsGenerateModalOpen(true)}>
                     <Plus size={16} />

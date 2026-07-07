@@ -37,3 +37,30 @@
   --font-display: 'Urbanist', sans-serif;
   --font-body: 'Noto Sans', sans-serif;
 }
+
+.dark {
+  /* Brand Colors - slightly more vibrant for dark mode contrast */
+  --color-primary: #5c4dff;
+  --color-primary-hover: #4e80ff;
+  --color-primary-light: rgba(92, 80, 255, 0.15);
+  --color-primary-shadow: rgba(92, 80, 255, 0.3);
+
+  /* Background Colors */
+  --color-bg-main: #0b0f19;
+  --color-bg-card: #151b2c;
+
+  /* Text Colors */
+  --color-text-heading: #f8fafc;
+  --color-text-body: #cbd5e1;
+  --color-text-muted: #64748b;
+  --color-text-placeholder: #475569;
+
+  /* Borders & Dividers */
+  --color-border-light: #1f293d;
+  --color-border-medium: #2e3c54;
+
+  /* Semantic Colors */
+  --color-error: #f87171;
+  --color-error-bg: rgba(248, 113, 113, 0.1);
+  --color-error-border: rgba(248, 113, 113, 0.2);
+}

@@ -34,7 +34,7 @@ const Sidebar = ({ isSidebarOpen, toggleSidebar }) => {
 
       {/* Sidebar Container */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 w-65 bg-white border-r border-border-light flex flex-col transition-transform duration-300 ease-in-out lg:static lg:translate-x-0 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
+        className={`fixed inset-y-0 left-0 z-50 w-65 bg-bg-card border-r border-border-light flex flex-col transition-transform duration-300 ease-in-out lg:static lg:translate-x-0 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
           }`}
       >
         {/* Sidebar Header / Logo */}
@@ -53,7 +53,7 @@ const Sidebar = ({ isSidebarOpen, toggleSidebar }) => {
           </Link>
           <button
             onClick={toggleSidebar}
-            className="lg:hidden p-1.5 rounded-lg text-text-body hover:bg-slate-100 transition-colors cursor-pointer"
+            className="lg:hidden p-1.5 rounded-lg text-text-body hover:bg-border-light transition-colors cursor-pointer"
             aria-label="Close Sidebar"
           >
             <X className="w-4 h-4" />
@@ -75,7 +75,7 @@ const Sidebar = ({ isSidebarOpen, toggleSidebar }) => {
                 onClick={() => { if (isSidebarOpen) toggleSidebar(); }}
                 className={`relative flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-semibold transition-all duration-300 select-none group ${isActive
                   ? 'bg-primary-light text-primary'
-                  : 'text-text-body hover:bg-slate-50 hover:text-text-heading'
+                  : 'text-text-body hover:bg-bg-main hover:text-text-heading'
                   }`}
               >
                 {/* Active Left indicator */}
@@ -112,7 +112,7 @@ const Sidebar = ({ isSidebarOpen, toggleSidebar }) => {
           {/* Log Out button in sidebar */}
           <button
             onClick={logout}
-            className="w-full mt-4 flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold text-error hover:bg-error-bg/60 transition-colors cursor-pointer text-left select-none"
+            className="w-full mt-4 flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold text-error hover:bg-error-bg transition-colors cursor-pointer text-left select-none"
           >
             <LogOut className="w-4.5 h-4.5" />
             <span>Log Out</span>

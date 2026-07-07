@@ -180,7 +180,7 @@ const FlashcardManager = ({ documentId }) => {
                             Previous
                         </button>
 
-                        <div className="flex items-center bg-slate-50 rounded-lg border border-slate-200 px-4 py-2 justify-center">
+                        <div className="flex items-center rounded-lg border border-slate-200 px-4 py-2 justify-center">
                             <span className="text-sm font-semibold text-text-heading tabular-nums">
                                 {currentCardIndex + 1}{" "}
                                 <span className="text-text-muted font-normal">/</span>{" "}
@@ -289,7 +289,7 @@ const FlashcardManager = ({ documentId }) => {
                         <div
                             key={set._id}
                             onClick={() => handleSelectSet(set)}
-                            className="group relative bg-bg-card border px-2 py-4 border-slate-200 shadow-xs rounded-2xl flex flex-col cursor-pointer hover:shadow-md hover:border-primary-hover/50 transition-all duration-200 overflow-hidden"
+                            className="group relative bg-bg-card border px-2 py-4 border-border-medium shadow-xs rounded-2xl flex flex-col cursor-pointer hover:shadow-md hover:border-primary-hover/50 transition-all duration-200 overflow-hidden"
                         >
                             {/* Delete Button */}
                             <button
@@ -339,7 +339,7 @@ const FlashcardManager = ({ documentId }) => {
     return (
 
         <>
-            <div className="bg-white/80 backdrop-blur-xl border border-slate-200/60 rounded-3xl shadow-xl shadow-slate-200/50 p-8 ">
+            <div className="border border-border-light rounded-3xl shadow-xs p-8 ">
                 {selectedSet ? renderFlashcardViewer() : renderSetList()}
             </div>
 

@@ -1,10 +1,12 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from "../../context/AuthContext";
 import { Link, useNavigate } from 'react-router-dom';
-import { Bell, User, Menu, Search, LogOut, Sparkles, ChevronDown } from 'lucide-react';
+import { Bell, User, Menu, Search, LogOut, Sparkles, ChevronDown, Sun, Moon } from 'lucide-react';
+import { useTheme } from "../../context/ThemeContext";
 
 const Header = ({ toggleSidebar }) => {
     const { user, logout } = useAuth();
+    const { theme, toggleTheme } = useTheme();
     const navigate = useNavigate();
 
     const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -72,12 +74,12 @@ const Header = ({ toggleSidebar }) => {
     const userInitial = user?.username ? user.username.charAt(0).toUpperCase() : 'U';
 
     return (
-        <header className="sticky top-0 z-40 w-full h-16 bg-white/85 backdrop-blur-md border-b border-border-light flex items-center justify-between px-6 select-none">
+        <header className="sticky top-0 z-40 w-full h-16 bg-bg-card/80 backdrop-blur-md border-b border-border-light flex items-center justify-between px-6 select-none">
             {/* Left Section: Sidebar Toggle & Search */}
             <div className="flex items-center gap-4 flex-1">
                 <button
                     onClick={toggleSidebar}
-                    className="p-2 -ml-2 rounded-xl text-text-body hover:bg-slate-100 lg:hidden transition-colors cursor-pointer"
+                    className="p-2 -ml-2 rounded-xl text-text-body hover:bg-border-light lg:hidden transition-colors cursor-pointer"
                     aria-label="Toggle Sidebar"
                 >
                     <Menu className="w-5 h-5" />
@@ -90,21 +92,34 @@ const Header = ({ toggleSidebar }) => {
                         ref={searchInputRef}
                         type="text"
                         placeholder="Search notes, flashcards, or quizzes..."
-                        className="w-full bg-slate-100/50 hover:bg-slate-100 focus:bg-white text-sm text-text-heading border border-transparent focus:border-primary-hover/20 rounded-2xl pl-10 pr-12 py-2 transition-all duration-300 focus:outline-none focus:ring-1 focus:ring-primary/20 focus:shadow-md focus:shadow-primary-shadow/5"
+                        className="w-full bg-bg-main hover:bg-border-light/60 focus:bg-bg-card text-sm text-text-heading border border-transparent focus:border-primary-hover/20 rounded-2xl pl-10 pr-12 py-2 transition-all duration-300 focus:outline-none focus:ring-1 focus:ring-primary/20 focus:shadow-md focus:shadow-primary-shadow/5"
                     />
-                    <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-0.5 px-1.5 py-0.5 bg-slate-200/50 text-[10px] font-semibold text-text-muted rounded border border-slate-300/30">
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-0.5 px-1.5 py-0.5 bg-border-light text-[10px] font-semibold text-text-muted rounded border border-border-medium/40">
                         <span>⌘</span><span>K</span>
                     </div>
                 </div>
             </div>
 
-            {/* Right Section: Notifications & Profile */}
+            {/* Right Section: Theme Toggle, Notifications & Profile */}
             <div className="flex items-center gap-4">
+                {/* Theme Toggle Button */}
+                <button
+                    onClick={toggleTheme}
+                    className="p-2.5 rounded-xl text-text-body transition-all duration-300 hover:bg-border-light cursor-pointer"
+                    aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+                >
+                    {theme === 'dark' ? (
+                        <Sun className="w-5 h-5 text-amber-400 animate-fade-in" />
+                    ) : (
+                        <Moon className="w-5 h-5 text-text-body animate-fade-in" />
+                    )}
+                </button>
+
                 {/* Notification Dropdown Container */}
                 <div className="relative" ref={notificationsRef}>
                     <button
                         onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
-                        className={`relative p-2.5 rounded-xl text-text-body transition-all duration-300 hover:bg-slate-100 cursor-pointer ${isNotificationsOpen ? 'bg-slate-100' : ''
+                        className={`relative p-2.5 rounded-xl text-text-body transition-all duration-300 hover:bg-border-light cursor-pointer ${isNotificationsOpen ? 'bg-border-light' : ''
                             }`}
                         aria-label="Notifications"
                     >
@@ -118,7 +133,7 @@ const Header = ({ toggleSidebar }) => {
 
                     {/* Notification Dropdown Panel */}
                     {isNotificationsOpen && (
-                        <div className="absolute right-0 mt-3 w-80 bg-white border border-border-medium rounded-2xl shadow-xl shadow-slate-200/80 py-2 z-50 animate-fade-in origin-top-right transition-all">
+                        <div className="absolute right-0 mt-3 w-80 bg-bg-card border border-border-medium rounded-2xl shadow-xl shadow-slate-200/25 dark:shadow-none py-2 z-50 animate-fade-in origin-top-right transition-all">
                             <div className="flex items-center justify-between px-4 py-2 border-b border-border-light">
                                 <h3 className="font-semibold text-text-heading text-sm">Notifications</h3>
                                 {unreadCount > 0 && (
@@ -135,7 +150,7 @@ const Header = ({ toggleSidebar }) => {
                                     notifications.map(n => (
                                         <div
                                             key={n.id}
-                                            className={`px-4 py-3 flex gap-3 hover:bg-slate-50 transition-colors border-b border-border-light last:border-0 ${n.unread ? 'bg-primary-light/30' : ''
+                                            className={`px-4 py-3 flex gap-3 hover:bg-border-light/40 transition-colors border-b border-border-light last:border-0 ${n.unread ? 'bg-primary-light/30' : ''
                                                 }`}
                                         >
                                             <div className="flex-1">
@@ -165,13 +180,13 @@ const Header = ({ toggleSidebar }) => {
                 <div className="relative" ref={profileRef}>
                     <button
                         onClick={() => setIsProfileOpen(!isProfileOpen)}
-                        className="flex items-center gap-2 p-1.5 pr-3 rounded-2xl hover:bg-slate-100 transition-all duration-300 border border-transparent hover:border-border-medium cursor-pointer"
+                        className="flex items-center gap-2 p-1.5 pr-3 rounded-2xl hover:bg-border-light transition-all duration-300 border border-transparent hover:border-border-medium cursor-pointer"
                     >
                         {user?.profileImage ? (
                             <img
                                 src={user.profileImage}
                                 alt={user.username || 'User'}
-                                className="w-8 h-8 rounded-xl object-cover border border-slate-200"
+                                className="w-8 h-8 rounded-xl object-cover border border-border-medium"
                             />
                         ) : (
                             <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-primary to-primary-hover flex items-center justify-center text-white text-sm font-bold shadow-md shadow-primary-shadow/15">
@@ -187,7 +202,7 @@ const Header = ({ toggleSidebar }) => {
 
                     {/* Profile Dropdown Panel */}
                     {isProfileOpen && (
-                        <div className="absolute right-0 mt-3 w-56 bg-white border border-border-medium rounded-2xl shadow-xl shadow-slate-200/80 py-2 z-50 animate-fade-in origin-top-right transition-all">
+                        <div className="absolute right-0 mt-3 w-56 bg-bg-card border border-border-medium rounded-2xl shadow-xl shadow-slate-200/25 dark:shadow-none py-2 z-50 animate-fade-in origin-top-right transition-all">
                             {/* User details */}
                             <div className="px-4 py-3 border-b border-border-light flex flex-col">
                                 <span className="font-bold text-text-heading text-sm truncate">
@@ -203,7 +218,7 @@ const Header = ({ toggleSidebar }) => {
                                 <Link
                                     to="/dashboard"
                                     onClick={() => setIsProfileOpen(false)}
-                                    className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-text-heading font-medium hover:bg-slate-50 transition-colors"
+                                    className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-text-heading font-medium hover:bg-border-light/40 transition-colors"
                                 >
                                     <Sparkles className="w-4 h-4 text-primary" />
                                     <span>Dashboard</span>
@@ -211,7 +226,7 @@ const Header = ({ toggleSidebar }) => {
                                 <Link
                                     to="/profile"
                                     onClick={() => setIsProfileOpen(false)}
-                                    className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-text-heading font-medium hover:bg-slate-50 transition-colors"
+                                    className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-text-heading font-medium hover:bg-border-light/40 transition-colors"
                                 >
                                     <User className="w-4 h-4 text-text-muted" />
                                     <span>My Profile</span>

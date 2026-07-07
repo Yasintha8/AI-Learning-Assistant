@@ -2,6 +2,8 @@
 @import "./styles/variables.css";
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   /* Fonts */
   --font-display: var(--font-display);

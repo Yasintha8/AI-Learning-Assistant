@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import Sidebar from './Sidebar';
 import Header from './Header';
 
@@ -10,7 +10,7 @@ const AppLayout = ({ children }) => {
   }
 
   return (
-    <div className='flex h-screen bg-neutral-50 text-neutral-900'>
+    <div className='flex h-screen bg-bg-main text-text-body transition-colors duration-300'>
       <Sidebar isSidebarOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
       <div className="flex-1 flex flex-col overflow-hidden">
         <Header toggleSidebar={toggleSidebar} />

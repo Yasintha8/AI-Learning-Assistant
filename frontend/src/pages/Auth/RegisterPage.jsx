@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import authService from '../../services/authService';
 import { BrainCircuit, Mail, Lock, ArrowRight, Eye, EyeOff, User } from 'lucide-react';
@@ -46,7 +46,7 @@ const RegisterPage = () => {
 
       <div className="w-full max-w-md flex flex-col gap-6 relative z-10">
         {/* Register Card */}
-        <div className="w-full bg-bg-card rounded-3xl border border-border-light shadow-2xl shadow-slate-200/70 p-8 sm:p-12 transition-all duration-300 hover:shadow-2xl hover:shadow-slate-300/80">
+        <div className="w-full bg-bg-card rounded-3xl border border-border-light shadow-2xl shadow-slate-200/30 dark:shadow-none p-8 sm:p-12 transition-all duration-300 hover:shadow-2xl hover:shadow-slate-300/40 dark:hover:shadow-none">
           <form onSubmit={handleSubmit} className="flex flex-col gap-6">
             {/* Logo & Brand */}
             <div className="flex items-center gap-2 self-start">
@@ -76,7 +76,7 @@ const RegisterPage = () => {
             <div className="flex flex-col gap-5 mt-2">
               {/* Username */}
               <div className="flex flex-col gap-2">
-                <label className="text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                <label className="text-xs font-semibold text-text-muted uppercase tracking-wider">
                   Username
                 </label>
                 <div className="flex items-center border-b border-border-medium focus-within:border-primary transition-colors duration-300 py-2.5">
@@ -94,7 +94,7 @@ const RegisterPage = () => {
 
               {/* Email */}
               <div className="flex flex-col gap-2">
-                <label className="text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                <label className="text-xs font-semibold text-text-muted uppercase tracking-wider">
                   Email
                 </label>
                 <div className="flex items-center border-b border-border-medium focus-within:border-primary transition-colors duration-300 py-2.5">
@@ -112,7 +112,7 @@ const RegisterPage = () => {
 
               {/* Password */}
               <div className="flex flex-col gap-2">
-                <label className="text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                <label className="text-xs font-semibold text-text-muted uppercase tracking-wider">
                   Password
                 </label>
                 <div className="flex items-center border-b border-border-medium focus-within:border-primary transition-colors duration-300 py-2.5">
