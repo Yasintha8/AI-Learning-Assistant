@@ -54,7 +54,7 @@ const QuizCard = ({ quiz, onDelete }) => {
             {/* Button */}
             <div className="mt-8">
                 {quiz?.userAnswers?.length > 0 ? (
-                    <Link to={`/quizzes/${quiz._id}`}>
+                    <Link to={`/quizzes/${quiz._id}/results`}>
                         <button className="flex w-full h-11 items-center justify-center gap-2 rounded-xl border border-primary text-sm font-semibold text-primary transition-all duration-300 hover:bg-primary hover:text-white cursor-pointer">
                             <BarChart2 size={18} />
                             View Results
