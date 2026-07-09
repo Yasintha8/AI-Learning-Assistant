@@ -1,21 +1,28 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import PageHeader from "../.././components/common/PageHeader";
 import Button from "../.././components/common/Button";
 import Spinner from "../.././components/common/Spinner";
 import authService from "../.././services/authService";
 import { useAuth } from "../.././context/AuthContext";
 import toast from "react-hot-toast";
-import { User, Mail, Lock, Shield } from "lucide-react";
+import { User, Mail, Lock, Shield, Camera, X } from "lucide-react";
 
 const ProfilePage = () => {
 
   const { user } = useAuth();
+  const fileInputRef = useRef(null);
+
   const [loading, setLoading] = useState(true);
   const [passwordLoading, setPasswordLoading] = useState(false);
   const [profileLoading, setProfileLoading] = useState(false);
+  const [avatarUploading, setAvatarUploading] = useState(false);
 
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
+  const [avatarUrl, setAvatarUrl] = useState(null);
+  const [avatarPreview, setAvatarPreview] = useState(null);
+  const [avatarFile, setAvatarFile] = useState(null);
+
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmNewPassword, setConfirmNewPassword] = useState("");
@@ -26,6 +33,7 @@ const ProfilePage = () => {
         const data = await authService.getProfile();
         setUsername(data.username || "");
         setEmail(data.email || "");
+        setAvatarUrl(data.avatarUrl || null);
       } catch (error) {
         toast.error("Failed to load profile.");
         console.error(error);
@@ -35,6 +43,45 @@ const ProfilePage = () => {
     };
     fetchProfile();
   }, []);
+
+  const handleAvatarChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please select an image file.");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Image must be under 5MB.");
+      return;
+    }
+    setAvatarFile(file);
+    setAvatarPreview(URL.createObjectURL(file));
+  };
+
+  const handleAvatarUpload = async () => {
+    if (!avatarFile) return;
+    setAvatarUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("avatar", avatarFile);
+      const data = await authService.uploadAvatar(formData);
+      setAvatarUrl(data.avatarUrl);
+      setAvatarPreview(null);
+      setAvatarFile(null);
+      toast.success("Profile picture updated.");
+    } catch (error) {
+      toast.error(error.message || "Failed to upload picture.");
+    } finally {
+      setAvatarUploading(false);
+    }
+  };
+
+  const handleCancelAvatar = () => {
+    setAvatarPreview(null);
+    setAvatarFile(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
 
   const handleProfileUpdate = async (e) => {
     e.preventDefault();
@@ -81,27 +128,106 @@ const ProfilePage = () => {
     );
   }
   const userInitial = user?.username ? user.username.charAt(0).toUpperCase() : 'U';
+  const displayAvatar = avatarPreview || avatarUrl;
+
   return (
     <div className="max-w-5xl mx-auto flex flex-col gap-8 animate-fade-in">
       <PageHeader
-        title="Profile Setting"
+        title="Profile Settings"
         subtitle="Manage your account information and password"
       />
 
       {/* Avatar + name banner */}
-      <div className="bg-bg-card border border-border-light rounded-2xl p-6 flex items-center gap-5 shadow-sm">
-        <div className="w-16 h-16 rounded-2xl bg-linear-to-br from-primary to-blue-400 flex items-center justify-center shadow-sm shadow-primary-shadow shrink-0">
-          <span className="text-2xl font-bold text-white">
-            {userInitial}
-          </span>
+      <div className="bg-bg-card border border-border-light rounded-2xl p-6 flex flex-col sm:flex-row items-center sm:items-start gap-6 shadow-sm">
+
+        {/* Avatar */}
+        <div className="flex flex-col items-center gap-3 shrink-0">
+          <div className="relative group">
+            <div className="w-20 h-20 rounded-2xl overflow-hidden shadow-sm shadow-primary-shadow">
+              {displayAvatar ? (
+                <img
+                  src={displayAvatar}
+                  alt="Profile"
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full bg-linear-to-br from-primary to-blue-400 flex items-center justify-center">
+                  <span className="text-2xl font-bold text-white">{userInitial}</span>
+                </div>
+              )}
+            </div>
+
+            {/* Camera overlay */}
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="absolute inset-0 rounded-2xl bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 cursor-pointer"
+            >
+              <Camera className="w-5 h-5 text-white" strokeWidth={2} />
+            </button>
+
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleAvatarChange}
+              className="hidden"
+            />
+          </div>
+
+          {/* Upload / Cancel buttons — only show when a new image is selected */}
+          {avatarFile && (
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={handleAvatarUpload}
+                disabled={avatarUploading}
+                className="h-8 px-3 rounded-lg bg-linear-to-r from-primary to-blue-400 hover:from-primary-hover hover:to-cyan-400 text-white text-xs font-semibold inline-flex items-center gap-1.5 shadow-sm shadow-primary-shadow transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {avatarUploading ? (
+                  <>
+                    <div className="w-3 h-3 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                    Uploading...
+                  </>
+                ) : (
+                  "Upload"
+                )}
+              </button>
+              <button
+                type="button"
+                onClick={handleCancelAvatar}
+                disabled={avatarUploading}
+                className="h-8 w-8 rounded-lg border border-border-medium bg-bg-main flex items-center justify-center text-text-muted hover:text-error hover:bg-error-bg transition-colors duration-150 disabled:opacity-50"
+              >
+                <X className="w-3.5 h-3.5" strokeWidth={2} />
+              </button>
+            </div>
+          )}
+
+          {!avatarFile && (
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="text-xs font-semibold text-primary hover:text-primary-hover transition-colors duration-150"
+            >
+              Change photo
+            </button>
+          )}
         </div>
-        <div className="min-w-0">
+
+        {/* Name + email */}
+        <div className="flex flex-col justify-center gap-1 min-w-0 text-center sm:text-left">
           <h2 className="text-lg font-bold text-text-heading truncate">{username}</h2>
           <p className="text-sm text-text-muted truncate">{email}</p>
+          {avatarPreview && (
+            <p className="text-xs text-amber-500 font-medium mt-1">
+              Preview — click Upload to save
+            </p>
+          )}
         </div>
       </div>
 
-      {/* Profile Info */}
+      {/* Personal Information */}
       <div className="bg-bg-card border border-border-light rounded-2xl overflow-hidden shadow-sm">
         <div className="flex items-center gap-3 px-6 py-5 border-b border-border-light">
           <div className="w-8 h-8 rounded-lg bg-primary-light flex items-center justify-center">
