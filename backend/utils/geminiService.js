@@ -81,7 +81,7 @@ ${text.substring(0, 15000)}`;
  * Generate quiz questions
  * @param {string} text - Document text
  * @param {number} numQuestions - Number of questions
- * @returns {Promise<Array<{question: string, options: Array, correctAnswer: string, explanation: string, difficulty: string}>>}
+ * @returns {Promise<Array<{question: string, options: Array, correctOption: string, explanation: string, difficulty: string}>>}
  */
 export const generateQuiz = async (text, numQuestions = 5) => {
     const prompt = `Generate exactly ${numQuestions} multiple choice questions from the following text.
@@ -91,9 +91,15 @@ O1: [Option 1]
 O2: [Option 2]
 O3: [Option 3]
 O4: [Option 4]
-C: [Correct option - exactly as written above]
+C: [1, 2, 3, or 4 ONLY]
 E: [Brief explanation]
 D: [Difficulty: easy, medium, or hard]
+
+IMPORTANT:
+- C MUST contain ONLY the option number (1, 2, 3, or 4).
+- Do NOT write the answer text.
+- Do NOT abbreviate the answer.
+- Do NOT add any extra words.
 
 Separate questions with "---"
 
@@ -113,38 +119,55 @@ ${text.substring(0, 15000)}`;
 
         for (const block of questionBlocks) {
             const lines = block.trim().split('\n');
-            let question = '', options = [], correctAnswer = '', explanation = '', difficulty = 'medium';
+
+            let question = '';
+            let options = [];
+            let correctOption = null;
+            let explanation = '';
+            let difficulty = 'medium';
 
             for (const line of lines) {
                 const trimmed = line.trim();
+
                 if (trimmed.startsWith('Q:')) {
                     question = trimmed.substring(2).trim();
-                } else if (trimmed.match(/^O\d:/)) {
+
+                } else if (/^O\d:/.test(trimmed)) {
                     options.push(trimmed.substring(3).trim());
+
                 } else if (trimmed.startsWith('C:')) {
-                    correctAnswer = trimmed.substring(2).trim();
+                    correctOption = parseInt(trimmed.substring(2).trim(), 10);
+
                 } else if (trimmed.startsWith('E:')) {
                     explanation = trimmed.substring(2).trim();
+
                 } else if (trimmed.startsWith('D:')) {
                     const diff = trimmed.substring(2).trim().toLowerCase();
+
                     if (['easy', 'medium', 'hard'].includes(diff)) {
                         difficulty = diff;
                     }
                 }
             }
 
-            if (question && options.length === 4 && correctAnswer) {
+            if (
+                question &&
+                options.length === 4 &&
+                correctOption >= 1 &&
+                correctOption <= 4
+            ) {
                 questions.push({
                     question,
                     options,
-                    correctAnswer,
+                    correctOption,
                     explanation,
-                    difficulty,
+                    difficulty
                 });
             }
         }
-
-        return questions.slice(0, numQuestions);
+        console.log("Generated Questions:");
+        console.log(JSON.stringify(questions, null, 2));
+        return questions;
     } catch (error) {
         console.error('Gemini API error:', error);
 

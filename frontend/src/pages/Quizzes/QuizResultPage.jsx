@@ -126,10 +126,14 @@ const QuizResultPage = () => {
                 </div>
 
                 {detailedResults.map((result, index) => {
+
+                    console.log("Question:", result.question);
+                    console.log("Options:", result.options);
+                    console.log("Correct Option:", result.correctOption);
+                    console.log("Selected Answer:", result.selectedAnswer);
+
                     const userAnswerIndex = result.options.findIndex(opt => opt === result.selectedAnswer);
-                    const correctAnswerIndex = result.correctAnswer.startsWith('0')
-                        ? parseInt(result.correctAnswer.substring(1)) - 1
-                        : result.options.findIndex(opt => opt === result.correctAnswer);
+                    const correctAnswerIndex = result.correctOption - 1;
                     const isCorrect = result.isCorrect;
 
                     return (

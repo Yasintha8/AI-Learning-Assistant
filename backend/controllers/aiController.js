@@ -69,7 +69,10 @@ export const generateFlashcards = async (req, res, next) => {
 // @access  Private
 export const generateQuiz = async (req, res, next) => {
     try {
-        const { documentId, numberQuestions = 5, title } = req.body;
+        const { documentId, numQuestions = 5, title } = req.body;
+
+        console.log("Request Body:", req.body);
+        console.log("numQuestions:", numQuestions);
 
         if (!documentId) {
             return res.json({
@@ -94,10 +97,25 @@ export const generateQuiz = async (req, res, next) => {
         }
 
         // Generate quiz using Gemini
-        const questions = await geminiService.generateQuiz(
-            document.extractedText,
-            parseInt(numberQuestions)
-        );
+        const totalQuestions = parseInt(numQuestions);
+
+        let questions = [];
+
+        while (questions.length < totalQuestions) {
+
+            const remaining = totalQuestions - questions.length;
+
+            const batchSize = Math.min(10, remaining);
+
+            const batch = await geminiService.generateQuiz(
+                document.extractedText,
+                batchSize
+            );
+
+            questions.push(...batch);
+        }
+
+        questions = questions.slice(0, totalQuestions);
 
         //Save quiz to database
         const quiz = await Quiz.create({

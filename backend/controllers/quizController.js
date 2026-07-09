@@ -94,7 +94,10 @@ export const submitQuiz = async (req, res, next) => {
 
             if (questionIndex < quiz.questions.length) {
                 const question = quiz.questions[questionIndex];
-                const isCorrect = selectedAnswer === question.correctAnswer;
+                const selectedOption =
+                    question.options.findIndex(opt => opt === selectedAnswer) + 1;
+
+                const isCorrect = selectedOption === question.correctOption;
 
                 if (isCorrect) correctCount++;
 
@@ -168,7 +171,7 @@ export const getQuizResults = async (req, res, next) => {
                 questionIndex: index,
                 question: question.question,
                 options: question.options,
-                correctAnswer: question.correctAnswer,
+                correctOption: question.correctOption,
                 selectedAnswer: userAnswer?.selectedAnswer || null,
                 isCorrect: userAnswer?.isCorrect || false,
                 explanation: question.explanation
