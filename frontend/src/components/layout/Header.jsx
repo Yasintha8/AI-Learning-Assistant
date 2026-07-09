@@ -189,7 +189,7 @@ const Header = ({ toggleSidebar }) => {
                                 className="w-8 h-8 rounded-xl object-cover border border-border-medium"
                             />
                         ) : (
-                            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-primary to-primary-hover flex items-center justify-center text-white text-sm font-bold shadow-md shadow-primary-shadow/15">
+                            <div className="w-8 h-8 rounded-xl bg-linear-to-tr from-primary to-primary-hover flex items-center justify-center text-white text-sm font-bold shadow-md shadow-primary-shadow/15">
                                 {userInitial}
                             </div>
                         )}
