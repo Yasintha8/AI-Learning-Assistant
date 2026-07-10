@@ -147,7 +147,7 @@ const DocumentListPage = () => {
   return (
     <div className="min-h-screen bg-bg-main">
       {/* Subtle background pattern */}
-      <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-primary/5 via-transparent to-transparent" />
+      <div className="pointer-events-none fixed inset-0 bg-[radial-linear(ellipse_at_top_right,_var(--tw-linear-stops))] from-primary/5 via-transparent to-transparent" />
 
       <div className="relative max-w-6xl mx-auto px-6 py-5 space-y-8">
         {/* Header */}
