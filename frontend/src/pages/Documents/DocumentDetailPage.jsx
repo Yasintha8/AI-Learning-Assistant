@@ -10,7 +10,15 @@ import ChatInterface from '../../components/chat/ChatInterface';
 import AIActions from '../../components/ai/AIActions';
 import FlashcardManager from '../../components/flashcards/FlashcardManager';
 import QuizManager from '../../components/quizzes/QuizManager';
+import DocxViewer from '../../components/documents/DocxViewer';
 import { BASE_URL } from '../../utils/apiPaths';
+
+const YOUTUBE_URL_REGEX = /(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([\w-]{11})/;
+
+const getYoutubeEmbedUrl = (url) => {
+  const match = url.match(YOUTUBE_URL_REGEX);
+  return match ? `https://www.youtube.com/embed/${match[1]}` : null;
+};
 
 const DocumentDetailPage = () => {
 
@@ -35,8 +43,8 @@ const DocumentDetailPage = () => {
     fetchDocumentDetails();
   }, [id]);
 
-  // Helper function to get the full PDF URL
-  const getPdfUrl = () => {
+  // Helper function to get the full file URL
+  const getFileUrl = () => {
     if (!document?.data?.filePath) return null;
 
     const filePath = document.data.filePath;
@@ -53,17 +61,24 @@ const DocumentDetailPage = () => {
       return <Spinner />;
     }
     if (!document || !document.data || !document.data.filePath) {
-      return <div className="text-center p-8">PDF not available.</div>;
+      return <div className="text-center p-8">Document not available.</div>;
     }
 
-    const pdfUrl = getPdfUrl();
+    const fileUrl = getFileUrl();
+    const fileType = document.data.fileType;
+    const isPdf = fileType === 'pdf';
+    const isYoutube = fileType === 'youtube';
+    const isWebsite = fileType === 'website';
+    // Only DOCX needs the internal preview route (raw file downloads instead of viewing);
+    // PDF, YouTube, and website links can all be opened directly at their real source.
+    const openInNewTabHref = fileType === 'docx' ? `/documents/${id}/preview` : fileUrl;
 
     return (
       <div className="bg-bg-card border border-border-medium rounded-lg overflow-hidden shadow-sm">
         <div className="flex items-center justify-between p-4 bg-bg-main border-b border-border-medium">
           <span className="text-sm font-medium text-text-heading">Document Viewer</span>
           <a
-            href={pdfUrl}
+            href={openInNewTabHref}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1.5 text-sm text-primary hover:text-primary-hover font-medium transition-colors"
@@ -72,17 +87,54 @@ const DocumentDetailPage = () => {
             Open in new tab
           </a>
         </div>
-        <div className="bg-border-light p-1">
-          <iframe
-            src={pdfUrl}
-            className="w-full h-[70vh] bg-bg-card rounded border border-border-medium"
-            title="PDF Viewer"
-            frameBorder="0"
-            style={{
-              colorScheme: 'light',
-            }}
-          />
-        </div>
+        {isPdf ? (
+          <div className="bg-border-light p-1">
+            <iframe
+              src={fileUrl}
+              className="w-full h-[70vh] bg-bg-card rounded border border-border-medium"
+              title="PDF Viewer"
+              frameBorder="0"
+              style={{
+                colorScheme: 'light',
+              }}
+            />
+          </div>
+        ) : isYoutube ? (
+          <div className="bg-black">
+            <iframe
+              src={getYoutubeEmbedUrl(fileUrl)}
+              className="w-full h-[70vh]"
+              title="YouTube Video"
+              frameBorder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            />
+          </div>
+        ) : isWebsite ? (
+          document.data.status === 'ready' && document.data.extractedText ? (
+            <div className="w-full h-[70vh] overflow-y-auto bg-border-light p-6">
+              <div className="max-w-3xl mx-auto bg-bg-card border border-border-light rounded-xl shadow-sm p-10">
+                <p className="whitespace-pre-wrap text-sm text-text-body leading-relaxed">
+                  {document.data.extractedText}
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div className="w-full h-[70vh] flex items-center justify-center bg-border-light text-sm text-text-muted">
+              {document.data.status === 'error'
+                ? 'Failed to process website content.'
+                : 'Processing website...'}
+            </div>
+          )
+        ) : document.data.status === 'ready' ? (
+          <DocxViewer fileUrl={fileUrl} />
+        ) : (
+          <div className="w-full h-[70vh] flex items-center justify-center bg-border-light text-sm text-text-muted">
+            {document.data.status === 'error'
+              ? 'Failed to process document content.'
+              : 'Processing document...'}
+          </div>
+        )}
       </div >
     );
   };

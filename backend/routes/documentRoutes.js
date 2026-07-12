@@ -1,6 +1,7 @@
 import express from 'express';
 import {
     uploadDocument,
+    addUrlDocument,
     getDocuments,
     getDocument,
     deleteDocument,
@@ -14,6 +15,7 @@ const router = express.Router();
 router.use(protect);
 
 router.post('/upload', upload.single('file'), uploadDocument);
+router.post('/upload-url', addUrlDocument);
 router.get('/', getDocuments);
 router.get('/:id', getDocument);
 router.delete('/:id', deleteDocument);
