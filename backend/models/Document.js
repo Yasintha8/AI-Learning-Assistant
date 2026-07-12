@@ -21,6 +21,10 @@ const documentSchema = new mongoose.Schema({
     },
     fileSize: {
         type: Number,
+    },
+    fileType: {
+        type: String,
+        enum: ['pdf', 'docx', 'youtube', 'website'],
         required: true
     },
     extractedText: {

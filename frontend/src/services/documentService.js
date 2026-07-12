@@ -23,6 +23,15 @@ const uploadDocument = async (formData) => {
     }
 };
 
+const addDocumentFromUrl = async ({ url, title }) => {
+    try {
+        const response = await axiosInstance.post(API_PATHS.DOCUMENTS.UPLOAD_URL, { url, title });
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || { message: 'Failed to add document from link' };
+    }
+};
+
 const deleteDocument = async (id) => {
     try {
         const response = await axiosInstance.delete(API_PATHS.DOCUMENTS.DELETE_DOCUMENT(id));
@@ -44,6 +53,7 @@ const getDocumentById = async (id) => {
 const documentService = {
     getDocuments,
     uploadDocument,
+    addDocumentFromUrl,
     deleteDocument,
     getDocumentById,
 };

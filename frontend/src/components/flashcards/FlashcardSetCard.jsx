@@ -8,25 +8,17 @@ const FlashcardSetCard = ({ flashcardSet }) => {
     const navigate = useNavigate();
 
     const handleStudyNow = () => {
+        if (!flashcardSet.documentId?._id) return;
         navigate(`/documents/${flashcardSet.documentId._id}/flashcards`);
     };
 
     const totalCards = flashcardSet.cards.length;
 
-    const reviewedCards = flashcardSet.cards.filter(card => {
-        console.log("lastReviewed:", card => card.reviewCount > 0);
-        return !!card.lastReviewed;
-    });
+    const reviewedCards = flashcardSet.cards.filter(card => !!card.lastReviewed);
 
     const reviewedCount = reviewedCards.length;
 
-    console.log({
-        title: flashcardSet.documentId.title,
-        totalCards,
-        reviewedCount,
-    });
     const progressPercentage = totalCards > 0 ? Math.round((reviewedCount / totalCards) * 100) : 0;
-    console.log(flashcardSet.cards[0]);
 
     return (
         <div

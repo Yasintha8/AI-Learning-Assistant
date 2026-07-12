@@ -7,6 +7,7 @@ import NotFoundPage from './pages/NotFoundPage'
 import DashboardPage from './pages/Dashboard/DashboardPage'
 import DocumentListPage from './pages/Documents/DocumentListPage'
 import DocumentDetailPage from './pages/Documents/DocumentDetailPage'
+import DocumentPreviewPage from './pages/Documents/DocumentPreviewPage'
 import FlashcardsListPage from './pages/Flashcards/FlashcardsListPage'
 import FlashcardPage from './pages/Flashcards/FlashcardPage'
 import QuizTakePage from './pages/Quizzes/QuizTakePage'
@@ -38,6 +39,7 @@ const App = () => {
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/documents" element={<DocumentListPage />} />
           <Route path="/documents/:id" element={<DocumentDetailPage />} />
+          <Route path="/documents/:id/preview" element={<DocumentPreviewPage />} />
           <Route path="/flashcards" element={<FlashcardsListPage />} />
           <Route path="/documents/:id/flashcards" element={<FlashcardPage />} />
           <Route path="/quizzes/:quizId" element={<QuizTakePage />} />
