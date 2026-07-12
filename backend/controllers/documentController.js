@@ -2,11 +2,30 @@ import Document from '../models/Document.js';
 import Flashcard from '../models/Flashcard.js';
 import Quiz from '../models/Quiz.js';
 import { extractTextFromPDF } from '../utils/pdfParser.js';
+import { extractTextFromDOCX } from '../utils/docxParser.js';
+import { extractTextFromYouTube } from '../utils/youtubeParser.js';
+import { extractTextFromWebsite } from '../utils/websiteParser.js';
 import { chunkText } from '../utils/textChunker.js';
 import fs from 'fs/promises';
 import mongoose from 'mongoose';
 
-// @desc Upload PDF document
+const DOCX_MIME_TYPE = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+const YOUTUBE_URL_REGEX = /(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([\w-]{11})/;
+
+// Determine whether a URL points to a YouTube video or a generic website
+const detectLinkType = (url) => {
+    let parsed;
+    try {
+        parsed = new URL(url);
+    } catch {
+        return null;
+    }
+
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return null;
+    return YOUTUBE_URL_REGEX.test(url) ? 'youtube' : 'website';
+};
+
+// @desc Upload PDF or DOCX document
 // @route POST /api/documents/upload
 // @access Private
 export const uploadDocument = async (req, res, next) => {
@@ -14,7 +33,7 @@ export const uploadDocument = async (req, res, next) => {
         if (!req.file) {
             return res.status(400).json({
                 success: false,
-                error: 'Please upload a PDF file',
+                error: 'Please upload a PDF or DOCX file',
                 statusCode: 400
             })
         }
@@ -34,6 +53,7 @@ export const uploadDocument = async (req, res, next) => {
         // Construct the URL for the uploaded file
         const baseUrl = `http://localhost:${process.env.PORT || 8000}`;
         const fileUrl = `${baseUrl}/uploads/documents/${req.file.filename}`;
+        const fileType = req.file.mimetype === DOCX_MIME_TYPE ? 'docx' : 'pdf';
 
         //Create document record
         const document = await Document.create({
@@ -42,12 +62,13 @@ export const uploadDocument = async (req, res, next) => {
             fileName: req.file.originalname,//Original name of the uploaded file
             filePath: fileUrl,//Store the URL instead of the local path
             fileSize: req.file.size,
+            fileType,
             status: 'processing'
         })
 
-        // Process PDF in background
-        processPDF(document._id, req.file.path).catch(err => {
-            console.error('PDF processing error:', err);
+        // Process document in background
+        processDocument(document._id, req.file.path, fileType).catch(err => {
+            console.error('Document processing error:', err);
 
         });
 
@@ -66,10 +87,72 @@ export const uploadDocument = async (req, res, next) => {
     }
 };
 
-// Helper function to proces PDF
-const processPDF = async (documentId, filePath) => {
+// @desc Add a document from a YouTube or website link
+// @route POST /api/documents/upload-url
+// @access Private
+export const addUrlDocument = async (req, res, next) => {
     try {
-        const { text } = await extractTextFromPDF(filePath);
+        const { url, title } = req.body;
+
+        if (!url || !title) {
+            return res.status(400).json({
+                success: false,
+                error: 'Please provide a URL and a document title',
+                statusCode: 400,
+            });
+        }
+
+        const fileType = detectLinkType(url);
+        if (!fileType) {
+            return res.status(400).json({
+                success: false,
+                error: 'Please provide a valid YouTube or website URL',
+                statusCode: 400,
+            });
+        }
+
+        let text;
+        try {
+            ({ text } = fileType === 'youtube'
+                ? await extractTextFromYouTube(url)
+                : await extractTextFromWebsite(url));
+        } catch (extractionError) {
+            return res.status(400).json({
+                success: false,
+                error: extractionError.message || 'Failed to extract content from the provided link',
+                statusCode: 400,
+            });
+        }
+
+        const chunks = chunkText(text, 500, 50);
+
+        const document = await Document.create({
+            userId: req.user._id,
+            title,
+            fileName: title,
+            filePath: url,
+            fileType,
+            extractedText: text,
+            chunks,
+            status: 'ready',
+        });
+
+        res.status(201).json({
+            success: true,
+            data: document,
+            message: 'Document added successfully!',
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+// Helper function to process an uploaded document based on its file type
+const processDocument = async (documentId, filePath, fileType) => {
+    try {
+        const { text } = fileType === 'docx'
+            ? await extractTextFromDOCX(filePath)
+            : await extractTextFromPDF(filePath);
 
         //Create chunks
         const chunks = chunkText(text, 500, 50);
@@ -87,7 +170,7 @@ const processPDF = async (documentId, filePath) => {
         console.error(`Error processing document ${documentId}:`, error);
 
         await Document.findByIdAndUpdate(documentId, {
-            status: 'failed'
+            status: 'error'
         });
     }
 };
