@@ -1,7 +1,12 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FileText, Trash2, BookOpen, BrainCircuit, Clock } from 'lucide-react';
+import { FileText, Trash2, BookOpen, BrainCircuit, Clock, Video, Globe } from 'lucide-react';
 import moment from 'moment';
+
+const FILE_TYPE_ICONS = {
+    youtube: Video,
+    website: Globe,
+};
 
 // Helper function to format file size
 const formatFileSize = (bytes) => {
@@ -31,13 +36,15 @@ const DocumentCard = ({ document, onDelete }) => {
         onDelete(document);
     };
 
+    const TypeIcon = FILE_TYPE_ICONS[document.fileType] || FileText;
+
     return (
         <div className='relative group bg-bg-card border border-border-medium/50 rounded-2xl p-5 flex flex-col gap-4 cursor-pointer shadow-sm hover:shadow-md hover:border-border-medium transition-all duration-200 overflow-hidden' onClick={handleNavigate}>
             {/* Header Section */}
             <div className="flex flex-col gap-3">
                 <div className="flex items-start justify-between">
                     <div className="w-11 h-11 rounded-xl bg-linear-to-br from-primary to-blue-400 flex items-center justify-center shadow-sm shadow-primary-shadow shrink-0">
-                        <FileText className="w-5 h-5 text-white" strokeWidth={2} />
+                        <TypeIcon className="w-5 h-5 text-white" strokeWidth={2} />
                     </div>
                     <button
                         onClick={handleDelete}
@@ -56,6 +63,9 @@ const DocumentCard = ({ document, onDelete }) => {
 
                 {/* Document Info */}
                 <div className='flex items-center gap-1.5'>
+                    {document.fileType && (
+                        <span className='text-xs text-text-muted font-semibold bg-border-light px-2 py-0.5 rounded-md uppercase'>{document.fileType}</span>
+                    )}
                     {document.fileSize !== undefined && (
                         <>
                             <span className='text-xs text-text-muted font-medium bg-border-light px-2 py-0.5 rounded-md'>{formatFileSize(document.fileSize)}</span>
