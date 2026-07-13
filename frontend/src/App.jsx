@@ -12,6 +12,7 @@ import FlashcardsListPage from './pages/Flashcards/FlashcardsListPage'
 import FlashcardPage from './pages/Flashcards/FlashcardPage'
 import QuizTakePage from './pages/Quizzes/QuizTakePage'
 import QuizResultPage from './pages/Quizzes/QuizResultPage'
+import LearningPathPage from './pages/LearningPath/LearningPathPage'
 import ProfilePage from './pages/Profile/ProfilePage'
 import ProtectedRoute from './components/auth/ProtectedRoute'
 import { useAuth } from './context/AuthContext'
@@ -44,6 +45,7 @@ const App = () => {
           <Route path="/documents/:id/flashcards" element={<FlashcardPage />} />
           <Route path="/quizzes/:quizId" element={<QuizTakePage />} />
           <Route path="/quizzes/:quizId/results" element={<QuizResultPage />} />
+          <Route path="/documents/:id/learning-path" element={<LearningPathPage />} />
           <Route path="/profile" element={<ProfilePage />} />
         </Route>
 

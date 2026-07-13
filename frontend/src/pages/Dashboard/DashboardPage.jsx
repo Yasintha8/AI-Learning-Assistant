@@ -1,13 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import Spinner from '../../components/common/Spinner';
 import progressService from '../../services/progressService';
+import learningPathService from '../../services/learningPathService';
+import { useAuth } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
-import { FileText, BookOpen, BrainCircuit, TrendingUp, Clock, ArrowRight } from 'lucide-react';
+import { FileText, BookOpen, BrainCircuit, TrendingUp, Clock, ArrowRight, Target } from 'lucide-react';
+
+// Recommendations only ever contain non-mastered topics, so weak/in-progress is enough context here
+const RECOMMENDATION_LIMIT = 5;
+const WEAK_THRESHOLD = 50;
 
 const DashboardPage = () => {
 
+  const { user } = useAuth();
   const [dashboardData, setDashboardData] = useState(null);
+  const [recommendations, setRecommendations] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [recommendationsLoading, setRecommendationsLoading] = useState(true);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -24,6 +33,32 @@ const DashboardPage = () => {
     };
     fetchDashboardData();
   }, []);
+
+  useEffect(() => {
+    const fetchRecommendations = async () => {
+      if (!user) return;
+      try {
+        const response = await learningPathService.getAllLearningPaths(user.id || user._id);
+        const learningPaths = response.data || [];
+
+        const allRecommendations = learningPaths.flatMap((path) =>
+          (path.recommendedNext || []).map((rec) => ({
+            ...rec,
+            documentId: path.documentId?._id,
+            documentTitle: path.documentId?.title,
+          }))
+        ).filter((rec) => rec.documentId);
+
+        allRecommendations.sort((a, b) => a.masteryScore - b.masteryScore);
+        setRecommendations(allRecommendations.slice(0, RECOMMENDATION_LIMIT));
+      } catch (error) {
+        console.error(error);
+      } finally {
+        setRecommendationsLoading(false);
+      }
+    };
+    fetchRecommendations();
+  }, [user]);
 
   if (loading) {
     return (
@@ -128,6 +163,71 @@ const DashboardPage = () => {
               </div>
             </div>
           ))}
+        </div>
+
+        {/* Recommended for you */}
+        <div className="bg-bg-card border border-border-light rounded-2xl overflow-hidden shadow-sm">
+          <div className="flex items-center gap-3 px-6 py-5 border-b border-border-light">
+            <div className="w-8 h-8 rounded-lg bg-primary-light flex items-center justify-center">
+              <Target className="w-4 h-4 text-primary" strokeWidth={2} />
+            </div>
+            <h3 className="text-sm font-semibold text-text-heading">
+              Recommended for You
+            </h3>
+          </div>
+
+          {recommendationsLoading ? (
+            <div className="flex items-center justify-center py-10">
+              <Spinner />
+            </div>
+          ) : recommendations.length > 0 ? (
+            <ul className="divide-y divide-border-light">
+              {recommendations.map((rec, index) => {
+                const isWeak = rec.masteryScore < WEAK_THRESHOLD;
+
+                return (
+                  <li
+                    key={`${rec.documentId}-${rec.topicId}-${index}`}
+                    className="flex items-center justify-between gap-4 px-6 py-4 hover:bg-border-light/40 transition-colors duration-150"
+                  >
+                    <div className="flex items-start gap-3 min-w-0">
+                      <span className={`mt-1.5 flex-shrink-0 w-2 h-2 rounded-full ${isWeak ? 'bg-rose-400' : 'bg-blue-400'}`} />
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-text-heading truncate">
+                          {rec.title}
+                        </p>
+                        <p className="text-xs text-text-muted mt-0.5 truncate">
+                          {rec.reason}
+                          {rec.documentTitle && ` · ${rec.documentTitle}`}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3 flex-shrink-0">
+                      <span className={`text-xs font-semibold tabular-nums ${isWeak ? 'text-rose-600' : 'text-blue-600'}`}>
+                        {rec.masteryScore}%
+                      </span>
+                      <a
+                        href={`/documents/${rec.documentId}/learning-path`}
+                        className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:text-primary-hover transition-colors duration-150"
+                      >
+                        Study
+                        <ArrowRight className="w-3.5 h-3.5" strokeWidth={2.5} />
+                      </a>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-16 px-6 text-center space-y-2">
+              <div className="w-12 h-12 rounded-2xl bg-border-light flex items-center justify-center mb-1">
+                <Target className="w-5 h-5 text-text-muted" strokeWidth={1.5} />
+              </div>
+              <p className="text-sm font-medium text-text-body">No recommendations yet.</p>
+              <p className="text-xs text-text-muted">Generate a learning path from one of your documents to get personalized suggestions.</p>
+            </div>
+          )}
         </div>
 
         {/* Recent Activity */}

@@ -227,6 +227,46 @@ export const generateLearningPath = async (req, res, next) => {
     }
 };
 
+// Recalculate every topic's mastery score + recommendedNext for a user's learning path
+// on a given document. Returns null (no-op) if the user hasn't generated a learning
+// path for that document yet - this lets callers use it as a safe, best-effort hook.
+export const recalculateMastery = async (userId, documentId) => {
+    const learningPath = await LearningPath.findOne({ userId, documentId });
+
+    if (!learningPath) return null;
+
+    const [quizzes, flashcardSets] = await Promise.all([
+        Quiz.find({ userId, documentId, completedAt: { $ne: null } }),
+        Flashcard.find({ userId, documentId })
+    ]);
+
+    learningPath.topics.forEach(topic => {
+        const stats = computeTopicStats(topic.topicId, quizzes, flashcardSets);
+
+        topic.masteryScore = stats.masteryScore;
+        topic.source = stats.source;
+        topic.lastReviewedAt = stats.lastReviewedAt;
+        topic.status = deriveStatus(stats.masteryScore, stats.hasActivity);
+    });
+
+    // Recommend the weakest, not-yet-mastered topics
+    learningPath.recommendedNext = learningPath.topics
+        .filter(topic => topic.status !== 'mastered')
+        .sort((a, b) => a.masteryScore - b.masteryScore)
+        .slice(0, RECOMMEND_LIMIT)
+        .map(topic => ({
+            topicId: topic.topicId,
+            title: topic.title,
+            masteryScore: topic.masteryScore,
+            reason: topic.status === 'not-started'
+                ? 'Not started yet'
+                : `Lowest mastery (${topic.masteryScore}%)`
+        }));
+
+    await learningPath.save();
+    return learningPath;
+};
+
 // @desc    Recalculate topic mastery scores after a quiz or flashcard session
 // @route   POST /api/learning-path/update
 // @access  Private
@@ -242,10 +282,7 @@ export const updateLearningPath = async (req, res, next) => {
             });
         }
 
-        const learningPath = await LearningPath.findOne({
-            userId: req.user._id,
-            documentId
-        });
+        const learningPath = await recalculateMastery(req.user._id, documentId);
 
         if (!learningPath) {
             return res.status(404).json({
@@ -254,36 +291,6 @@ export const updateLearningPath = async (req, res, next) => {
                 statusCode: 404
             });
         }
-
-        const [quizzes, flashcardSets] = await Promise.all([
-            Quiz.find({ userId: req.user._id, documentId, completedAt: { $ne: null } }),
-            Flashcard.find({ userId: req.user._id, documentId })
-        ]);
-
-        learningPath.topics.forEach(topic => {
-            const stats = computeTopicStats(topic.topicId, quizzes, flashcardSets);
-
-            topic.masteryScore = stats.masteryScore;
-            topic.source = stats.source;
-            topic.lastReviewedAt = stats.lastReviewedAt;
-            topic.status = deriveStatus(stats.masteryScore, stats.hasActivity);
-        });
-
-        // Recommend the weakest, not-yet-mastered topics
-        learningPath.recommendedNext = learningPath.topics
-            .filter(topic => topic.status !== 'mastered')
-            .sort((a, b) => a.masteryScore - b.masteryScore)
-            .slice(0, RECOMMEND_LIMIT)
-            .map(topic => ({
-                topicId: topic.topicId,
-                title: topic.title,
-                masteryScore: topic.masteryScore,
-                reason: topic.status === 'not-started'
-                    ? 'Not started yet'
-                    : `Lowest mastery (${topic.masteryScore}%)`
-            }));
-
-        await learningPath.save();
 
         res.status(200).json({
             success: true,

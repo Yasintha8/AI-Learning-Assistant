@@ -81,8 +81,11 @@ const FlashcardPage = () => {
     if (!currentCard) return;
 
     try {
-      await flashcardService.reviewFlashcard(currentCard._id, index);
-      toast.success("Flashcard reviewed!");
+      const response = await flashcardService.reviewFlashcard(currentCard._id, index);
+      toast.success(
+        response.masteryUpdated ? "Flashcard reviewed! Mastery updated." : "Flashcard reviewed!",
+        response.masteryUpdated ? { icon: '🎯' } : undefined
+      );
     } catch (error) {
       toast.error("Failed to review flashcard.");
     }

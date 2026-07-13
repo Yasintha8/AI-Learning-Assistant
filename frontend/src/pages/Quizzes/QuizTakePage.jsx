@@ -63,8 +63,11 @@ const QuizTakePage = () => {
         return { questionIndex, selectedAnswer };
       });
 
-      await quizService.submitQuiz(quizId, formattedAnswers);
+      const response = await quizService.submitQuiz(quizId, formattedAnswers);
       toast.success('Quiz submitted successfully!');
+      if (response.masteryUpdated) {
+        toast.success('Mastery updated for this document\'s learning path!', { icon: '🎯' });
+      }
       navigate(`/quizzes/${quizId}/results`);
     } catch (error) {
       toast.error(error.message || 'Failed to submit quiz.');

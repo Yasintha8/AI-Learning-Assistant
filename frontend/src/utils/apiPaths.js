@@ -46,4 +46,10 @@ export const API_PATHS = {
     PROGRESS: {
         GET_DASHBOARD: "/api/progress/dashboard",
     },
+
+    LEARNING_PATH: {
+        GENERATE: "/api/learning-path/generate",
+        UPDATE: "/api/learning-path/update",
+        GET_FOR_USER: (userId) => `/api/learning-path/${userId}`,
+    },
 };

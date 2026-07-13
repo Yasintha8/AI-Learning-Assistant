@@ -3,7 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import documentService from '../../services/documentService';
 import Spinner from '../../components/common/Spinner';
 import toast from 'react-hot-toast';
-import { ArrowLeft, ExternalLink } from 'lucide-react';
+import { ArrowLeft, ExternalLink, Map } from 'lucide-react';
 import PageHeader from '../../components/common/PageHeader';
 import Tabs from '../../components/common/Tabs';
 import ChatInterface from '../../components/chat/ChatInterface';
@@ -183,7 +183,15 @@ const DocumentDetailPage = () => {
           Back to Documents
         </Link>
       </div>
-      <PageHeader title={document.data.title} />
+      <PageHeader title={document.data.title}>
+        <Link
+          to={`/documents/${id}/learning-path`}
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-border-medium bg-bg-card text-sm font-semibold text-text-body hover:bg-border-light transition-colors duration-150"
+        >
+          <Map className="w-4 h-4 text-primary" strokeWidth={2} />
+          Learning Path
+        </Link>
+      </PageHeader>
       <Tabs tabs={tabs} activeTab={activeTab} setActiveTab={setActiveTab} />
     </div>
   )

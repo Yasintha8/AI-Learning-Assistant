@@ -1,4 +1,5 @@
 import Flashcard from '../models/Flashcard.js';
+import { recalculateMastery } from './learningPathController.js';
 
 // @desc    Get all flashcards for a document
 // @route   GET /api/flashcards/:documentId
@@ -76,9 +77,20 @@ export const reviewFlashcard = async (req, res, next) => {
 
         await flashcardSet.save();
 
+        // Best-effort: recalculate topic mastery if a learning path exists for this
+        // document. Failing here should never block marking the card as reviewed.
+        let masteryUpdated = false;
+        try {
+            const updatedPath = await recalculateMastery(req.user._id, flashcardSet.documentId);
+            masteryUpdated = !!updatedPath;
+        } catch (masteryError) {
+            console.error('Failed to update learning path mastery:', masteryError);
+        }
+
         res.status(200).json({
             success: true,
             data: flashcardSet,
+            masteryUpdated,
             message: 'Flashcard reviewed successfully'
         })
 
