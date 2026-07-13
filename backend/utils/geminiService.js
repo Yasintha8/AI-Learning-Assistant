@@ -247,6 +247,83 @@ Answer:`;
 };
 
 /**
+ * Extract topics and subtopics from document text
+ * @param {string} text - Document text
+ * @returns {Promise<Array<{title: string, difficulty: string, subtopics: Array<{title: string, difficulty: string}>}>>}
+ */
+export const generateTopics = async (text) => {
+    const prompt = `Analyze the following text and break it down into the main topics and subtopics a student would need to learn.
+Return ONLY a JSON array (no markdown, no code fences, no extra commentary) in exactly this shape:
+[
+  {
+    "title": "Topic title",
+    "difficulty": "easy" | "medium" | "hard",
+    "subtopics": [
+      { "title": "Subtopic title", "difficulty": "easy" | "medium" | "hard" }
+    ]
+  }
+]
+
+Rules:
+- Produce between 3 and 10 top-level topics.
+- Each topic may have 0 to 5 subtopics.
+- difficulty must be exactly one of: easy, medium, hard.
+
+Text:
+${text.substring(0, 15000)}`;
+
+    try {
+        const response = await ai.models.generateContent({
+            model: "gemini-2.5-flash-lite",
+            contents: prompt,
+        });
+
+        const generatedText = response.text;
+        const jsonText = generatedText
+            .replace(/```json/gi, '')
+            .replace(/```/g, '')
+            .trim();
+
+        const parsed = JSON.parse(jsonText);
+
+        if (!Array.isArray(parsed)) {
+            throw new Error('Gemini did not return a JSON array');
+        }
+
+        const validDifficulties = ['easy', 'medium', 'hard'];
+        const normalizeDifficulty = (d) => {
+            const diff = (d || '').toString().trim().toLowerCase();
+            return validDifficulties.includes(diff) ? diff : 'medium';
+        };
+
+        return parsed
+            .filter(topic => topic && topic.title)
+            .map(topic => ({
+                title: String(topic.title).trim(),
+                difficulty: normalizeDifficulty(topic.difficulty),
+                subtopics: Array.isArray(topic.subtopics)
+                    ? topic.subtopics
+                        .filter(sub => sub && sub.title)
+                        .map(sub => ({
+                            title: String(sub.title).trim(),
+                            difficulty: normalizeDifficulty(sub.difficulty)
+                        }))
+                    : []
+            }));
+    } catch (error) {
+        console.error('Gemini API error:', error);
+
+        if (error.status === 429) {
+            throw new Error(
+                'Failed to generate topics. Gemini API quota exceeded. Please try again later.'
+            );
+        }
+
+        throw new Error('Failed to generate topics from document');
+    }
+};
+
+/**
  * Explain a specific concept
  * @param {string} concept - Concept to explain
  * @param {string} context - Relevant context

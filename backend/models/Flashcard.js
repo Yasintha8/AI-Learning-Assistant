@@ -32,6 +32,14 @@ const flashcardSchema = new mongoose.Schema({
                 type: Boolean,
                 default: false,
             },
+            topicId: {
+                type: String,
+                default: null,
+            },
+            topicTitle: {
+                type: String,
+                default: null,
+            },
         }
     ]
 },
