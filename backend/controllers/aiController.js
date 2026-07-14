@@ -2,8 +2,27 @@ import Document from '../models/Document.js';
 import Flashcard from '../models/Flashcard.js';
 import Quiz from '../models/Quiz.js';
 import ChatHistory from '../models/ChatHistory.js';
+import LearningPath from '../models/LearningPath.js';
 import * as geminiService from '../utils/geminiService.js';
 import { findRelevantChunks } from '../utils/textChunker.js';
+
+// Build a case-insensitive "topic title" -> { topicId, title } lookup from a learning path,
+// used to attach topicId/topicTitle to freshly generated quiz questions/flashcards.
+const buildTopicLookup = (learningPath) => {
+    const lookup = new Map();
+    (learningPath?.topics || []).forEach(topic => {
+        lookup.set(topic.title.toLowerCase(), { topicId: topic.topicId, title: topic.title });
+    });
+    return lookup;
+};
+
+const resolveTopic = (topicTitle, topicLookup) => {
+    if (!topicTitle) return { topicId: null, topicTitle: null };
+    const matched = topicLookup.get(topicTitle.toLowerCase());
+    return matched
+        ? { topicId: matched.topicId, topicTitle: matched.title }
+        : { topicId: null, topicTitle: null };
+};
 
 // @desc    Generate flashcards from document
 // @route   POST /api/ai/generate-flashcards
@@ -34,23 +53,38 @@ export const generateFlashcards = async (req, res, next) => {
             });
         }
 
+        // If a learning path already exists for this document, tag each flashcard
+        // with the closest matching topic so mastery scoring can pick it up
+        const learningPath = await LearningPath.findOne({
+            userId: req.user._id,
+            documentId: document._id
+        });
+        const topicLookup = buildTopicLookup(learningPath);
+        const topicTitles = (learningPath?.topics || []).map(t => t.title);
+
         // Generate flashcards using Gemini
         const cards = await geminiService.generateFlashcards(
             document.extractedText,
-            parseInt(count)
+            parseInt(count),
+            topicTitles
         );
 
         // Save to database
         const flashcardSet = await Flashcard.create({
             userId: req.user._id,
             documentId: document._id,
-            cards: cards.map(card => ({
-                question: card.question,
-                answer: card.answer,
-                difficulty: card.difficulty,
-                reviewCount: 0,
-                isStarred: false
-            }))
+            cards: cards.map(card => {
+                const { topicId, topicTitle } = resolveTopic(card.topicTitle, topicLookup);
+                return {
+                    question: card.question,
+                    answer: card.answer,
+                    difficulty: card.difficulty,
+                    reviewCount: 0,
+                    isStarred: false,
+                    topicId,
+                    topicTitle
+                };
+            })
         });
 
         res.status(201).json({
@@ -96,6 +130,15 @@ export const generateQuiz = async (req, res, next) => {
             })
         }
 
+        // If a learning path already exists for this document, tag each question
+        // with the closest matching topic so mastery scoring can pick it up
+        const learningPath = await LearningPath.findOne({
+            userId: req.user._id,
+            documentId: document._id
+        });
+        const topicLookup = buildTopicLookup(learningPath);
+        const topicTitles = (learningPath?.topics || []).map(t => t.title);
+
         // Generate quiz using Gemini
         const totalQuestions = parseInt(numQuestions);
 
@@ -109,13 +152,17 @@ export const generateQuiz = async (req, res, next) => {
 
             const batch = await geminiService.generateQuiz(
                 document.extractedText,
-                batchSize
+                batchSize,
+                topicTitles
             );
 
             questions.push(...batch);
         }
 
-        questions = questions.slice(0, totalQuestions);
+        questions = questions.slice(0, totalQuestions).map(question => {
+            const { topicId, topicTitle } = resolveTopic(question.topicTitle, topicLookup);
+            return { ...question, topicId, topicTitle };
+        });
 
         //Save quiz to database
         const quiz = await Quiz.create({

@@ -1,8 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from "../../context/AuthContext";
 import { Link, useNavigate } from 'react-router-dom';
-import { Bell, User, Menu, Search, LogOut, Sparkles, ChevronDown, Sun, Moon } from 'lucide-react';
+import { Bell, User, Menu, Search, LogOut, Sparkles, ChevronDown, Sun, Moon, FileText, Layers, HelpCircle, Loader2, X } from 'lucide-react';
 import { useTheme } from "../../context/ThemeContext";
+import searchService from '../../services/searchService';
+
+const SEARCH_DEBOUNCE_MS = 350;
+const MIN_QUERY_LENGTH = 2;
 
 const Header = ({ toggleSidebar }) => {
     const { user, logout } = useAuth();
@@ -35,9 +39,15 @@ const Header = ({ toggleSidebar }) => {
         }
     ]);
 
+    const [searchQuery, setSearchQuery] = useState('');
+    const [searchResults, setSearchResults] = useState({ documents: [], flashcards: [], quizzes: [] });
+    const [isSearching, setIsSearching] = useState(false);
+    const [showSearchResults, setShowSearchResults] = useState(false);
+
     const profileRef = useRef(null);
     const notificationsRef = useRef(null);
     const searchInputRef = useRef(null);
+    const searchContainerRef = useRef(null);
 
     // Close dropdowns on click outside
     useEffect(() => {
@@ -47,6 +57,9 @@ const Header = ({ toggleSidebar }) => {
             }
             if (notificationsRef.current && !notificationsRef.current.contains(event.target)) {
                 setIsNotificationsOpen(false);
+            }
+            if (searchContainerRef.current && !searchContainerRef.current.contains(event.target)) {
+                setShowSearchResults(false);
             }
         };
 
@@ -66,12 +79,54 @@ const Header = ({ toggleSidebar }) => {
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, []);
 
+    // Debounced global search across documents, flashcards and quizzes
+    useEffect(() => {
+        const query = searchQuery.trim();
+
+        if (query.length < MIN_QUERY_LENGTH) {
+            setSearchResults({ documents: [], flashcards: [], quizzes: [] });
+            setIsSearching(false);
+            return;
+        }
+
+        setIsSearching(true);
+        const timeoutId = setTimeout(async () => {
+            try {
+                const results = await searchService.globalSearch(query);
+                setSearchResults(results || { documents: [], flashcards: [], quizzes: [] });
+            } catch (error) {
+                console.error('Search failed:', error);
+            } finally {
+                setIsSearching(false);
+            }
+        }, SEARCH_DEBOUNCE_MS);
+
+        return () => clearTimeout(timeoutId);
+    }, [searchQuery]);
+
     const handleMarkAllAsRead = () => {
         setNotifications(prev => prev.map(n => ({ ...n, unread: false })));
     };
 
+    const handleSearchResultClick = (path) => {
+        setShowSearchResults(false);
+        setSearchQuery('');
+        navigate(path);
+    };
+
+    const handleSearchKeyDown = (e) => {
+        if (e.key === 'Escape') {
+            setShowSearchResults(false);
+            searchInputRef.current?.blur();
+        }
+    };
+
     const unreadCount = notifications.filter(n => n.unread).length;
     const userInitial = user?.username ? user.username.charAt(0).toUpperCase() : 'U';
+    const trimmedQuery = searchQuery.trim();
+    const hasSearchResults = searchResults.documents.length > 0
+        || searchResults.flashcards.length > 0
+        || searchResults.quizzes.length > 0;
 
     return (
         <header className="sticky top-0 z-40 w-full h-16 bg-bg-card/80 backdrop-blur-md border-b border-border-light flex items-center justify-between px-6 select-none">
@@ -86,17 +141,113 @@ const Header = ({ toggleSidebar }) => {
                 </button>
 
                 {/* Search Bar */}
-                <div className="relative w-full max-w-md hidden md:block">
+                <div className="relative w-full max-w-md hidden md:block" ref={searchContainerRef}>
                     <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-muted w-4 h-4" />
                     <input
                         ref={searchInputRef}
                         type="text"
-                        placeholder="Search notes, flashcards, or quizzes..."
+                        value={searchQuery}
+                        onChange={(e) => {
+                            setSearchQuery(e.target.value);
+                            setShowSearchResults(true);
+                        }}
+                        onFocus={() => {
+                            if (trimmedQuery.length >= MIN_QUERY_LENGTH) setShowSearchResults(true);
+                        }}
+                        onKeyDown={handleSearchKeyDown}
+                        placeholder="Search documents, flashcards, or quizzes..."
                         className="w-full bg-bg-main hover:bg-border-light/60 focus:bg-bg-card text-sm text-text-heading border border-transparent focus:border-primary-hover/20 rounded-2xl pl-10 pr-12 py-2 transition-all duration-300 focus:outline-none focus:ring-1 focus:ring-primary/20 focus:shadow-md focus:shadow-primary-shadow/5"
                     />
-                    <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-0.5 px-1.5 py-0.5 bg-border-light text-[10px] font-semibold text-text-muted rounded border border-border-medium/40">
-                        <span>⌘</span><span>K</span>
-                    </div>
+                    {searchQuery ? (
+                        <button
+                            onClick={() => {
+                                setSearchQuery('');
+                                setShowSearchResults(false);
+                                searchInputRef.current?.focus();
+                            }}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-body p-0.5 rounded cursor-pointer"
+                            aria-label="Clear search"
+                        >
+                            <X className="w-3.5 h-3.5" />
+                        </button>
+                    ) : (
+                        <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-0.5 px-1.5 py-0.5 bg-border-light text-[10px] font-semibold text-text-muted rounded border border-border-medium/40">
+                            <span>⌘</span><span>K</span>
+                        </div>
+                    )}
+
+                    {/* Search Results Dropdown */}
+                    {showSearchResults && trimmedQuery.length >= MIN_QUERY_LENGTH && (
+                        <div className="absolute left-0 right-0 mt-2 bg-bg-card border border-border-medium rounded-2xl shadow-xl shadow-slate-200/25 dark:shadow-none py-2 z-50 animate-fade-in max-h-96 overflow-y-auto">
+                            {isSearching ? (
+                                <div className="py-8 flex items-center justify-center gap-2 text-text-muted text-xs">
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                    Searching...
+                                </div>
+                            ) : hasSearchResults ? (
+                                <>
+                                    {searchResults.documents.length > 0 && (
+                                        <div className="px-2 pb-1">
+                                            <p className="px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-text-muted">Documents</p>
+                                            {searchResults.documents.map((doc) => (
+                                                <button
+                                                    key={doc._id}
+                                                    onClick={() => handleSearchResultClick(`/documents/${doc._id}`)}
+                                                    className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-left hover:bg-border-light/40 transition-colors cursor-pointer"
+                                                >
+                                                    <FileText className="w-4 h-4 text-primary shrink-0" />
+                                                    <span className="text-xs text-text-heading font-medium truncate">{doc.title}</span>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+
+                                    {searchResults.flashcards.length > 0 && (
+                                        <div className="px-2 pb-1">
+                                            <p className="px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-text-muted">Flashcards</p>
+                                            {searchResults.flashcards.map((set) => (
+                                                <button
+                                                    key={set.id}
+                                                    onClick={() => handleSearchResultClick(`/documents/${set.documentId}/flashcards`)}
+                                                    className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-left hover:bg-border-light/40 transition-colors cursor-pointer"
+                                                >
+                                                    <Layers className="w-4 h-4 text-primary shrink-0" />
+                                                    <div className="min-w-0">
+                                                        <p className="text-xs text-text-heading font-medium truncate">{set.question || set.documentTitle}</p>
+                                                        <p className="text-[10px] text-text-muted truncate">{set.documentTitle}</p>
+                                                    </div>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+
+                                    {searchResults.quizzes.length > 0 && (
+                                        <div className="px-2 pb-1">
+                                            <p className="px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-text-muted">Quizzes</p>
+                                            {searchResults.quizzes.map((quiz) => (
+                                                <button
+                                                    key={quiz._id}
+                                                    onClick={() => handleSearchResultClick(
+                                                        quiz.completedAt
+                                                            ? `/quizzes/${quiz._id}/results`
+                                                            : `/quizzes/${quiz._id}`
+                                                    )}
+                                                    className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-left hover:bg-border-light/40 transition-colors cursor-pointer"
+                                                >
+                                                    <HelpCircle className="w-4 h-4 text-primary shrink-0" />
+                                                    <span className="text-xs text-text-heading font-medium truncate">{quiz.title}</span>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+                                </>
+                            ) : (
+                                <div className="py-8 text-center text-text-muted text-xs">
+                                    No results found for "{trimmedQuery}"
+                                </div>
+                            )}
+                        </div>
+                    )}
                 </div>
             </div>
 

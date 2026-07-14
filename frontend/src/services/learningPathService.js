@@ -30,6 +30,15 @@ const getLearningPathForDocument = async (userId, documentId) => {
     }
 };
 
+const getStudyPlan = async (documentId, force = false) => {
+    try {
+        const response = await axiosInstance.post(API_PATHS.LEARNING_PATH.STUDY_PLAN, { documentId, force });
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || { message: 'Failed to fetch study plan' };
+    }
+};
+
 const getAllLearningPaths = async (userId) => {
     try {
         const response = await axiosInstance.get(API_PATHS.LEARNING_PATH.GET_FOR_USER(userId));
@@ -42,6 +51,7 @@ const getAllLearningPaths = async (userId) => {
 const learningPathService = {
     generateLearningPath,
     updateLearningPath,
+    getStudyPlan,
     getLearningPathForDocument,
     getAllLearningPaths,
 };

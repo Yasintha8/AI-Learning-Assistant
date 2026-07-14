@@ -15,14 +15,18 @@ if (!process.env.GEMINI_API_KEY) {
  * Generate flashcards from text
  * @param {string} text - Document text
  * @param {number} count - Number of flashcards to generate
- * @returns {Promise<Array<{question: string, answer: string, difficulty: string}>>}
+ * @param {string[]} topicTitles - Optional list of existing learning-path topic titles to tag each card with
+ * @returns {Promise<Array<{question: string, answer: string, difficulty: string, topicTitle: string|null}>>}
  */
-export const generateFlashcards = async (text, count = 10) => {
+export const generateFlashcards = async (text, count = 10, topicTitles = []) => {
+    const shouldTagTopics = topicTitles.length > 0;
+
     const prompt = `Generate exactly ${count} educational flashcards from the following text.
 Format each flashcard as:
 Q: [Clear, specific question]
 A: [Concise, accurate answer]
-D: [Difficulty level: easy, medium, or hard]
+D: [Difficulty level: easy, medium, or hard]${shouldTagTopics ? `
+T: [The single best matching topic from this exact list: ${topicTitles.join(' | ')}]` : ''}
 
 Separate each flashcard with "---"
 
@@ -43,7 +47,7 @@ ${text.substring(0, 15000)}`;
 
         for (const card of cards) {
             const lines = card.trim().split('\n');
-            let question = '', answer = '', difficulty = 'medium';
+            let question = '', answer = '', difficulty = 'medium', topicTitle = null;
 
             for (const line of lines) {
                 if (line.startsWith('Q:')) {
@@ -55,11 +59,13 @@ ${text.substring(0, 15000)}`;
                     if (['easy', 'medium', 'hard'].includes(diff)) {
                         difficulty = diff;
                     }
+                } else if (line.startsWith('T:')) {
+                    topicTitle = line.substring(2).trim() || null;
                 }
             }
 
             if (question && answer) {
-                flashcards.push({ question, answer, difficulty });
+                flashcards.push({ question, answer, difficulty, topicTitle });
             }
         }
 
@@ -81,9 +87,12 @@ ${text.substring(0, 15000)}`;
  * Generate quiz questions
  * @param {string} text - Document text
  * @param {number} numQuestions - Number of questions
- * @returns {Promise<Array<{question: string, options: Array, correctOption: string, explanation: string, difficulty: string}>>}
+ * @param {string[]} topicTitles - Optional list of existing learning-path topic titles to tag each question with
+ * @returns {Promise<Array<{question: string, options: Array, correctOption: string, explanation: string, difficulty: string, topicTitle: string|null}>>}
  */
-export const generateQuiz = async (text, numQuestions = 5) => {
+export const generateQuiz = async (text, numQuestions = 5, topicTitles = []) => {
+    const shouldTagTopics = topicTitles.length > 0;
+
     const prompt = `Generate exactly ${numQuestions} multiple choice questions from the following text.
 Format each question as:
 Q: [Question]
@@ -93,7 +102,8 @@ O3: [Option 3]
 O4: [Option 4]
 C: [1, 2, 3, or 4 ONLY]
 E: [Brief explanation]
-D: [Difficulty: easy, medium, or hard]
+D: [Difficulty: easy, medium, or hard]${shouldTagTopics ? `
+T: [The single best matching topic from this exact list: ${topicTitles.join(' | ')}]` : ''}
 
 IMPORTANT:
 - C MUST contain ONLY the option number (1, 2, 3, or 4).
@@ -125,6 +135,7 @@ ${text.substring(0, 15000)}`;
             let correctOption = null;
             let explanation = '';
             let difficulty = 'medium';
+            let topicTitle = null;
 
             for (const line of lines) {
                 const trimmed = line.trim();
@@ -147,6 +158,8 @@ ${text.substring(0, 15000)}`;
                     if (['easy', 'medium', 'hard'].includes(diff)) {
                         difficulty = diff;
                     }
+                } else if (trimmed.startsWith('T:')) {
+                    topicTitle = trimmed.substring(2).trim() || null;
                 }
             }
 
@@ -161,7 +174,8 @@ ${text.substring(0, 15000)}`;
                     options,
                     correctOption,
                     explanation,
-                    difficulty
+                    difficulty,
+                    topicTitle
                 });
             }
         }
@@ -320,6 +334,92 @@ ${text.substring(0, 15000)}`;
         }
 
         throw new Error('Failed to generate topics from document');
+    }
+};
+
+const VALID_KNOWLEDGE_LEVELS = ['beginner', 'intermediate', 'proficient'];
+const VALID_STUDY_ACTIONS = ['reread-summary', 'redo-flashcards', 'retake-quiz', 'ask-ai-explain'];
+
+/**
+ * Classify each topic's knowledge level and recommend a next study action, based on the
+ * user's actual quiz/flashcard performance. Grounded on masteryScore bands (<40 beginner,
+ * 40-74 intermediate, >=75 proficient) so Gemini's labels stay consistent with the numeric
+ * mastery system - it may only nudge one band based on other signals (recency, engagement).
+ * @param {Array<{title: string, masteryScore: number, status: string, difficulty: string, source: string|null, daysSinceReviewed: number|null}>} topicStats
+ * @returns {Promise<Array<{title: string, knowledgeLevel: string|null, levelReason: string, action: string|null, actionReason: string}>>}
+ */
+export const classifyTopicKnowledge = async (topicStats) => {
+    const topicsList = topicStats.map(t => `- Title: "${t.title}"
+  masteryScore: ${t.masteryScore}/100
+  difficulty: ${t.difficulty}
+  performanceSource: ${t.source || 'none yet'}
+  lastReviewed: ${t.daysSinceReviewed === null ? 'never' : `${t.daysSinceReviewed} day(s) ago`}`).join('\n\n');
+
+    const prompt = `You are analyzing a student's mastery of topics from a learning document, based on their real quiz and flashcard performance.
+
+For each topic below, decide:
+1. A "knowledgeLevel": one of "beginner", "intermediate", "proficient".
+   - Use masteryScore as the primary anchor: below 40 is normally beginner, 40-74 is normally intermediate, 75+ is normally proficient.
+   - You may shift a topic by at most one band if other signals justify it (e.g. never reviewed, or long time since last review).
+2. A "levelReason": one short sentence (plain language) explaining why, referencing the actual numbers.
+3. An "action": the single best next study step, chosen from EXACTLY these 4 values:
+   - "reread-summary": re-read the AI-generated document summary. Best when the student has little/no engagement with this topic yet.
+   - "redo-flashcards": review this topic's flashcards again. Best when flashcard practice is missing or light relative to quiz activity.
+   - "retake-quiz": take another quiz on this topic. Best when the student has some grasp but needs more testing/reinforcement.
+   - "ask-ai-explain": ask the AI to explain the concept again. Best when quiz accuracy is low, suggesting a conceptual gap rather than a practice gap.
+4. An "actionReason": one short sentence explaining why that specific action was chosen.
+
+Return ONLY a JSON array (no markdown, no code fences, no extra commentary) in exactly this shape:
+[
+  {
+    "title": "Topic title (must exactly match one given below)",
+    "knowledgeLevel": "beginner" | "intermediate" | "proficient",
+    "levelReason": "...",
+    "action": "reread-summary" | "redo-flashcards" | "retake-quiz" | "ask-ai-explain",
+    "actionReason": "..."
+  }
+]
+
+Topics:
+${topicsList}`;
+
+    try {
+        const response = await ai.models.generateContent({
+            model: "gemini-2.5-flash-lite",
+            contents: prompt,
+        });
+
+        const generatedText = response.text;
+        const jsonText = generatedText
+            .replace(/```json/gi, '')
+            .replace(/```/g, '')
+            .trim();
+
+        const parsed = JSON.parse(jsonText);
+
+        if (!Array.isArray(parsed)) {
+            throw new Error('Gemini did not return a JSON array');
+        }
+
+        return parsed
+            .filter(item => item && item.title)
+            .map(item => ({
+                title: String(item.title).trim(),
+                knowledgeLevel: VALID_KNOWLEDGE_LEVELS.includes(item.knowledgeLevel) ? item.knowledgeLevel : null,
+                levelReason: typeof item.levelReason === 'string' ? item.levelReason.trim().slice(0, 300) : '',
+                action: VALID_STUDY_ACTIONS.includes(item.action) ? item.action : null,
+                actionReason: typeof item.actionReason === 'string' ? item.actionReason.trim().slice(0, 300) : ''
+            }));
+    } catch (error) {
+        console.error('Gemini API error:', error);
+
+        if (error.status === 429) {
+            throw new Error(
+                'Failed to classify topic knowledge. Gemini API quota exceeded. Please try again later.'
+            );
+        }
+
+        throw new Error('Failed to classify topic knowledge');
     }
 };
 

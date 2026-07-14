@@ -19,6 +19,37 @@ const IN_PROGRESS_THRESHOLD = 50;
 // Recommend at most this many weakest topics
 const RECOMMEND_LIMIT = 5;
 
+// Eligibility gate for the AI study plan: needs enough real activity on the document
+// for the classification to be meaningful, not just a cold-start guess
+const REQUIRED_COMPLETED_QUIZZES = 3;
+const REQUIRED_REVIEWED_FLASHCARD_SETS = 1;
+
+// Deterministic fallback bands, used only when Gemini's classification is missing/invalid
+// for a topic - keeps knowledgeLevel consistent with the same bands Gemini is grounded on
+const KNOWLEDGE_PROFICIENT_THRESHOLD = 75;
+const KNOWLEDGE_INTERMEDIATE_THRESHOLD = 40;
+
+const deriveKnowledgeLevelFallback = (masteryScore) => {
+    if (masteryScore >= KNOWLEDGE_PROFICIENT_THRESHOLD) return 'proficient';
+    if (masteryScore >= KNOWLEDGE_INTERMEDIATE_THRESHOLD) return 'intermediate';
+    return 'beginner';
+};
+
+// Deterministic fallback action, used only when Gemini's action is missing/invalid for a topic
+const deriveFallbackAction = (topic) => {
+    if (!topic.source) return 'reread-summary';
+    if (topic.knowledgeLevel === 'beginner') return 'ask-ai-explain';
+    if (topic.source === 'quiz') return 'redo-flashcards';
+    return 'retake-quiz';
+};
+
+const FALLBACK_ACTION_REASONS = {
+    'reread-summary': "You haven't engaged with this topic yet - start with the document summary.",
+    'ask-ai-explain': 'Your mastery score is still low - ask the AI to explain this concept again.',
+    'redo-flashcards': "You haven't practiced this topic with flashcards yet.",
+    'retake-quiz': 'A bit more quiz practice will help solidify this topic.'
+};
+
 // Simple, explainable status derivation from a 0-100 masteryScore
 const deriveStatus = (masteryScore, hasActivity) => {
     if (!hasActivity) return 'not-started';
@@ -338,6 +369,157 @@ export const getLearningPath = async (req, res, next) => {
             success: true,
             count: learningPaths.length,
             data: learningPaths
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+// How much real activity the user has on this document, and whether it clears the
+// gate for generating an AI-driven study plan
+const computeEligibility = async (userId, documentId) => {
+    const [completedQuizCount, flashcardSets] = await Promise.all([
+        Quiz.countDocuments({ userId, documentId, completedAt: { $ne: null } }),
+        Flashcard.find({ userId, documentId })
+    ]);
+
+    const reviewedFlashcardSetCount = flashcardSets.filter(set =>
+        set.cards.some(card => card.reviewCount > 0)
+    ).length;
+
+    const totalFlashcardReviews = flashcardSets.reduce(
+        (sum, set) => sum + set.cards.reduce((cardSum, card) => cardSum + card.reviewCount, 0),
+        0
+    );
+
+    return {
+        eligible: completedQuizCount >= REQUIRED_COMPLETED_QUIZZES
+            && reviewedFlashcardSetCount >= REQUIRED_REVIEWED_FLASHCARD_SETS,
+        completedQuizCount,
+        requiredQuizCount: REQUIRED_COMPLETED_QUIZZES,
+        reviewedFlashcardSetCount,
+        requiredFlashcardSetCount: REQUIRED_REVIEWED_FLASHCARD_SETS,
+        totalFlashcardReviews
+    };
+};
+
+// Regenerate knowledgeLevel per topic + the studyPlan checklist, but only calls Gemini
+// when the user is eligible AND real activity changed since the plan was last generated
+// (or `force` is set) - keeps this cheap to call on every Learning Path page load.
+const generateStudyPlanForDocument = async (userId, documentId, { force = false } = {}) => {
+    const learningPath = await LearningPath.findOne({ userId, documentId });
+    if (!learningPath) return null;
+
+    const eligibility = await computeEligibility(userId, documentId);
+
+    if (!eligibility.eligible) {
+        return { learningPath, eligibility };
+    }
+
+    const isStale = force
+        || !learningPath.studyPlanGeneratedAt
+        || learningPath.studyPlanStats?.completedQuizCount !== eligibility.completedQuizCount
+        || learningPath.studyPlanStats?.totalFlashcardReviews !== eligibility.totalFlashcardReviews;
+
+    if (!isStale) {
+        return { learningPath, eligibility };
+    }
+
+    const now = Date.now();
+    const topicStatsInput = learningPath.topics.map(topic => ({
+        title: topic.title,
+        masteryScore: topic.masteryScore,
+        status: topic.status,
+        difficulty: topic.difficulty,
+        source: topic.source,
+        daysSinceReviewed: topic.lastReviewedAt
+            ? Math.floor((now - new Date(topic.lastReviewedAt).getTime()) / (1000 * 60 * 60 * 24))
+            : null
+    }));
+
+    // Best-effort: if Gemini fails entirely, fall back to deterministic classification
+    // for every topic rather than blocking the whole feature
+    let classifications = [];
+    try {
+        classifications = await geminiService.classifyTopicKnowledge(topicStatsInput);
+    } catch (error) {
+        console.error('Failed to classify topic knowledge via Gemini, using fallback:', error);
+    }
+
+    const classificationByTitle = new Map(
+        classifications.map(c => [c.title.toLowerCase(), c])
+    );
+
+    learningPath.topics.forEach(topic => {
+        const classification = classificationByTitle.get(topic.title.toLowerCase());
+
+        topic.knowledgeLevel = classification?.knowledgeLevel || deriveKnowledgeLevelFallback(topic.masteryScore);
+        topic.knowledgeLevelReason = classification?.levelReason
+            || `Based on a mastery score of ${topic.masteryScore}%.`;
+    });
+
+    // Ordered checklist: weakest topics first, excluding anything already proficient
+    learningPath.studyPlan = learningPath.topics
+        .filter(topic => topic.knowledgeLevel !== 'proficient')
+        .sort((a, b) => a.masteryScore - b.masteryScore)
+        .map(topic => {
+            const classification = classificationByTitle.get(topic.title.toLowerCase());
+            const action = classification?.action || deriveFallbackAction(topic);
+            const reason = classification?.actionReason || FALLBACK_ACTION_REASONS[action];
+
+            return {
+                topicId: topic.topicId,
+                title: topic.title,
+                knowledgeLevel: topic.knowledgeLevel,
+                action,
+                reason
+            };
+        });
+
+    learningPath.studyPlanGeneratedAt = new Date();
+    learningPath.studyPlanStats = {
+        completedQuizCount: eligibility.completedQuizCount,
+        totalFlashcardReviews: eligibility.totalFlashcardReviews
+    };
+
+    await learningPath.save();
+
+    return { learningPath, eligibility };
+};
+
+// @desc    Get (regenerating if stale) the AI knowledge-level classification and study
+//          plan checklist for a document. No-ops until the user has enough activity.
+// @route   POST /api/learning-path/study-plan
+// @access  Private
+export const getStudyPlan = async (req, res, next) => {
+    try {
+        const { documentId, force } = req.body;
+
+        if (!documentId) {
+            return res.status(400).json({
+                success: false,
+                error: 'Please provide documentId',
+                statusCode: 400
+            });
+        }
+
+        const result = await generateStudyPlanForDocument(req.user._id, documentId, { force: !!force });
+
+        if (!result) {
+            return res.status(404).json({
+                success: false,
+                error: 'Learning path not found. Generate one first.',
+                statusCode: 404
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            data: result.learningPath,
+            eligibility: result.eligibility,
+            message: result.eligibility.eligible
+                ? 'Study plan is up to date'
+                : 'Not enough activity yet to generate a study plan'
         });
     } catch (error) {
         next(error);

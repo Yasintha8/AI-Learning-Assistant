@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, useSearchParams, Link } from 'react-router-dom';
 import documentService from '../../services/documentService';
 import Spinner from '../../components/common/Spinner';
 import toast from 'react-hot-toast';
@@ -23,9 +23,15 @@ const getYoutubeEmbedUrl = (url) => {
 const DocumentDetailPage = () => {
 
   const { id } = useParams();
+  const [searchParams] = useSearchParams();
+  const VALID_TABS = ['Content', 'Chat', 'AI Actions', 'Flashcards', 'Quizzes'];
+  const requestedTab = searchParams.get('tab');
+
   const [document, setDocument] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('Content');
+  const [activeTab, setActiveTab] = useState(
+    VALID_TABS.includes(requestedTab) ? requestedTab : 'Content'
+  );
 
   useEffect(() => {
     const fetchDocumentDetails = async () => {

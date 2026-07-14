@@ -44,6 +44,15 @@ const learningPathSchema = new mongoose.Schema({
             type: String,
             enum: ['quiz', 'flashcard', 'both', null],
             default: null
+        },
+        knowledgeLevel: {
+            type: String,
+            enum: ['beginner', 'intermediate', 'proficient', null],
+            default: null
+        },
+        knowledgeLevelReason: {
+            type: String,
+            default: ''
         }
     }],
     recommendedNext: [{
@@ -62,7 +71,46 @@ const learningPathSchema = new mongoose.Schema({
             type: String,
             default: ''
         }
-    }]
+    }],
+    studyPlan: [{
+        topicId: {
+            type: String,
+            required: true
+        },
+        title: {
+            type: String,
+            required: true
+        },
+        knowledgeLevel: {
+            type: String,
+            enum: ['beginner', 'intermediate', 'proficient', null],
+            default: null
+        },
+        action: {
+            type: String,
+            enum: ['reread-summary', 'redo-flashcards', 'retake-quiz', 'ask-ai-explain'],
+            required: true
+        },
+        reason: {
+            type: String,
+            default: ''
+        }
+    }],
+    // Bookkeeping to avoid re-calling Gemini when nothing has actually changed
+    studyPlanGeneratedAt: {
+        type: Date,
+        default: null
+    },
+    studyPlanStats: {
+        completedQuizCount: {
+            type: Number,
+            default: 0
+        },
+        totalFlashcardReviews: {
+            type: Number,
+            default: 0
+        }
+    }
 }, {
     timestamps: true
 });
