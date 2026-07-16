@@ -96,6 +96,39 @@ const learningPathSchema = new mongoose.Schema({
             default: ''
         }
     }],
+    // Concept-level weak areas mined from the user's incorrect quiz answers, clustered by AI.
+    // Regenerated in the same pass as studyPlan (see studyPlanGeneratedAt/studyPlanStats below).
+    weakConcepts: [{
+        concept: {
+            type: String,
+            required: true
+        },
+        description: {
+            type: String,
+            default: ''
+        },
+        relatedTopicId: {
+            type: String,
+            default: null
+        },
+        relatedTopicTitle: {
+            type: String,
+            default: null
+        },
+        missedCount: {
+            type: Number,
+            default: 0
+        },
+        action: {
+            type: String,
+            enum: ['reread-summary', 'redo-flashcards', 'retake-quiz', 'ask-ai-explain'],
+            required: true
+        },
+        reason: {
+            type: String,
+            default: ''
+        }
+    }],
     // Bookkeeping to avoid re-calling Gemini when nothing has actually changed
     studyPlanGeneratedAt: {
         type: Date,

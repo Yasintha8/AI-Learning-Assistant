@@ -424,6 +424,100 @@ ${topicsList}`;
 };
 
 /**
+ * Cluster a user's incorrect quiz answers into a small number of named weak concepts, each
+ * with a recommended next study action. Reuses the same action taxonomy as
+ * classifyTopicKnowledge so the frontend can render both lists identically.
+ * @param {Array<{question: string, correctAnswer: string, selectedAnswer: string, explanation: string, topicTitle: string|null}>} wrongAnswers
+ * @returns {Promise<Array<{concept: string, description: string, relatedTopicTitle: string|null, missedCount: number, action: string|null, actionReason: string}>>}
+ */
+export const identifyWeakConcepts = async (wrongAnswers) => {
+    if (!Array.isArray(wrongAnswers) || wrongAnswers.length === 0) {
+        return [];
+    }
+
+    const answersList = wrongAnswers.map((a, i) => `${i + 1}. Question: "${a.question}"
+   Section: ${a.topicTitle || 'unknown'}
+   Student answered: "${a.selectedAnswer}"
+   Correct answer: "${a.correctAnswer}"
+   Explanation: ${a.explanation || 'none provided'}`).join('\n\n');
+
+    const prompt = `You are analyzing a student's incorrect quiz answers on a learning document to find their underlying weak areas.
+
+Below is a list of specific questions the student got wrong, with what they answered, the correct answer, and the explanation.
+
+Group these mistakes into 3 to 8 distinct "weak concepts" - specific skills or ideas the student seems to be struggling with (e.g. "confusing precedence of AND vs OR", not a vague restatement of an entire chapter). Multiple wrong answers can belong to the same concept. Do not create one concept per question - only create a new concept when the mistake pattern is genuinely different.
+
+For each concept, decide:
+1. "concept": a short, specific name for the weak area (3-8 words).
+2. "description": one plain-language sentence describing the mistake pattern, referencing what the student seems to be getting confused about.
+3. "relatedTopicTitle": the section title (from the questions above) that best matches this concept, or null if unclear.
+4. "missedCount": how many of the numbered questions above relate to this concept.
+5. "action": the single best next study step, chosen from EXACTLY these 4 values:
+   - "reread-summary": re-read the AI-generated document summary. Best for broad unfamiliarity.
+   - "redo-flashcards": review flashcards again. Best when more repetition/practice would help.
+   - "retake-quiz": take another quiz. Best when the student has some grasp but needs more testing/reinforcement.
+   - "ask-ai-explain": ask the AI to explain the concept again. Best when the mistakes suggest a genuine conceptual misunderstanding.
+6. "actionReason": one short sentence explaining why that specific action was chosen.
+
+Return ONLY a JSON array (no markdown, no code fences, no extra commentary) in exactly this shape:
+[
+  {
+    "concept": "...",
+    "description": "...",
+    "relatedTopicTitle": "..." | null,
+    "missedCount": 1,
+    "action": "reread-summary" | "redo-flashcards" | "retake-quiz" | "ask-ai-explain",
+    "actionReason": "..."
+  }
+]
+
+Incorrect answers:
+${answersList}`;
+
+    try {
+        const response = await ai.models.generateContent({
+            model: "gemini-2.5-flash-lite",
+            contents: prompt,
+        });
+
+        const generatedText = response.text;
+        const jsonText = generatedText
+            .replace(/```json/gi, '')
+            .replace(/```/g, '')
+            .trim();
+
+        const parsed = JSON.parse(jsonText);
+
+        if (!Array.isArray(parsed)) {
+            throw new Error('Gemini did not return a JSON array');
+        }
+
+        return parsed
+            .filter(item => item && item.concept)
+            .map(item => ({
+                concept: String(item.concept).trim().slice(0, 120),
+                description: typeof item.description === 'string' ? item.description.trim().slice(0, 300) : '',
+                relatedTopicTitle: typeof item.relatedTopicTitle === 'string' && item.relatedTopicTitle.trim()
+                    ? item.relatedTopicTitle.trim()
+                    : null,
+                missedCount: Number.isFinite(item.missedCount) ? Math.max(0, Math.round(item.missedCount)) : 0,
+                action: VALID_STUDY_ACTIONS.includes(item.action) ? item.action : null,
+                actionReason: typeof item.actionReason === 'string' ? item.actionReason.trim().slice(0, 300) : ''
+            }));
+    } catch (error) {
+        console.error('Gemini API error:', error);
+
+        if (error.status === 429) {
+            throw new Error(
+                'Failed to identify weak concepts. Gemini API quota exceeded. Please try again later.'
+            );
+        }
+
+        throw new Error('Failed to identify weak concepts');
+    }
+};
+
+/**
  * Explain a specific concept
  * @param {string} concept - Concept to explain
  * @param {string} context - Relevant context

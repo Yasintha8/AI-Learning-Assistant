@@ -24,6 +24,9 @@ const RECOMMEND_LIMIT = 5;
 const REQUIRED_COMPLETED_QUIZZES = 3;
 const REQUIRED_REVIEWED_FLASHCARD_SETS = 1;
 
+// Cap how many wrong-answer records are sent to Gemini for weak-concept clustering
+const MAX_WRONG_ANSWERS_FOR_ANALYSIS = 40;
+
 // Deterministic fallback bands, used only when Gemini's classification is missing/invalid
 // for a topic - keeps knowledgeLevel consistent with the same bands Gemini is grounded on
 const KNOWLEDGE_PROFICIENT_THRESHOLD = 75;
@@ -130,6 +133,40 @@ const computeTopicStats = (topicId, quizzes, flashcardSets) => {
         source,
         lastReviewedAt
     };
+};
+
+// Gather every incorrectly-answered quiz question across the user's completed quizzes for a
+// document, resolving each to the info Gemini needs to cluster them into weak concepts.
+// Most recent first, deduplicated (question + selected answer) so repeated retakes of the
+// same quiz don't flood the prompt, and capped to keep token usage bounded.
+const collectWrongAnswers = (quizzes) => {
+    const wrongAnswers = [];
+    const seen = new Set();
+
+    for (const quiz of quizzes) {
+        quiz.userAnswers.forEach(userAnswer => {
+            if (userAnswer.isCorrect) return;
+
+            const question = quiz.questions[userAnswer.questionIndex];
+            if (!question) return;
+
+            const dedupeKey = `${question.question}::${userAnswer.selectedAnswer}`;
+            if (seen.has(dedupeKey)) return;
+            seen.add(dedupeKey);
+
+            wrongAnswers.push({
+                question: question.question,
+                correctAnswer: question.options[question.correctOption - 1] || '',
+                selectedAnswer: userAnswer.selectedAnswer,
+                explanation: question.explanation,
+                topicTitle: question.topicTitle,
+                answeredAt: userAnswer.answeredAt || quiz.completedAt
+            });
+        });
+    }
+
+    wrongAnswers.sort((a, b) => new Date(b.answeredAt) - new Date(a.answeredAt));
+    return wrongAnswers.slice(0, MAX_WRONG_ANSWERS_FOR_ANALYSIS);
 };
 
 // Convert a topic title into a URL/DB-safe slug, e.g. "Cell Structure" -> "cell-structure"
@@ -403,9 +440,9 @@ const computeEligibility = async (userId, documentId) => {
     };
 };
 
-// Regenerate knowledgeLevel per topic + the studyPlan checklist, but only calls Gemini
-// when the user is eligible AND real activity changed since the plan was last generated
-// (or `force` is set) - keeps this cheap to call on every Learning Path page load.
+// Regenerate knowledgeLevel per topic + the studyPlan checklist + concept-level weakConcepts,
+// but only calls Gemini when the user is eligible AND real activity changed since the plan was
+// last generated (or `force` is set) - keeps this cheap to call on every Learning Path page load.
 const generateStudyPlanForDocument = async (userId, documentId, { force = false } = {}) => {
     const learningPath = await LearningPath.findOne({ userId, documentId });
     if (!learningPath) return null;
@@ -476,15 +513,68 @@ const generateStudyPlanForDocument = async (userId, documentId, { force = false 
             };
         });
 
+    // Concept-level weak areas, mined from the user's actual wrong quiz answers (flashcards
+    // carry no correctness signal, so only quizzes can drive this). Best-effort: if Gemini
+    // fails, keep whatever weakConcepts were already stored rather than blocking the response.
+    const completedQuizzes = await Quiz.find({ userId, documentId, completedAt: { $ne: null } });
+    const wrongAnswers = collectWrongAnswers(completedQuizzes);
+
+    if (wrongAnswers.length === 0) {
+        learningPath.weakConcepts = [];
+    } else {
+        try {
+            const concepts = await geminiService.identifyWeakConcepts(wrongAnswers);
+            const topicIdByTitle = new Map(
+                learningPath.topics.map(t => [t.title.toLowerCase(), t.topicId])
+            );
+
+            learningPath.weakConcepts = concepts
+                .filter(c => c.action) // drop entries Gemini gave no valid action for
+                .map(c => ({
+                    concept: c.concept,
+                    description: c.description,
+                    relatedTopicId: c.relatedTopicTitle
+                        ? topicIdByTitle.get(c.relatedTopicTitle.toLowerCase()) || null
+                        : null,
+                    relatedTopicTitle: c.relatedTopicTitle,
+                    missedCount: c.missedCount,
+                    action: c.action,
+                    reason: c.actionReason
+                }));
+        } catch (error) {
+            console.error('Failed to identify weak concepts via Gemini, keeping previous value:', error);
+        }
+    }
+
     learningPath.studyPlanGeneratedAt = new Date();
     learningPath.studyPlanStats = {
         completedQuizCount: eligibility.completedQuizCount,
         totalFlashcardReviews: eligibility.totalFlashcardReviews
     };
 
-    await learningPath.save();
+    // Two Gemini calls happen between reading and saving this document, which widens the
+    // window for a concurrent request (e.g. duplicate calls on page load) to save first and
+    // trigger a Mongoose VersionError. Reapply our already-computed fields onto a fresh copy
+    // rather than re-running (and re-billing) the Gemini calls.
+    let savedLearningPath = learningPath;
+    try {
+        await learningPath.save();
+    } catch (error) {
+        if (error.name !== 'VersionError') throw error;
 
-    return { learningPath, eligibility };
+        const fresh = await LearningPath.findById(learningPath._id);
+        if (!fresh) throw error;
+
+        fresh.topics = learningPath.topics;
+        fresh.studyPlan = learningPath.studyPlan;
+        fresh.weakConcepts = learningPath.weakConcepts;
+        fresh.studyPlanGeneratedAt = learningPath.studyPlanGeneratedAt;
+        fresh.studyPlanStats = learningPath.studyPlanStats;
+        await fresh.save();
+        savedLearningPath = fresh;
+    }
+
+    return { learningPath: savedLearningPath, eligibility };
 };
 
 // @desc    Get (regenerating if stale) the AI knowledge-level classification and study

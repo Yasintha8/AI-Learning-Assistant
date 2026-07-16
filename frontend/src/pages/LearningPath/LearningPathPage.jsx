@@ -14,6 +14,7 @@ import {
   Layers,
   BrainCircuit,
   Lightbulb,
+  AlertTriangle,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import learningPathService from '../../services/learningPathService';
@@ -64,7 +65,7 @@ const LearningPathPage = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [refreshingStudyPlan, setRefreshingStudyPlan] = useState(false);
   const [selectedTopic, setSelectedTopic] = useState(null);
-  const [actionLoadingTopicId, setActionLoadingTopicId] = useState(null);
+  const [actionLoadingKey, setActionLoadingKey] = useState(null);
   const [actionModal, setActionModal] = useState({ isOpen: false, title: '', content: '' });
 
   const fetchStudyPlan = async (force = false) => {
@@ -132,20 +133,22 @@ const LearningPathPage = () => {
     }
   };
 
-  const handleInlineAction = async (item) => {
-    setActionLoadingTopicId(item.topicId);
+  // `key` uniquely identifies the item for the loading spinner; `title` is what gets sent to
+  // the AI (a topic title for study-plan items, a concept name for weak-concept items).
+  const handleInlineAction = async (item, key, title) => {
+    setActionLoadingKey(key);
     try {
       if (item.action === 'reread-summary') {
         const { summary } = await aiService.generateSummary(documentId);
         setActionModal({ isOpen: true, title: 'Document Summary', content: summary });
       } else if (item.action === 'ask-ai-explain') {
-        const { explanation } = await aiService.explainConcept(documentId, item.title);
-        setActionModal({ isOpen: true, title: `Explanation: ${item.title}`, content: explanation });
+        const { explanation } = await aiService.explainConcept(documentId, title);
+        setActionModal({ isOpen: true, title: `Explanation: ${title}`, content: explanation });
       }
     } catch (error) {
       toast.error(error.message || 'Failed to run this action.');
     } finally {
-      setActionLoadingTopicId(null);
+      setActionLoadingKey(null);
     }
   };
 
@@ -253,7 +256,7 @@ const LearningPathPage = () => {
                 const levelStyle = getKnowledgeLevelStyle(item.knowledgeLevel);
                 const meta = ACTION_META[item.action];
                 const ActionIcon = meta?.icon;
-                const isLoadingThis = actionLoadingTopicId === item.topicId;
+                const isLoadingThis = actionLoadingKey === item.topicId;
                 const link = getActionLink(item.action, documentId);
 
                 return (
@@ -288,7 +291,7 @@ const LearningPathPage = () => {
                       </Link>
                     ) : (
                       <button
-                        onClick={() => handleInlineAction(item)}
+                        onClick={() => handleInlineAction(item, item.topicId, item.title)}
                         disabled={isLoadingThis}
                         className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border-medium text-xs font-semibold text-text-body hover:bg-border-light transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
@@ -302,6 +305,85 @@ const LearningPathPage = () => {
                 );
               })}
             </ul>
+          </div>
+        )}
+
+        {/* Weak Areas (concept-level, mined from wrong quiz answers) */}
+        {eligibility?.eligible && (
+          <div className="bg-bg-card border border-border-light rounded-2xl overflow-hidden shadow-sm">
+            <div className="flex items-center gap-3 px-6 py-5 border-b border-border-light">
+              <div className="w-8 h-8 rounded-lg bg-primary-light flex items-center justify-center">
+                <AlertTriangle className="w-4 h-4 text-primary" strokeWidth={2} />
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold text-text-heading">Weak Areas</h3>
+                <p className="text-xs text-text-muted">Specific concepts you've missed on quizzes so far.</p>
+              </div>
+            </div>
+
+            {(!learningPath.weakConcepts || learningPath.weakConcepts.length === 0) ? (
+              <div className="px-6 py-5 text-sm text-text-body">
+                No weak areas detected - nice work on your quizzes so far.
+              </div>
+            ) : (
+              <ul className="divide-y divide-border-light">
+                {learningPath.weakConcepts.map((item, index) => {
+                  const meta = ACTION_META[item.action];
+                  const ActionIcon = meta?.icon;
+                  const key = `weak-${index}-${item.concept}`;
+                  const isLoadingThis = actionLoadingKey === key;
+                  const link = getActionLink(item.action, documentId);
+
+                  return (
+                    <li
+                      key={key}
+                      className="flex items-center justify-between gap-4 px-6 py-4"
+                    >
+                      <div className="flex items-start gap-3 min-w-0">
+                        <AlertTriangle className="mt-0.5 shrink-0 w-4 h-4 text-amber-500" strokeWidth={2} />
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <p className="text-sm font-medium text-text-heading">{item.concept}</p>
+                            {item.relatedTopicTitle && (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-border-light text-text-muted">
+                                {item.relatedTopicTitle}
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-xs text-text-muted mt-0.5">{item.description}</p>
+                          {item.missedCount > 0 && (
+                            <p className="text-[11px] text-text-muted mt-0.5">
+                              Missed in {item.missedCount} answer{item.missedCount === 1 ? '' : 's'}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+
+                      {link ? (
+                        <Link
+                          to={link}
+                          className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border-medium text-xs font-semibold text-text-body hover:bg-border-light transition-colors duration-150"
+                        >
+                          {ActionIcon && <ActionIcon className="w-3.5 h-3.5 text-primary" strokeWidth={2} />}
+                          {meta.label}
+                        </Link>
+                      ) : (
+                        <button
+                          onClick={() => handleInlineAction(item, key, item.concept)}
+                          disabled={isLoadingThis}
+                          className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border-medium text-xs font-semibold text-text-body hover:bg-border-light transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {isLoadingThis
+                            ? <div className="w-3.5 h-3.5 border-2 border-text-muted/30 border-t-text-muted rounded-full animate-spin" />
+                            : ActionIcon && <ActionIcon className="w-3.5 h-3.5 text-primary" strokeWidth={2} />}
+                          {meta?.label}
+                        </button>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
           </div>
         )}
 
