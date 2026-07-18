@@ -22,19 +22,20 @@ const storage = multer.diskStorage({
     }
 });
 
-// File filter - only PDFs and DOCX files
+// File filter - only PDFs, DOCX and PPTX files
 const allowedMimeTypes = [
     'application/pdf',
     'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'application/vnd.openxmlformats-officedocument.presentationml.presentation',
 ];
-const allowedExtensions = ['.pdf', '.docx'];
+const allowedExtensions = ['.pdf', '.docx', '.pptx'];
 
 const fileFilter = (req, file, cb) => {
     const ext = path.extname(file.originalname).toLowerCase();
     if (allowedMimeTypes.includes(file.mimetype) && allowedExtensions.includes(ext)) {
         cb(null, true);
     } else {
-        cb(new Error('Only PDF and DOCX files are allowed!'), false);
+        cb(new Error('Only PDF, DOCX and PPTX files are allowed!'), false);
     }
 };
 

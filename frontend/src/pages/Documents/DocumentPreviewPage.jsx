@@ -5,6 +5,7 @@ import { Download } from 'lucide-react';
 import documentService from '../../services/documentService';
 import Spinner from '../../components/common/Spinner';
 import DocxViewer from '../../components/documents/DocxViewer';
+import PptxViewer from '../../components/documents/PptxViewer';
 import { BASE_URL } from '../../utils/apiPaths';
 
 // Standalone, full-page document view used as the target of "Open in new
@@ -85,6 +86,8 @@ const DocumentPreviewPage = () => {
             title="PDF Viewer"
             frameBorder="0"
           />
+        ) : document.data.fileType === 'pptx' ? (
+          <PptxViewer fileUrl={fileUrl} className="w-full min-h-[calc(100vh-56px)]" />
         ) : (
           <DocxViewer fileUrl={fileUrl} className="w-full min-h-[calc(100vh-56px)]" />
         )}

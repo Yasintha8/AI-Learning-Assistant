@@ -12,6 +12,7 @@ import ResourceExplorer from '../../components/resources/ResourceExplorer';
 import FlashcardManager from '../../components/flashcards/FlashcardManager';
 import QuizManager from '../../components/quizzes/QuizManager';
 import DocxViewer from '../../components/documents/DocxViewer';
+import PptxViewer from '../../components/documents/PptxViewer';
 import { BASE_URL } from '../../utils/apiPaths';
 
 const YOUTUBE_URL_REGEX = /(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([\w-]{11})/;
@@ -76,9 +77,13 @@ const DocumentDetailPage = () => {
     const isPdf = fileType === 'pdf';
     const isYoutube = fileType === 'youtube';
     const isWebsite = fileType === 'website';
-    // Only DOCX needs the internal preview route (raw file downloads instead of viewing);
-    // PDF, YouTube, and website links can all be opened directly at their real source.
-    const openInNewTabHref = fileType === 'docx' ? `/documents/${id}/preview` : fileUrl;
+    const isPptx = fileType === 'pptx';
+    // DOCX and PPTX need the internal preview route (the raw file downloads
+    // instead of viewing); PDF, YouTube, and website links can all be opened
+    // directly at their real source.
+    const openInNewTabHref = fileType === 'docx' || fileType === 'pptx'
+      ? `/documents/${id}/preview`
+      : fileUrl;
 
     return (
       <div className="bg-bg-card border border-border-medium rounded-lg overflow-hidden shadow-sm">
@@ -134,7 +139,11 @@ const DocumentDetailPage = () => {
             </div>
           )
         ) : document.data.status === 'ready' ? (
-          <DocxViewer fileUrl={fileUrl} />
+          isPptx ? (
+            <PptxViewer fileUrl={fileUrl} />
+          ) : (
+            <DocxViewer fileUrl={fileUrl} />
+          )
         ) : (
           <div className="w-full h-[70vh] flex items-center justify-center bg-border-light text-sm text-text-muted">
             {document.data.status === 'error'

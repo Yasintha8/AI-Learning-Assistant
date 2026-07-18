@@ -1,11 +1,12 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FileText, Trash2, BookOpen, BrainCircuit, Clock, Video, Globe } from 'lucide-react';
+import { FileText, Trash2, BookOpen, BrainCircuit, Clock, Video, Globe, Presentation } from 'lucide-react';
 import moment from 'moment';
 
 const FILE_TYPE_ICONS = {
     youtube: Video,
     website: Globe,
+    pptx: Presentation,
 };
 
 // Helper function to format file size

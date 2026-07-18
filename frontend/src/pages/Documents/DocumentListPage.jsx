@@ -145,8 +145,8 @@ const DocumentListPage = () => {
               No Documents Yet
             </h3>
             <p className="text-sm text-text-muted mb-6 leading-relaxed">
-              Get started by adding your first PDF, DOCX, YouTube video, or
-              website link to begin learning.
+              Get started by adding your first PDF, DOCX, PPTX, YouTube video,
+              or website link to begin learning.
             </p>
             <button
               onClick={() => setIsUploadModalOpen(true)}
@@ -218,7 +218,7 @@ const DocumentListPage = () => {
               Add New Document
             </h2>
             <p className="text-sm text-text-muted">
-              Add a PDF/DOCX file, a YouTube video, or a website link
+              Add a PDF/DOCX/PPTX file, a YouTube video, or a website link
             </p>
           </div>
 
@@ -266,7 +266,7 @@ const DocumentListPage = () => {
                   Document File
                 </label>
                 <div className="relative group">
-                  <input id="file-upload" type="file" accept=".pdf,.docx" onChange={handleFileChange} required className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
+                  <input id="file-upload" type="file" accept=".pdf,.docx,.pptx" onChange={handleFileChange} required className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
                   <div className={`flex flex-col items-center justify-center gap-3 px-4 py-8 rounded-xl border-2 border-dashed transition-colors duration-150 ${uploadFile ? 'border-primary bg-primary-light' : 'border-border-medium bg-bg-main group-hover:border-primary '}`}>
                     <div className={`w-11 h-11 rounded-xl flex items-center justify-center ${uploadFile ? 'bg-linear-to-br from-primary to-blue-400' : 'bg-border-light'}`}>
                       <Upload className={`w-5 h-5 ${uploadFile ? 'text-white' : 'text-text-muted'}`} strokeWidth={2} />
@@ -283,7 +283,7 @@ const DocumentListPage = () => {
                         or drag and drop
                       </>
                     )}</p>
-                    <p className="text-xs text-text-placeholder">PDF or DOCX up to 10MB</p>
+                    <p className="text-xs text-text-placeholder">PDF, DOCX or PPTX up to 10MB</p>
                   </div>
                 </div>
               </div>
