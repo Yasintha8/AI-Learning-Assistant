@@ -57,4 +57,9 @@ export const API_PATHS = {
     SEARCH: {
         GLOBAL: "/api/search",
     },
+
+    RESOURCES: {
+        GENERATE: "/api/resources/generate",
+        GET_FOR_DOC: (documentId) => `/api/resources/${documentId}`,
+    },
 };

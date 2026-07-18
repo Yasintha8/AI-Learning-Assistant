@@ -2,7 +2,7 @@ import Document from '../models/Document.js';
 import LearningPath from '../models/LearningPath.js';
 import Quiz from '../models/Quiz.js';
 import Flashcard from '../models/Flashcard.js';
-import * as geminiService from '../utils/geminiService.js';
+import * as claudeService from '../utils/claudeService.js';
 
 // How many of the most recent quiz-question attempts (per topic) count toward mastery
 const RECENT_QUIZ_ATTEMPTS_LIMIT = 20;
@@ -24,11 +24,11 @@ const RECOMMEND_LIMIT = 5;
 const REQUIRED_COMPLETED_QUIZZES = 3;
 const REQUIRED_REVIEWED_FLASHCARD_SETS = 1;
 
-// Cap how many wrong-answer records are sent to Gemini for weak-concept clustering
+// Cap how many wrong-answer records are sent to Claude for weak-concept clustering
 const MAX_WRONG_ANSWERS_FOR_ANALYSIS = 40;
 
-// Deterministic fallback bands, used only when Gemini's classification is missing/invalid
-// for a topic - keeps knowledgeLevel consistent with the same bands Gemini is grounded on
+// Deterministic fallback bands, used only when Claude's classification is missing/invalid
+// for a topic - keeps knowledgeLevel consistent with the same bands Claude is grounded on
 const KNOWLEDGE_PROFICIENT_THRESHOLD = 75;
 const KNOWLEDGE_INTERMEDIATE_THRESHOLD = 40;
 
@@ -38,7 +38,7 @@ const deriveKnowledgeLevelFallback = (masteryScore) => {
     return 'beginner';
 };
 
-// Deterministic fallback action, used only when Gemini's action is missing/invalid for a topic
+// Deterministic fallback action, used only when Claude's action is missing/invalid for a topic
 const deriveFallbackAction = (topic) => {
     if (!topic.source) return 'reread-summary';
     if (topic.knowledgeLevel === 'beginner') return 'ask-ai-explain';
@@ -136,7 +136,7 @@ const computeTopicStats = (topicId, quizzes, flashcardSets) => {
 };
 
 // Gather every incorrectly-answered quiz question across the user's completed quizzes for a
-// document, resolving each to the info Gemini needs to cluster them into weak concepts.
+// document, resolving each to the info Claude needs to cluster them into weak concepts.
 // Most recent first, deduplicated (question + selected answer) so repeated retakes of the
 // same quiz don't flood the prompt, and capped to keep token usage bounded.
 const collectWrongAnswers = (quizzes) => {
@@ -179,7 +179,7 @@ const slugify = (title) => {
         .replace(/^-+|-+$/g, '') || 'topic';
 };
 
-// Turn Gemini's nested topics/subtopics into a flat list of unique { topicId, title, difficulty }
+// Turn Claude's nested topics/subtopics into a flat list of unique { topicId, title, difficulty }
 const flattenTopics = (topics) => {
     const flat = [];
     const seenSlugs = new Map();
@@ -233,8 +233,8 @@ export const generateLearningPath = async (req, res, next) => {
             });
         }
 
-        // Extract topics/subtopics using Gemini
-        const rawTopics = await geminiService.generateTopics(document.extractedText);
+        // Extract topics/subtopics using Claude
+        const rawTopics = await claudeService.generateTopics(document.extractedText);
         const flatTopics = flattenTopics(rawTopics);
 
         if (flatTopics.length === 0) {
@@ -441,7 +441,7 @@ const computeEligibility = async (userId, documentId) => {
 };
 
 // Regenerate knowledgeLevel per topic + the studyPlan checklist + concept-level weakConcepts,
-// but only calls Gemini when the user is eligible AND real activity changed since the plan was
+// but only calls Claude when the user is eligible AND real activity changed since the plan was
 // last generated (or `force` is set) - keeps this cheap to call on every Learning Path page load.
 const generateStudyPlanForDocument = async (userId, documentId, { force = false } = {}) => {
     const learningPath = await LearningPath.findOne({ userId, documentId });
@@ -474,13 +474,13 @@ const generateStudyPlanForDocument = async (userId, documentId, { force = false 
             : null
     }));
 
-    // Best-effort: if Gemini fails entirely, fall back to deterministic classification
+    // Best-effort: if Claude fails entirely, fall back to deterministic classification
     // for every topic rather than blocking the whole feature
     let classifications = [];
     try {
-        classifications = await geminiService.classifyTopicKnowledge(topicStatsInput);
+        classifications = await claudeService.classifyTopicKnowledge(topicStatsInput);
     } catch (error) {
-        console.error('Failed to classify topic knowledge via Gemini, using fallback:', error);
+        console.error('Failed to classify topic knowledge via Claude, using fallback:', error);
     }
 
     const classificationByTitle = new Map(
@@ -514,7 +514,7 @@ const generateStudyPlanForDocument = async (userId, documentId, { force = false 
         });
 
     // Concept-level weak areas, mined from the user's actual wrong quiz answers (flashcards
-    // carry no correctness signal, so only quizzes can drive this). Best-effort: if Gemini
+    // carry no correctness signal, so only quizzes can drive this). Best-effort: if Claude
     // fails, keep whatever weakConcepts were already stored rather than blocking the response.
     const completedQuizzes = await Quiz.find({ userId, documentId, completedAt: { $ne: null } });
     const wrongAnswers = collectWrongAnswers(completedQuizzes);
@@ -523,13 +523,13 @@ const generateStudyPlanForDocument = async (userId, documentId, { force = false 
         learningPath.weakConcepts = [];
     } else {
         try {
-            const concepts = await geminiService.identifyWeakConcepts(wrongAnswers);
+            const concepts = await claudeService.identifyWeakConcepts(wrongAnswers);
             const topicIdByTitle = new Map(
                 learningPath.topics.map(t => [t.title.toLowerCase(), t.topicId])
             );
 
             learningPath.weakConcepts = concepts
-                .filter(c => c.action) // drop entries Gemini gave no valid action for
+                .filter(c => c.action) // drop entries Claude gave no valid action for
                 .map(c => ({
                     concept: c.concept,
                     description: c.description,
@@ -542,7 +542,7 @@ const generateStudyPlanForDocument = async (userId, documentId, { force = false 
                     reason: c.actionReason
                 }));
         } catch (error) {
-            console.error('Failed to identify weak concepts via Gemini, keeping previous value:', error);
+            console.error('Failed to identify weak concepts via Claude, keeping previous value:', error);
         }
     }
 
@@ -552,10 +552,10 @@ const generateStudyPlanForDocument = async (userId, documentId, { force = false 
         totalFlashcardReviews: eligibility.totalFlashcardReviews
     };
 
-    // Two Gemini calls happen between reading and saving this document, which widens the
+    // Two Claude calls happen between reading and saving this document, which widens the
     // window for a concurrent request (e.g. duplicate calls on page load) to save first and
     // trigger a Mongoose VersionError. Reapply our already-computed fields onto a fresh copy
-    // rather than re-running (and re-billing) the Gemini calls.
+    // rather than re-running (and re-billing) the Claude calls.
     let savedLearningPath = learningPath;
     try {
         await learningPath.save();

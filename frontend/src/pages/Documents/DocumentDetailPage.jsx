@@ -8,6 +8,7 @@ import PageHeader from '../../components/common/PageHeader';
 import Tabs from '../../components/common/Tabs';
 import ChatInterface from '../../components/chat/ChatInterface';
 import AIActions from '../../components/ai/AIActions';
+import ResourceExplorer from '../../components/resources/ResourceExplorer';
 import FlashcardManager from '../../components/flashcards/FlashcardManager';
 import QuizManager from '../../components/quizzes/QuizManager';
 import DocxViewer from '../../components/documents/DocxViewer';
@@ -24,7 +25,7 @@ const DocumentDetailPage = () => {
 
   const { id } = useParams();
   const [searchParams] = useSearchParams();
-  const VALID_TABS = ['Content', 'Chat', 'AI Actions', 'Flashcards', 'Quizzes'];
+  const VALID_TABS = ['Content', 'Chat', 'AI Actions', 'Related Resources', 'Flashcards', 'Quizzes'];
   const requestedTab = searchParams.get('tab');
 
   const [document, setDocument] = useState(null);
@@ -153,6 +154,10 @@ const DocumentDetailPage = () => {
     return <AIActions />
   };
 
+  const renderRelatedResources = () => {
+    return <ResourceExplorer documentId={id} documentTitle={document?.data?.title || ''} />
+  };
+
   const renderFlashcardsTab = () => {
     return <FlashcardManager documentId={id} />
   };
@@ -165,6 +170,7 @@ const DocumentDetailPage = () => {
     { name: 'Content', label: 'Content', content: renderContent() },
     { name: 'Chat', label: 'Chat', content: renderChat() },
     { name: 'AI Actions', label: 'AI Actions', content: renderAIActions() },
+    { name: 'Related Resources', label: 'Related Resources', content: renderRelatedResources() },
     { name: 'Flashcards', label: 'Flashcards', content: renderFlashcardsTab() },
     { name: 'Quizzes', label: 'Quizzes', content: renderQuizzesTab() },
   ];

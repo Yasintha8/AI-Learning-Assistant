@@ -16,6 +16,7 @@ import quizRoutes from './routes/quizRoutes.js';
 import progressRoutes from './routes/progressRoutes.js';
 import learningPathRoutes from './routes/learningPathRoutes.js';
 import searchRoutes from './routes/searchRoutes.js';
+import resourceRoutes from './routes/resourceRoutes.js';
 
 //ES6 module _dirname alternative
 const __filename = fileURLToPath(import.meta.url);
@@ -52,6 +53,7 @@ app.use('/api/quizzes', quizRoutes);
 app.use('/api/progress', progressRoutes);
 app.use('/api/learning-path', learningPathRoutes);
 app.use('/api/search', searchRoutes);
+app.use('/api/resources', resourceRoutes);
 
 
 app.use(errorHandler);

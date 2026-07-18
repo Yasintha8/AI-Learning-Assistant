@@ -23,7 +23,7 @@ const FlashcardSetCard = ({ flashcardSet }) => {
     return (
         <div
             onClick={handleStudyNow}
-            className="group cursor-pointer rounded-2xl border border-border-medium bg-bg-card p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-primary/40"
+            className="group cursor-pointer rounded-2xl border border-border-medium/50 bg-bg-card p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-primary/40"
         >
             <div className="flex flex-col gap-5">
 
