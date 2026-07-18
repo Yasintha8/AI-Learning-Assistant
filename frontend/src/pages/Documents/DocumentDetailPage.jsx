@@ -3,7 +3,7 @@ import { useParams, useSearchParams, Link } from 'react-router-dom';
 import documentService from '../../services/documentService';
 import Spinner from '../../components/common/Spinner';
 import toast from 'react-hot-toast';
-import { ArrowLeft, ExternalLink, Map } from 'lucide-react';
+import { ArrowLeft, ExternalLink, Map, Globe, BookOpen } from 'lucide-react';
 import PageHeader from '../../components/common/PageHeader';
 import Tabs from '../../components/common/Tabs';
 import ChatInterface from '../../components/chat/ChatInterface';
@@ -34,6 +34,9 @@ const DocumentDetailPage = () => {
   const [activeTab, setActiveTab] = useState(
     VALID_TABS.includes(requestedTab) ? requestedTab : 'Content'
   );
+  // 'live' embeds the real site in an iframe; some sites block that via
+  // X-Frame-Options, so users can switch to the always-available reader view.
+  const [websiteViewMode, setWebsiteViewMode] = useState('live');
 
   useEffect(() => {
     const fetchDocumentDetails = async () => {
@@ -49,6 +52,7 @@ const DocumentDetailPage = () => {
     };
 
     fetchDocumentDetails();
+    setWebsiteViewMode('live');
   }, [id]);
 
   // Helper function to get the full file URL
@@ -89,6 +93,26 @@ const DocumentDetailPage = () => {
       <div className="bg-bg-card border border-border-medium rounded-lg overflow-hidden shadow-sm">
         <div className="flex items-center justify-between p-4 bg-bg-main border-b border-border-medium">
           <span className="text-sm font-medium text-text-heading">Document Viewer</span>
+          {isWebsite && (
+            <div className="flex items-center gap-1 p-0.5 bg-bg-card rounded-lg border border-border-medium">
+              <button
+                type="button"
+                onClick={() => setWebsiteViewMode('live')}
+                className={`inline-flex items-center gap-1.5 px-3 h-7 rounded-md text-xs font-semibold transition-colors duration-150 cursor-pointer ${websiteViewMode === 'live' ? 'bg-primary text-white' : 'text-text-muted hover:text-text-body'}`}
+              >
+                <Globe size={13} strokeWidth={2} />
+                Live Site
+              </button>
+              <button
+                type="button"
+                onClick={() => setWebsiteViewMode('reader')}
+                className={`inline-flex items-center gap-1.5 px-3 h-7 rounded-md text-xs font-semibold transition-colors duration-150 cursor-pointer ${websiteViewMode === 'reader' ? 'bg-primary text-white' : 'text-text-muted hover:text-text-body'}`}
+              >
+                <BookOpen size={13} strokeWidth={2} />
+                Reader View
+              </button>
+            </div>
+          )}
           <a
             href={openInNewTabHref}
             target="_blank"
@@ -123,7 +147,24 @@ const DocumentDetailPage = () => {
             />
           </div>
         ) : isWebsite ? (
-          document.data.status === 'ready' && document.data.extractedText ? (
+          websiteViewMode === 'live' ? (
+            <div className="bg-border-light p-1">
+              <iframe
+                src={fileUrl}
+                className="w-full h-[70vh] bg-bg-card rounded border border-border-medium"
+                title="Website Viewer"
+                frameBorder="0"
+                sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+                referrerPolicy="no-referrer"
+              />
+              <p className="px-2 pt-2 pb-1 text-xs text-text-muted">
+                Some sites block embedding - if the page above stays blank, switch to{' '}
+                <button type="button" onClick={() => setWebsiteViewMode('reader')} className="text-primary hover:text-primary-hover font-medium cursor-pointer">
+                  Reader View
+                </button>.
+              </p>
+            </div>
+          ) : document.data.status === 'ready' && document.data.extractedText ? (
             <div className="w-full h-[70vh] overflow-y-auto bg-border-light p-6">
               <div className="max-w-3xl mx-auto bg-bg-card border border-border-light rounded-xl shadow-sm p-10">
                 <p className="whitespace-pre-wrap text-sm text-text-body leading-relaxed">
