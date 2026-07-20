@@ -1,7 +1,7 @@
 import React from "react";
 import { X } from "lucide-react";
 
-const Modal = ({ isOpen, onClose, title, children }) => {
+const Modal = ({ isOpen, onClose, title, headerAction, children }) => {
 
     if (!isOpen) return null;
 
@@ -20,10 +20,11 @@ const Modal = ({ isOpen, onClose, title, children }) => {
                     <X className="w-4 h-4" strokeWidth={2} />
                 </button>
 
-                <div className="px-6 pt-6 pb-4 border-b border-border-light pr-12">
+                <div className="px-6 pt-6 pb-4 border-b border-border-light pr-12 flex items-center justify-between gap-3">
                     <h3 className="text-lg font-bold text-text-heading tracking-tight">
                         {title}
                     </h3>
+                    {headerAction}
                 </div>
 
                 <div className="px-6 py-5">{children}</div>

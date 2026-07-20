@@ -47,8 +47,8 @@ const Sidebar = ({ isSidebarOpen, toggleSidebar }) => {
             <div className="p-2 bg-primary/10 rounded-xl text-primary flex items-center justify-center shadow-sm">
               <BrainCircuit className="w-5 h-5" />
             </div>
-            <span className="font-display font-bold text-lg text-text-heading tracking-tight bg-linear-to-r from-primary to-primary-hover bg-clip-text">
-              AI Learning Assistant
+            <span className="font-display font-bold text-2xl text-text-heading tracking-tight bg-linear-to-r from-primary to-primary-hover bg-clip-text">
+              NeuroLearn
             </span>
           </Link>
           <button
