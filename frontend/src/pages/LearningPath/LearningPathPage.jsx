@@ -296,7 +296,7 @@ const LearningPathPage = () => {
                         className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border-medium text-xs font-semibold text-text-body hover:bg-border-light transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         {isLoadingThis
-                          ? <div className="w-3.5 h-3.5 border-2 border-text-muted/30 border-t-text-muted rounded-full animate-spin" />
+                          ? <Spinner size="xs" tone="muted" inline />
                           : ActionIcon && <ActionIcon className="w-3.5 h-3.5 text-primary" strokeWidth={2} />}
                         {meta?.label}
                       </button>
@@ -374,7 +374,7 @@ const LearningPathPage = () => {
                           className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border-medium text-xs font-semibold text-text-body hover:bg-border-light transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           {isLoadingThis
-                            ? <div className="w-3.5 h-3.5 border-2 border-text-muted/30 border-t-text-muted rounded-full animate-spin" />
+                            ? <Spinner size="xs" tone="muted" inline />
                             : ActionIcon && <ActionIcon className="w-3.5 h-3.5 text-primary" strokeWidth={2} />}
                           {meta?.label}
                         </button>

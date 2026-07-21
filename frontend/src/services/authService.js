@@ -44,6 +44,19 @@ const updateProfile = async (userData) => {
     }
 };
 
+const uploadAvatar = async (formData) => {
+    try {
+        const response = await axiosInstance.post(API_PATHS.AUTH.UPLOAD_AVATAR, formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            }
+        });
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || { message: 'Failed to upload avatar' };
+    }
+};
+
 const changePassword = async (passwords) => {
     try {
         const response = await axiosInstance.post(API_PATHS.AUTH.CHANGE_PASSWORD, passwords);
@@ -59,6 +72,7 @@ const authService = {
     register,
     getProfile,
     updateProfile,
+    uploadAvatar,
     changePassword,
 };
 

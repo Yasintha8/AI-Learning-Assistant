@@ -122,7 +122,6 @@ const Header = ({ toggleSidebar }) => {
     };
 
     const unreadCount = notifications.filter(n => n.unread).length;
-    const userInitial = user?.username ? user.username.charAt(0).toUpperCase() : 'U';
     const trimmedQuery = searchQuery.trim();
     const hasSearchResults = searchResults.documents.length > 0
         || searchResults.flashcards.length > 0
@@ -340,13 +339,10 @@ const Header = ({ toggleSidebar }) => {
                                 className="w-8 h-8 rounded-xl object-cover border border-border-medium"
                             />
                         ) : (
-                            <div className="w-8 h-8 rounded-xl bg-linear-to-tr from-primary to-primary-hover flex items-center justify-center text-white text-sm font-bold shadow-md shadow-primary-shadow/15">
-                                {userInitial}
+                            <div className="w-8 h-8 rounded-xl bg-linear-to-tr from-primary to-primary-hover flex items-center justify-center shadow-md shadow-primary-shadow/15">
+                                <User className="w-4 h-4 text-white" strokeWidth={2.5} />
                             </div>
                         )}
-                        <span className="hidden sm:block text-xs font-semibold text-text-heading max-w-[100px] truncate">
-                            {user?.username || 'Guest'}
-                        </span>
                         <ChevronDown className={`w-3.5 h-3.5 text-text-muted transition-transform duration-300 ${isProfileOpen ? 'rotate-180' : ''
                             }`} />
                     </button>

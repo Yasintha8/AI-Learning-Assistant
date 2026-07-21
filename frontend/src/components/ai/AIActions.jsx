@@ -7,6 +7,7 @@ import aiService from "../../services/aiService";
 import toast from "react-hot-toast";
 import MarkdownRenderer from "../common/MarkdownRenderer";
 import Modal from "../common/Modal";
+import Spinner from "../common/Spinner";
 
 const AIActions = () => {
 
@@ -148,7 +149,7 @@ const AIActions = () => {
                         >
                             {loadingAction === "summary" ? (
                                 <span className="inline-flex items-center gap-2">
-                                    <div className="w-3.5 h-3.5 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                                    <Spinner size="xs" tone="white" inline />
                                     Loading...
                                 </span>
                             ) : (
@@ -191,7 +192,7 @@ const AIActions = () => {
                                 >
                                     {loadingAction === "explain" ? (
                                         <span className="inline-flex items-center gap-2">
-                                            <div className="w-3.5 h-3.5 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                                            <Spinner size="xs" tone="white" inline />
                                             Loading...
                                         </span>
                                     ) : (
@@ -214,7 +215,7 @@ const AIActions = () => {
                                 className="shrink-0 h-8 px-3 rounded-lg border border-border-medium hover:border-primary hover:text-primary text-text-body text-xs font-semibold flex items-center gap-1.5 transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                             >
                                 {isDownloading ? (
-                                    <div className="w-3.5 h-3.5 rounded-full border-2 border-current/30 border-t-current animate-spin" />
+                                    <Spinner size="xs" tone="current" inline />
                                 ) : (
                                     <Download className="w-3.5 h-3.5" strokeWidth={2} />
                                 )}

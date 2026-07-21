@@ -148,7 +148,14 @@ const QuizManager = ({ documentId }) => {
                         </Button>
 
                         <Button type="submit" disabled={generating}>
-                            {generating ? 'Generating...' : 'Generate'}
+                            {generating ? (
+                                <span className="inline-flex items-center justify-center gap-2">
+                                    <Spinner size="sm" tone="white" inline />
+                                    Generating...
+                                </span>
+                            ) : (
+                                'Generate'
+                            )}
                         </Button>
                     </div>
                 </form>
@@ -182,7 +189,7 @@ const QuizManager = ({ documentId }) => {
                         >
                             {deleting ? (
                                 <span className="inline-flex items-center justify-center gap-2">
-                                    <div className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                                    <Spinner size="sm" tone="white" inline />
                                     Deleting...
                                 </span>
                             ) : (

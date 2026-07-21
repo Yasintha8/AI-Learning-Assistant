@@ -1,9 +1,9 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { BookOpen, Sparkles, TrendingUp } from "lucide-react";
+import { BookOpen, Sparkles, TrendingUp, Trash2 } from "lucide-react";
 import moment from "moment";
 
-const FlashcardSetCard = ({ flashcardSet }) => {
+const FlashcardSetCard = ({ flashcardSet, onDelete }) => {
 
     const navigate = useNavigate();
 
@@ -12,79 +12,73 @@ const FlashcardSetCard = ({ flashcardSet }) => {
         navigate(`/documents/${flashcardSet.documentId._id}/flashcards`);
     };
 
+    const handleDelete = (e) => {
+        e.stopPropagation();
+        onDelete?.(flashcardSet);
+    };
+
     const totalCards = flashcardSet.cards.length;
-
-    const reviewedCards = flashcardSet.cards.filter(card => !!card.lastReviewed);
-
-    const reviewedCount = reviewedCards.length;
-
+    const reviewedCount = flashcardSet.cards.filter((card) => !!card.lastReviewed).length;
     const progressPercentage = totalCards > 0 ? Math.round((reviewedCount / totalCards) * 100) : 0;
 
     return (
         <div
             onClick={handleStudyNow}
-            className="group cursor-pointer rounded-2xl border border-border-medium/50 bg-bg-card p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-primary/40"
+            className="relative group h-full flex flex-col gap-4 cursor-pointer rounded-2xl border border-border-medium/50 bg-bg-card p-5 shadow-sm hover:shadow-md hover:border-border-medium transition-all duration-200 overflow-hidden"
         >
-            <div className="flex flex-col gap-5">
-
-                {/* Header */}
-                <div className="flex flex-col items-start justify-between gap-4">
-
-                    <div className="flex items-center gap-4 min-w-0">
-                        <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-primary-light text-primary transition-transform duration-300 group-hover:scale-105">
-                            <BookOpen className="h-7 w-7" strokeWidth={2} />
-                        </div>
-
-                        <div className="min-w-0">
-                            <h3
-                                title={flashcardSet.documentId?.title}
-                                className="line-clamp-3 font-display text-md font-bold leading-6 text-text-heading"
-                            >
-                                {flashcardSet.documentId?.title}
-                            </h3>
-
-                            <p className="mt-1 text-sm text-text-muted">
-                                Created {moment(flashcardSet.createdAt).fromNow()}
-                            </p>
-                        </div>
-                    </div>
-
-                    <div className="rounded-full border border-border-medium bg-bg-main px-3 py-1.5 text-sm font-semibold text-text-body">
-                        {totalCards} {totalCards === 1 ? "Card" : "Cards"}
-                    </div>
-
+            {/* Header */}
+            <div className="flex items-start justify-between gap-3">
+                <div className="w-11 h-11 rounded-xl bg-linear-to-br from-violet-400 to-purple-500 flex items-center justify-center shadow-sm shrink-0">
+                    <BookOpen className="w-5 h-5 text-white" strokeWidth={2} />
                 </div>
+                {onDelete && (
+                    <button
+                        onClick={handleDelete}
+                        className="w-8 h-8 rounded-lg flex items-center justify-center text-text-muted hover:text-error hover:bg-error-bg transition-colors duration-150 opacity-0 group-hover:opacity-100 cursor-pointer shrink-0"
+                        aria-label="Delete flashcard set"
+                    >
+                        <Trash2 className="w-4 h-4" strokeWidth={2} />
+                    </button>
+                )}
+            </div>
 
-                {/* Progress */}
+            {/* Title */}
+            <div className="min-w-0" title={flashcardSet.documentId?.title}>
+                <h3 className="text-sm font-semibold text-text-heading leading-snug line-clamp-2">
+                    {flashcardSet.documentId?.title || "Untitled document"}
+                </h3>
+                <p className="mt-1 text-xs text-text-muted">
+                    Created {moment(flashcardSet.createdAt).fromNow()}
+                </p>
+            </div>
+
+            {/* Card count badge */}
+            <div>
+                <span className="text-xs text-text-muted font-semibold bg-border-light px-2 py-0.5 rounded-md">
+                    {totalCards} {totalCards === 1 ? "Card" : "Cards"}
+                </span>
+            </div>
+
+            {/* Progress */}
+            <div className="mt-auto flex flex-col gap-2">
                 {totalCards > 0 && (
                     <>
-                        <div className="flex items-center justify-between">
-
-                            <div className="flex items-center gap-2">
-                                <span className="text-sm font-medium text-text-body">
-                                    Progress
-                                </span>
-
+                        <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-1.5">
+                                <span className="text-xs font-medium text-text-body">Progress</span>
                                 {reviewedCount > 0 && (
-                                    <div className="flex items-center gap-1 rounded-full bg-primary-light px-2 py-1 text-primary">
-                                        <TrendingUp
-                                            className="h-4 w-4"
-                                            strokeWidth={2.5}
-                                        />
-                                        <span className="text-xs font-bold">
-                                            {progressPercentage}%
-                                        </span>
+                                    <div className="flex items-center gap-0.5 rounded-full bg-primary-light px-1.5 py-0.5 text-primary">
+                                        <TrendingUp className="w-3 h-3" strokeWidth={2.5} />
+                                        <span className="text-[10px] font-bold">{progressPercentage}%</span>
                                     </div>
                                 )}
                             </div>
-
-                            <span className="text-sm text-text-muted">
+                            <span className="text-xs text-text-muted">
                                 {reviewedCount}/{totalCards} reviewed
                             </span>
-
                         </div>
 
-                        <div className="h-2 overflow-hidden rounded-full bg-border-light">
+                        <div className="h-1.5 overflow-hidden rounded-full bg-border-light">
                             <div
                                 className="h-full rounded-full bg-primary transition-all duration-700"
                                 style={{ width: `${progressPercentage}%` }}
@@ -93,22 +87,23 @@ const FlashcardSetCard = ({ flashcardSet }) => {
                     </>
                 )}
 
-                {/* Button */}
                 <button
                     onClick={(e) => {
                         e.stopPropagation();
                         handleStudyNow();
                     }}
-                    className="group/button mt-2 flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-primary font-semibold text-white transition-all duration-300 hover:bg-primary-hover hover:shadow-lg hover:shadow-primary-shadow cursor-pointer"
+                    className="group/button mt-1 flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-primary text-sm font-semibold text-white transition-all duration-300 hover:bg-primary-hover hover:shadow-lg hover:shadow-primary-shadow cursor-pointer"
                 >
                     <Sparkles
-                        className="h-4 w-4 transition-transform duration-300 group-hover/button:rotate-12"
+                        className="w-3.5 h-3.5 transition-transform duration-300 group-hover/button:rotate-12"
                         strokeWidth={2.5}
                     />
-                    <span className="text-md">Study Now</span>
+                    Study Now
                 </button>
-
             </div>
+
+            {/* Hover indicator */}
+            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-linear-to-r from-violet-400 to-purple-500 scale-x-0 group-hover:scale-x-100 transition-transform duration-200 origin-left" />
         </div>
     );
 };

@@ -173,9 +173,45 @@ export const updateProfile = async (req, res, next) => {
     }
 };
 
+//@desc Upload/replace profile avatar
+//@route POST /api/auth/avatar
+//@access Private
+
+export const uploadAvatar = async (req, res, next) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({
+                success: false,
+                error: "Please provide an image file",
+                statusCode: 400,
+            });
+        }
+
+        const baseUrl = `http://localhost:${process.env.PORT || 8000}`;
+        const avatarUrl = `${baseUrl}/uploads/avatars/${req.file.filename}`;
+
+        const user = await User.findById(req.user._id);
+        user.profileImage = avatarUrl;
+        await user.save();
+
+        res.status(200).json({
+            success: true,
+            data: {
+                id: user._id,
+                username: user.username,
+                email: user.email,
+                profileImage: user.profileImage,
+            },
+            message: "Avatar updated successfully",
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
 //@desc Change password
 //@route PUT /api/auth/change-password
-//@access Private 
+//@access Private
 
 export const changePassword = async (req, res, next) => {
     try {
