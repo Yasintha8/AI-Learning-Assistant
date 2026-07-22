@@ -3,12 +3,15 @@ import { body } from 'express-validator';
 import {
     register,
     login,
+    googleAuth,
     getProfile,
     updateProfile,
+    uploadAvatar,
     changePassword
 } from '../controllers/authController.js';
 
 import protect from '../middleware/auth.js';
+import avatarUpload from '../config/avatarMulter.js';
 
 const router = express.Router();
 
@@ -39,10 +42,12 @@ const loginValidation = [
 //Public routes
 router.post('/register', registervalidation, register);
 router.post('/login', loginValidation, login);
+router.post('/google', googleAuth);
 
 //Protected routes
 router.get('/profile', protect, getProfile);
 router.put('/profile', protect, updateProfile);
+router.post('/avatar', protect, avatarUpload.single('avatar'), uploadAvatar);
 router.post('/change-password', protect, changePassword);
 
 export default router;

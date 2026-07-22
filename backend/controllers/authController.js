@@ -1,4 +1,5 @@
 import jwt from "jsonwebtoken";
+import { OAuth2Client } from "google-auth-library";
 import User from "../models/User.js";
 
 //Generate jwt token
@@ -6,6 +7,17 @@ const generateToken = (id) => {
     return jwt.sign({ id }, process.env.JWT_SECRET, {
         expiresIn: process.env.JWT_EXPIRE || "7d",
     });
+};
+
+let googleClient;
+const getGoogleClient = () => {
+    if (!googleClient) {
+        googleClient = new OAuth2Client(
+            process.env.GOOGLE_CLIENT_ID,
+            process.env.GOOGLE_CLIENT_SECRET
+        );
+    }
+    return googleClient;
 };
 
 //@desc Register new user
@@ -17,7 +29,7 @@ export const register = async (req, res, next) => {
         const { username, email, password } = req.body;
 
         // Check if user exists
-        const userExists = await User.findOne({ $or: [{ email }] });
+        const userExists = await User.findOne({ $or: [{ email }, { username }] });
 
         if (userExists) {
             return res.status(400).json({
@@ -118,6 +130,95 @@ export const login = async (req, res, next) => {
     }
 };
 
+//@desc Login or register a user via Google Identity Services
+//@route POST /api/auth/google
+//@access Public
+
+export const googleAuth = async (req, res, next) => {
+    try {
+        const { code } = req.body;
+
+        if (!code) {
+            return res.status(400).json({
+                success: false,
+                error: "Google authorization code is required",
+                statusCode: 400,
+            });
+        }
+
+        const client = getGoogleClient();
+
+        const { tokens } = await client.getToken({
+            code,
+            redirect_uri: "postmessage",
+        });
+
+        const ticket = await client.verifyIdToken({
+            idToken: tokens.id_token,
+            audience: process.env.GOOGLE_CLIENT_ID,
+        });
+
+        const payload = ticket.getPayload();
+        const { sub: googleId, email, name, picture } = payload;
+
+        let user = await User.findOne({ $or: [{ googleId }, { email }] });
+
+        if (user) {
+            if (!user.googleId) {
+                user.googleId = googleId;
+                user.authProvider = 'google';
+                if (!user.profileImage && picture) user.profileImage = picture;
+                await user.save();
+            }
+        } else {
+            let username = (name || email.split('@')[0]).replace(/\s+/g, '').toLowerCase();
+            if (username.length < 3) username = `user_${username}`;
+
+            const usernameTaken = await User.findOne({ username });
+            if (usernameTaken) {
+                username = `${username}_${googleId.slice(-5)}`;
+            }
+
+            user = await User.create({
+                username,
+                email,
+                googleId,
+                authProvider: 'google',
+                profileImage: picture || null,
+            });
+        }
+
+        const token = generateToken(user._id);
+
+        res.status(200).json({
+            success: true,
+            user: {
+                id: user._id,
+                username: user.username,
+                email: user.email,
+                profileImage: user.profileImage,
+            },
+            token,
+            message: "Google login successful",
+        });
+    } catch (error) {
+        console.error('Google auth error:', error.response?.data || error.message);
+        if (
+            error.message?.includes('invalid_grant') ||
+            error.message?.includes('invalid_request') ||
+            error.message?.includes('Token used too late') ||
+            error.message?.includes('Wrong number of segments')
+        ) {
+            return res.status(401).json({
+                success: false,
+                error: "Invalid or expired Google authorization code",
+                statusCode: 401,
+            });
+        }
+        next(error);
+    }
+};
+
 //@desc Get user profile
 //@route GET /api/auth/profile
 //@access Private
@@ -173,9 +274,45 @@ export const updateProfile = async (req, res, next) => {
     }
 };
 
+//@desc Upload/replace profile avatar
+//@route POST /api/auth/avatar
+//@access Private
+
+export const uploadAvatar = async (req, res, next) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({
+                success: false,
+                error: "Please provide an image file",
+                statusCode: 400,
+            });
+        }
+
+        const baseUrl = `http://localhost:${process.env.PORT || 8000}`;
+        const avatarUrl = `${baseUrl}/uploads/avatars/${req.file.filename}`;
+
+        const user = await User.findById(req.user._id);
+        user.profileImage = avatarUrl;
+        await user.save();
+
+        res.status(200).json({
+            success: true,
+            data: {
+                id: user._id,
+                username: user.username,
+                email: user.email,
+                profileImage: user.profileImage,
+            },
+            message: "Avatar updated successfully",
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
 //@desc Change password
 //@route PUT /api/auth/change-password
-//@access Private 
+//@access Private
 
 export const changePassword = async (req, res, next) => {
     try {

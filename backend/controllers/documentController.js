@@ -3,13 +3,19 @@ import Flashcard from '../models/Flashcard.js';
 import Quiz from '../models/Quiz.js';
 import { extractTextFromPDF } from '../utils/pdfParser.js';
 import { extractTextFromDOCX } from '../utils/docxParser.js';
+import { extractTextFromPPTX } from '../utils/pptxParser.js';
 import { extractTextFromYouTube } from '../utils/youtubeParser.js';
 import { extractTextFromWebsite } from '../utils/websiteParser.js';
 import { chunkText } from '../utils/textChunker.js';
 import fs from 'fs/promises';
+import path from 'path';
 import mongoose from 'mongoose';
 
-const DOCX_MIME_TYPE = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+const EXTENSION_TO_FILE_TYPE = {
+    '.pdf': 'pdf',
+    '.docx': 'docx',
+    '.pptx': 'pptx',
+};
 const YOUTUBE_URL_REGEX = /(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([\w-]{11})/;
 
 // Determine whether a URL points to a YouTube video or a generic website
@@ -25,7 +31,7 @@ const detectLinkType = (url) => {
     return YOUTUBE_URL_REGEX.test(url) ? 'youtube' : 'website';
 };
 
-// @desc Upload PDF or DOCX document
+// @desc Upload PDF, DOCX or PPTX document
 // @route POST /api/documents/upload
 // @access Private
 export const uploadDocument = async (req, res, next) => {
@@ -33,7 +39,7 @@ export const uploadDocument = async (req, res, next) => {
         if (!req.file) {
             return res.status(400).json({
                 success: false,
-                error: 'Please upload a PDF or DOCX file',
+                error: 'Please upload a PDF, DOCX or PPTX file',
                 statusCode: 400
             })
         }
@@ -53,7 +59,8 @@ export const uploadDocument = async (req, res, next) => {
         // Construct the URL for the uploaded file
         const baseUrl = `http://localhost:${process.env.PORT || 8000}`;
         const fileUrl = `${baseUrl}/uploads/documents/${req.file.filename}`;
-        const fileType = req.file.mimetype === DOCX_MIME_TYPE ? 'docx' : 'pdf';
+        const ext = path.extname(req.file.originalname).toLowerCase();
+        const fileType = EXTENSION_TO_FILE_TYPE[ext] || 'pdf';
 
         //Create document record
         const document = await Document.create({
@@ -150,9 +157,14 @@ export const addUrlDocument = async (req, res, next) => {
 // Helper function to process an uploaded document based on its file type
 const processDocument = async (documentId, filePath, fileType) => {
     try {
-        const { text } = fileType === 'docx'
-            ? await extractTextFromDOCX(filePath)
-            : await extractTextFromPDF(filePath);
+        let text;
+        if (fileType === 'docx') {
+            ({ text } = await extractTextFromDOCX(filePath));
+        } else if (fileType === 'pptx') {
+            ({ text } = await extractTextFromPPTX(filePath));
+        } else {
+            ({ text } = await extractTextFromPDF(filePath));
+        }
 
         //Create chunks
         const chunks = chunkText(text, 500, 50);

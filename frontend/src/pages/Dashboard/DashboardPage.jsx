@@ -1,19 +1,38 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import Spinner from '../../components/common/Spinner';
 import progressService from '../../services/progressService';
+import learningPathService from '../../services/learningPathService';
+import { useAuth } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
-import { FileText, BookOpen, BrainCircuit, TrendingUp, Clock, ArrowRight } from 'lucide-react';
+import {
+  FileText, BookOpen, BrainCircuit, Flame, Clock, ArrowRight, Target,
+  Award, AlertTriangle, ChevronRight, User as UserIcon
+} from 'lucide-react';
+
+// Recommendations only ever contain non-mastered topics, so weak/in-progress is enough context here
+const RECOMMENDATION_LIMIT = 5;
+const WEAK_THRESHOLD = 50;
+
+const getTimeGreeting = () => {
+  const hour = new Date().getHours();
+  if (hour < 12) return 'Good morning';
+  if (hour < 18) return 'Good afternoon';
+  return 'Good evening';
+};
 
 const DashboardPage = () => {
 
+  const { user } = useAuth();
   const [dashboardData, setDashboardData] = useState(null);
+  const [recommendations, setRecommendations] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [recommendationsLoading, setRecommendationsLoading] = useState(true);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
         const data = await progressService.getDashboardData();
-        console.log("Data__getDashboardData", data);
         setDashboardData(data.data);
       } catch (error) {
         toast.error('Failed to fetch dashboard data.');
@@ -25,91 +44,137 @@ const DashboardPage = () => {
     fetchDashboardData();
   }, []);
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Spinner />
-      </div>
-    )
-  }
+  useEffect(() => {
+    const fetchRecommendations = async () => {
+      if (!user) return;
+      try {
+        const response = await learningPathService.getAllLearningPaths(user.id || user._id);
+        const learningPaths = response.data || [];
 
-  if (!dashboardData || !dashboardData.overview) {
-    return (
-      <div className="min-h-screen bg-bg-main flex items-center justify-center">
-        <div className="text-center space-y-3">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-border-light">
-            <TrendingUp className="w-6 h-6 text-text-muted" strokeWidth={1.5} />
-          </div>
-          <p className="text-text-muted text-sm font-medium">No dashboard data available.</p>
-        </div>
-      </div>
-    );
-  }
+        const allRecommendations = learningPaths.flatMap((path) =>
+          (path.recommendedNext || []).map((rec) => ({
+            ...rec,
+            documentId: path.documentId?._id,
+            documentTitle: path.documentId?.title,
+          }))
+        ).filter((rec) => rec.documentId);
 
-  const stats = [
+        allRecommendations.sort((a, b) => a.masteryScore - b.masteryScore);
+        setRecommendations(allRecommendations.slice(0, RECOMMENDATION_LIMIT));
+      } catch (error) {
+        console.error(error);
+      } finally {
+        setRecommendationsLoading(false);
+      }
+    };
+    fetchRecommendations();
+  }, [user]);
+
+  const hasData = !loading && !!(dashboardData && dashboardData.overview);
+
+  const overview = hasData ? dashboardData.overview : null;
+  const recentActivity = hasData ? dashboardData.recentActivity : null;
+  const weeklyActivity = hasData ? (dashboardData.weeklyActivity || []) : [];
+  const focusAreas = hasData ? (dashboardData.focusAreas || []) : [];
+
+  const stats = hasData ? [
     {
-      label: 'Total Documents',
-      value: dashboardData.overview.totalDocuments,
+      label: 'Documents',
+      value: overview.totalDocuments ?? 0,
+      subtext: 'Uploaded so far',
       icon: FileText,
       gradient: 'from-blue-400 to-cyan-500',
-      bg: 'bg-blue-50',
-      text: 'text-blue-600',
     },
     {
-      label: 'Total Flashcards',
-      value: dashboardData.overview.totalFlashcards,
+      label: 'Flashcards',
+      value: overview.totalFlashcards ?? 0,
+      subtext: `${overview.reviewedFlashcards ?? 0} reviewed`,
       icon: BookOpen,
       gradient: 'from-violet-400 to-purple-500',
-      bg: 'bg-violet-50',
-      text: 'text-violet-600',
     },
     {
-      label: 'Total Quizzes',
-      value: dashboardData.overview.totalQuizzes,
+      label: 'Average Score',
+      value: `${overview.averageScore ?? 0}%`,
+      subtext: `${overview.completedQuizzes ?? 0}/${overview.totalQuizzes ?? 0} quizzes done`,
       icon: BrainCircuit,
       gradient: 'from-emerald-400 to-teal-500',
-      bg: 'bg-emerald-50',
-      text: 'text-emerald-600',
-    }
-  ];
+    },
+    {
+      label: 'Study Streak',
+      value: `${overview.studyStreak ?? 0}d`,
+      subtext: overview.studyStreak > 0 ? 'Keep the momentum going' : 'Study today to start one',
+      icon: Flame,
+      gradient: 'from-amber-400 to-orange-500',
+    },
+  ] : [];
 
-  const activities = dashboardData.recentActivity
+  const activities = recentActivity
     ? [
-      ...(dashboardData.recentActivity.documents || []).map(doc => ({
+      ...(recentActivity.documents || []).map(doc => ({
         id: doc._id,
         description: doc.title,
         timestamp: doc.lastAccessed,
         link: `/documents/${doc._id}`,
         type: 'document'
       })),
-      ...(dashboardData.recentActivity.quizzes || []).map(quiz => ({
+      ...(recentActivity.quizzes || []).map(quiz => ({
         id: quiz._id,
         description: quiz.title,
-        timestamp: quiz.lastAttempted,
-        link: `/quizzes/${quiz._id}`,
+        timestamp: quiz.completedAt,
+        link: quiz.completedAt ? `/quizzes/${quiz._id}/results` : `/quizzes/${quiz._id}`,
         type: 'quiz'
       }))
-    ].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+    ].filter(a => a.timestamp).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
     : [];
 
   const hasActivity = activities.length > 0;
 
+  const maxActivityCount = Math.max(1, ...weeklyActivity.map(d => d.count));
+  const activeDaysCount = weeklyActivity.filter(d => d.count > 0).length;
+
+  const quickLinks = [
+    { label: 'My Documents', subtext: 'Upload & manage files', to: '/documents', icon: FileText, bg: 'bg-blue-50 dark:bg-blue-500/10', text: 'text-blue-600 dark:text-blue-400' },
+    { label: 'Flashcards', subtext: 'Review & memorize', to: '/flashcards', icon: BookOpen, bg: 'bg-violet-50 dark:bg-violet-500/10', text: 'text-violet-600 dark:text-violet-400' },
+    { label: 'My Profile', subtext: 'Account & settings', to: '/profile', icon: UserIcon, bg: 'bg-slate-50 dark:bg-slate-500/10', text: 'text-slate-600 dark:text-slate-400' },
+  ];
+
   return (
     <div className="min-h-screen bg-bg-main">
-      <div className="relative max-w-6xl mx-auto px-6 py-5 space-y-10">
+      <div className="relative max-w-6xl mx-auto px-6 py-5 space-y-8">
 
         {/* Header */}
-        <div className="space-y-1">
-          <h1 className="text-3xl font-bold text-text-heading tracking-tight">
-            Dashboard
-          </h1>
-          <p className="text-text-muted text-sm">
-            Track your learning progress and activity
+        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-2">
+          <div className="space-y-1">
+            <p className="text-xs font-semibold text-primary uppercase tracking-wide">{getTimeGreeting()}</p>
+            <h1 className="text-3xl font-bold text-text-heading tracking-tight">
+              Hi, {user?.username || 'there'}
+            </h1>
+            <p className="text-text-muted text-sm">
+              Here's your learning snapshot for today.
+            </p>
+          </div>
+          <p className="text-xs font-medium text-text-muted">
+            {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
           </p>
         </div>
 
+        {loading ? (
+          <div className="flex items-center justify-center min-h-100">
+            <Spinner label="Loading your dashboard..." />
+          </div>
+        ) : !hasData ? (
+          <div className="flex items-center justify-center min-h-100">
+            <div className="text-center space-y-3">
+              <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-border-light mx-auto">
+                <Target className="w-6 h-6 text-text-muted" strokeWidth={1.5} />
+              </div>
+              <p className="text-text-muted text-sm font-medium">No dashboard data available.</p>
+            </div>
+          </div>
+        ) : (
+          <>
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {stats.map((stat, index) => (
             <div
               key={index}
@@ -119,78 +184,292 @@ const DashboardPage = () => {
                 <span className="text-xs font-semibold uppercase tracking-widest text-text-muted">
                   {stat.label}
                 </span>
-                <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${stat.gradient} flex items-center justify-center shadow-sm`}>
+                <div className={`w-10 h-10 rounded-xl bg-linear-to-br ${stat.gradient} flex items-center justify-center shadow-sm`}>
                   <stat.icon className="w-5 h-5 text-white" strokeWidth={2} />
                 </div>
               </div>
-              <div className="text-4xl font-bold text-text-heading tabular-nums">
-                {stat.value ?? 0}
+              <div>
+                <div className="text-4xl font-bold text-text-heading tabular-nums">
+                  {stat.value}
+                </div>
+                <p className="text-xs text-text-muted mt-1 truncate">{stat.subtext}</p>
               </div>
             </div>
           ))}
         </div>
 
-        {/* Recent Activity */}
-        <div className="bg-bg-card border border-border-light rounded-2xl overflow-hidden shadow-sm">
-          {/* Section header */}
-          <div className="flex items-center gap-3 px-6 py-5 border-b border-border-light">
-            <div className="w-8 h-8 rounded-lg bg-primary-light flex items-center justify-center">
-              <Clock className="w-4 h-4 text-primary" strokeWidth={2} />
+        {/* Main two-column layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+          {/* Left / main column */}
+          <div className="lg:col-span-2 space-y-6">
+
+            {/* Weekly Activity */}
+            <div className="bg-bg-card border border-border-light rounded-2xl p-6 shadow-sm">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h3 className="text-sm font-semibold text-text-heading">Weekly Activity</h3>
+                  <p className="text-xs text-text-muted mt-0.5">
+                    Active {activeDaysCount} of the last 7 days
+                  </p>
+                </div>
+                <Clock className="w-4 h-4 text-text-muted" />
+              </div>
+
+              <div className="flex items-end justify-between gap-2 h-28">
+                {weeklyActivity.map((day, index) => {
+                  const isToday = index === weeklyActivity.length - 1;
+                  const pct = Math.max(Math.round((day.count / maxActivityCount) * 100), 4);
+
+                  return (
+                    <div key={day.date} className="flex-1 flex flex-col items-center gap-2 group relative">
+                      {day.count > 0 && (
+                        <div className="absolute -top-7 px-2 py-1 rounded-lg bg-text-heading text-bg-card text-[10px] font-semibold opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap pointer-events-none z-10">
+                          {day.count} {day.count === 1 ? 'activity' : 'activities'}
+                        </div>
+                      )}
+                      <div className="w-full h-24 flex items-end justify-center">
+                        <div
+                          className={`w-full max-w-7 rounded-t-md transition-all duration-300 ${isToday ? 'bg-primary' : 'bg-primary/30 group-hover:bg-primary/60'
+                            }`}
+                          style={{ height: `${pct}%` }}
+                        />
+                      </div>
+                      <span className={`text-[10px] font-semibold ${isToday ? 'text-primary' : 'text-text-muted'}`}>
+                        {day.label}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
-            <h3 className="text-sm font-semibold text-text-heading">
-              Recent Activity
-            </h3>
+
+            {/* Recommended for you */}
+            <div className="bg-bg-card border border-border-light rounded-2xl overflow-hidden shadow-sm">
+              <div className="flex items-center gap-3 px-6 py-5 border-b border-border-light">
+                <div className="w-8 h-8 rounded-lg bg-primary-light flex items-center justify-center">
+                  <Target className="w-4 h-4 text-primary" strokeWidth={2} />
+                </div>
+                <h3 className="text-sm font-semibold text-text-heading">
+                  Recommended for You
+                </h3>
+              </div>
+
+              {recommendationsLoading ? (
+                <div className="flex items-center justify-center py-10">
+                  <Spinner />
+                </div>
+              ) : recommendations.length > 0 ? (
+                <ul className="divide-y divide-border-light">
+                  {recommendations.map((rec, index) => {
+                    const isWeak = rec.masteryScore < WEAK_THRESHOLD;
+
+                    return (
+                      <li
+                        key={`${rec.documentId}-${rec.topicId}-${index}`}
+                        className="flex items-center justify-between gap-4 px-6 py-4 hover:bg-border-light/40 transition-colors duration-150"
+                      >
+                        <div className="flex items-start gap-3 min-w-0">
+                          <span className={`mt-1.5 shrink-0 w-2 h-2 rounded-full ${isWeak ? 'bg-rose-400' : 'bg-blue-400'}`} />
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium text-text-heading truncate">
+                              {rec.title}
+                            </p>
+                            <p className="text-xs text-text-muted mt-0.5 truncate">
+                              {rec.reason}
+                              {rec.documentTitle && ` · ${rec.documentTitle}`}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-3 shrink-0">
+                          <span className={`text-xs font-semibold tabular-nums ${isWeak ? 'text-rose-600' : 'text-blue-600'}`}>
+                            {rec.masteryScore}%
+                          </span>
+                          <a
+                            href={`/documents/${rec.documentId}/learning-path`}
+                            className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:text-primary-hover transition-colors duration-150"
+                          >
+                            Study
+                            <ArrowRight className="w-3.5 h-3.5" strokeWidth={2.5} />
+                          </a>
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-16 px-6 text-center space-y-2">
+                  <div className="w-12 h-12 rounded-2xl bg-border-light flex items-center justify-center mb-1">
+                    <Target className="w-5 h-5 text-text-muted" strokeWidth={1.5} />
+                  </div>
+                  <p className="text-sm font-medium text-text-body">No recommendations yet.</p>
+                  <p className="text-xs text-text-muted">Generate a learning path from one of your documents to get personalized suggestions.</p>
+                </div>
+              )}
+            </div>
+
+            {/* Recent Activity */}
+            <div className="bg-bg-card border border-border-light rounded-2xl overflow-hidden shadow-sm">
+              {/* Section header */}
+              <div className="flex items-center gap-3 px-6 py-5 border-b border-border-light">
+                <div className="w-8 h-8 rounded-lg bg-primary-light flex items-center justify-center">
+                  <Clock className="w-4 h-4 text-primary" strokeWidth={2} />
+                </div>
+                <h3 className="text-sm font-semibold text-text-heading">
+                  Recent Activity
+                </h3>
+              </div>
+
+              {hasActivity ? (
+                <ul className="divide-y divide-border-light">
+                  {activities.slice(0, 6).map((activity, index) => (
+                    <li
+                      key={activity.id || index}
+                      className="flex items-center justify-between gap-4 px-6 py-4 hover:bg-border-light/40 transition-colors duration-150"
+                    >
+                      <div className="flex items-start gap-3 min-w-0">
+                        <span className={`mt-1.5 shrink-0 w-2 h-2 rounded-full ${activity.type === 'document'
+                          ? 'bg-blue-400'
+                          : 'bg-emerald-400'
+                          }`} />
+                        <div className="min-w-0">
+                          <p className="text-sm text-text-body truncate">
+                            <span className="text-text-muted mr-1">
+                              {activity.type === 'document' ? 'Accessed' : 'Attempted'}
+                            </span>
+                            <span className="font-medium text-text-heading">
+                              {activity.description}
+                            </span>
+                          </p>
+                          <p className="text-xs text-text-muted mt-0.5">
+                            {new Date(activity.timestamp).toLocaleString()}
+                          </p>
+                        </div>
+                      </div>
+
+                      {activity.link && (
+                        <a
+                          href={activity.link}
+                          className="shrink-0 inline-flex items-center gap-1 text-xs font-semibold text-primary hover:text-primary-hover transition-colors duration-150"
+                        >
+                          View
+                          <ArrowRight className="w-3.5 h-3.5" strokeWidth={2.5} />
+                        </a>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-16 px-6 text-center space-y-2">
+                  <div className="w-12 h-12 rounded-2xl bg-border-light flex items-center justify-center mb-1">
+                    <Clock className="w-5 h-5 text-text-muted" strokeWidth={1.5} />
+                  </div>
+                  <p className="text-sm font-medium text-text-body">No recent activity yet.</p>
+                  <p className="text-xs text-text-muted">Start learning to see your progress here.</p>
+                </div>
+              )}
+            </div>
+
           </div>
 
-          {hasActivity ? (
-            <ul className="divide-y divide-border-light">
-              {activities.map((activity, index) => (
-                <li
-                  key={activity.id || index}
-                  className="flex items-center justify-between gap-4 px-6 py-4 hover:bg-border-light/40 transition-colors duration-150"
-                >
-                  <div className="flex items-start gap-3 min-w-0">
-                    <span className={`mt-1.5 flex-shrink-0 w-2 h-2 rounded-full ${activity.type === 'document'
-                      ? 'bg-blue-400'
-                      : 'bg-emerald-400'
-                      }`} />
-                    <div className="min-w-0">
-                      <p className="text-sm text-text-body truncate">
-                        <span className="text-text-muted mr-1">
-                          {activity.type === 'document' ? 'Accessed' : 'Attempted'}
-                        </span>
-                        <span className="font-medium text-text-heading">
-                          {activity.description}
-                        </span>
-                      </p>
-                      <p className="text-xs text-text-muted mt-0.5">
-                        {new Date(activity.timestamp).toLocaleString()}
-                      </p>
-                    </div>
-                  </div>
+          {/* Right / side column */}
+          <div className="space-y-6">
 
-                  {activity.link && (
-                    <a
-                      href={activity.link}
-                      className="flex-shrink-0 inline-flex items-center gap-1 text-xs font-semibold text-primary hover:text-primary-hover transition-colors duration-150"
-                    >
-                      View
-                      <ArrowRight className="w-3.5 h-3.5" strokeWidth={2.5} />
-                    </a>
-                  )}
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <div className="flex flex-col items-center justify-center py-16 px-6 text-center space-y-2">
-              <div className="w-12 h-12 rounded-2xl bg-border-light flex items-center justify-center mb-1">
-                <Clock className="w-5 h-5 text-text-muted" strokeWidth={1.5} />
+            {/* Overall Mastery */}
+            <div className="bg-bg-card border border-border-light rounded-2xl p-6 shadow-sm">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-8 h-8 rounded-lg bg-primary-light flex items-center justify-center">
+                  <Award className="w-4 h-4 text-primary" strokeWidth={2} />
+                </div>
+                <h3 className="text-sm font-semibold text-text-heading">Overall Mastery</h3>
               </div>
-              <p className="text-sm font-medium text-text-body">No recent activity yet.</p>
-              <p className="text-xs text-text-muted">Start learning to see your progress here.</p>
+
+              {overview.overallMastery !== null && overview.overallMastery !== undefined ? (
+                <>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-3xl font-bold text-text-heading tabular-nums">{overview.overallMastery}%</span>
+                  </div>
+                  <div className="w-full h-2.5 rounded-full bg-primary-light overflow-hidden mt-3">
+                    <div
+                      className="h-full rounded-full bg-primary transition-all duration-500"
+                      style={{ width: `${overview.overallMastery}%` }}
+                    />
+                  </div>
+                  <p className="text-xs text-text-muted mt-2">
+                    Across {overview.topicsTracked} tracked topic{overview.topicsTracked === 1 ? '' : 's'}
+                  </p>
+                </>
+              ) : (
+                <p className="text-xs text-text-muted">
+                  Generate a learning path from a document to start tracking mastery.
+                </p>
+              )}
             </div>
-          )}
+
+            {/* Focus Areas */}
+            <div className="bg-bg-card border border-border-light rounded-2xl overflow-hidden shadow-sm">
+              <div className="flex items-center gap-3 px-6 py-5 border-b border-border-light">
+                <div className="w-8 h-8 rounded-lg bg-amber-50 dark:bg-amber-500/10 flex items-center justify-center">
+                  <AlertTriangle className="w-4 h-4 text-amber-500" strokeWidth={2} />
+                </div>
+                <h3 className="text-sm font-semibold text-text-heading">Focus Areas</h3>
+              </div>
+
+              {focusAreas.length > 0 ? (
+                <ul className="divide-y divide-border-light">
+                  {focusAreas.map((area, index) => (
+                    <li key={`${area.concept}-${index}`} className="px-6 py-3.5">
+                      <p className="text-sm font-medium text-text-heading truncate">{area.concept}</p>
+                      <div className="flex items-center justify-between gap-2 mt-1">
+                        <p className="text-xs text-text-muted truncate">
+                          {area.documentTitle || 'Untitled document'}
+                          {area.missedCount > 0 && ` · missed ${area.missedCount}×`}
+                        </p>
+                        {area.documentId && (
+                          <a
+                            href={`/documents/${area.documentId}/learning-path`}
+                            className="shrink-0 text-xs font-semibold text-primary hover:text-primary-hover transition-colors duration-150"
+                          >
+                            Review
+                          </a>
+                        )}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-10 px-6 text-center space-y-2">
+                  <p className="text-sm font-medium text-text-body">No focus areas right now.</p>
+                  <p className="text-xs text-text-muted">Take some quizzes to surface concepts worth revisiting.</p>
+                </div>
+              )}
+            </div>
+
+            {/* Quick Links */}
+            <div className="bg-bg-card border border-border-light rounded-2xl p-3 shadow-sm space-y-1">
+              {quickLinks.map((link) => (
+                <Link
+                  key={link.to}
+                  to={link.to}
+                  className="flex items-center gap-3 p-3 rounded-xl hover:bg-border-light/40 transition-colors duration-150"
+                >
+                  <div className={`w-9 h-9 rounded-lg ${link.bg} flex items-center justify-center shrink-0`}>
+                    <link.icon className={`w-4 h-4 ${link.text}`} strokeWidth={2} />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold text-text-heading">{link.label}</p>
+                    <p className="text-xs text-text-muted truncate">{link.subtext}</p>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-text-muted shrink-0" />
+                </Link>
+              ))}
+            </div>
+
+          </div>
         </div>
+          </>
+        )}
 
       </div>
     </div>

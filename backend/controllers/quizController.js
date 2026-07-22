@@ -1,4 +1,5 @@
 import Quiz from '../models/Quiz.js';
+import { recalculateMastery } from './learningPathController.js';
 
 // @desc     Get all quizzes for a document
 // @route    GET /api/quizzes/:documentId
@@ -120,6 +121,16 @@ export const submitQuiz = async (req, res, next) => {
 
         await quiz.save();
 
+        // Best-effort: recalculate topic mastery if a learning path exists for this
+        // document. Failing here should never block the quiz submission itself.
+        let masteryUpdated = false;
+        try {
+            const updatedPath = await recalculateMastery(req.user._id, quiz.documentId);
+            masteryUpdated = !!updatedPath;
+        } catch (masteryError) {
+            console.error('Failed to update learning path mastery:', masteryError);
+        }
+
         res.status(200).json({
             success: true,
             data: {
@@ -130,6 +141,7 @@ export const submitQuiz = async (req, res, next) => {
                 percentage: score,
                 userAnswers
             },
+            masteryUpdated,
             message: 'Quiz submitted successfully'
         });
     } catch (error) {

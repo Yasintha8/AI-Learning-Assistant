@@ -4,8 +4,10 @@ export const API_PATHS = {
     AUTH: {
         REGISTER: "/api/auth/register",
         LOGIN: "/api/auth/login",
+        GOOGLE: "/api/auth/google",
         GET_PROFILE: "/api/auth/profile",
         UPDATE_PROFILE: "/api/auth/profile",
+        UPLOAD_AVATAR: "/api/auth/avatar",
         CHANGE_PASSWORD: "/api/auth/change-password",
     },
 
@@ -45,5 +47,21 @@ export const API_PATHS = {
 
     PROGRESS: {
         GET_DASHBOARD: "/api/progress/dashboard",
+    },
+
+    LEARNING_PATH: {
+        GENERATE: "/api/learning-path/generate",
+        UPDATE: "/api/learning-path/update",
+        STUDY_PLAN: "/api/learning-path/study-plan",
+        GET_FOR_USER: (userId) => `/api/learning-path/${userId}`,
+    },
+
+    SEARCH: {
+        GLOBAL: "/api/search",
+    },
+
+    RESOURCES: {
+        GENERATE: "/api/resources/generate",
+        GET_FOR_DOC: (documentId) => `/api/resources/${documentId}`,
     },
 };

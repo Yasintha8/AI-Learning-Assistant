@@ -1,16 +1,38 @@
-import React, { useState, useEffect } from "react";
-import { Plus, Upload, Trash2, FileText, X, Link2 } from "lucide-react";
+import React, { useState, useEffect, useMemo } from "react";
+import { Plus, Upload, Trash2, FileText, X, Link2, Search, CheckCircle2, BookOpen, BrainCircuit, SearchX } from "lucide-react";
 import toast from "react-hot-toast";
 import documentService from "../../services/documentService";
 import Spinner from "../../components/common/Spinner";
 import Button from "../../components/common/Button";
 import DocumentCard from "../../components/documents/DocumentCard";
 
+const SORT_OPTIONS = [
+  { value: "newest", label: "Newest First" },
+  { value: "oldest", label: "Oldest First" },
+  { value: "name", label: "Name (A–Z)" },
+];
+
+const STATUS_OPTIONS = [
+  { value: "all", label: "All Status" },
+  { value: "ready", label: "Ready" },
+  { value: "processing", label: "Processing" },
+  { value: "pending", label: "Pending" },
+  { value: "error", label: "Error" },
+];
+
+const selectClassName = "h-10 px-3 rounded-xl border border-border-medium bg-bg-card text-sm text-text-body focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors duration-150 cursor-pointer";
+
 const DocumentListPage = () => {
 
 
   const [documents, setDocuments] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  // State for search / filter / sort toolbar
+  const [searchQuery, setSearchQuery] = useState("");
+  const [typeFilter, setTypeFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [sortBy, setSortBy] = useState("newest");
 
   // State for upload modal
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
@@ -123,17 +145,87 @@ const DocumentListPage = () => {
     }
   };
 
+  const availableTypes = useMemo(
+    () => [...new Set(documents.map((d) => d.fileType).filter(Boolean))],
+    [documents]
+  );
+
+  const readyCount = documents.filter((d) => d.status === "ready").length;
+  const processingCount = documents.filter((d) => d.status === "processing" || d.status === "pending").length;
+  const totalFlashcards = documents.reduce((sum, d) => sum + (d.flashcardCount || 0), 0);
+  const totalQuizzes = documents.reduce((sum, d) => sum + (d.quizCount || 0), 0);
+
+  const stats = [
+    {
+      label: "Total Documents",
+      value: documents.length,
+      subtext: `${readyCount} ready to study`,
+      icon: FileText,
+      gradient: "from-blue-400 to-cyan-500",
+    },
+    {
+      label: "Ready to Study",
+      value: readyCount,
+      subtext: processingCount > 0 ? `${processingCount} still processing` : "All up to date",
+      icon: CheckCircle2,
+      gradient: "from-emerald-400 to-teal-500",
+    },
+    {
+      label: "Flashcards",
+      value: totalFlashcards,
+      subtext: "Generated across all documents",
+      icon: BookOpen,
+      gradient: "from-violet-400 to-purple-500",
+    },
+    {
+      label: "Quizzes",
+      value: totalQuizzes,
+      subtext: "Generated across all documents",
+      icon: BrainCircuit,
+      gradient: "from-amber-400 to-orange-500",
+    },
+  ];
+
+  const filteredDocuments = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+
+    const filtered = documents.filter((doc) => {
+      const matchesQuery = !query || doc.title?.toLowerCase().includes(query);
+      const matchesType = typeFilter === "all" || doc.fileType === typeFilter;
+      const matchesStatus = statusFilter === "all" || doc.status === statusFilter;
+      return matchesQuery && matchesType && matchesStatus;
+    });
+
+    const sorted = [...filtered];
+    if (sortBy === "newest") {
+      sorted.sort((a, b) => new Date(b.uploadDate) - new Date(a.uploadDate));
+    } else if (sortBy === "oldest") {
+      sorted.sort((a, b) => new Date(a.uploadDate) - new Date(b.uploadDate));
+    } else if (sortBy === "name") {
+      sorted.sort((a, b) => (a.title || "").localeCompare(b.title || ""));
+    }
+    return sorted;
+  }, [documents, searchQuery, typeFilter, statusFilter, sortBy]);
+
+  const hasActiveFilters = searchQuery.trim() !== "" || typeFilter !== "all" || statusFilter !== "all";
+
+  const clearFilters = () => {
+    setSearchQuery("");
+    setTypeFilter("all");
+    setStatusFilter("all");
+  };
+
   const renderContent = () => {
     if (loading) {
       return (
-        <div className="flex items-center justify-center min-h-[400px]">
+        <div className="flex items-center justify-center min-h-100">
           <Spinner />
         </div>
       )
     }
     if (documents.length === 0) {
       return (
-        <div className="flex items-center justify-center min-h-[400px]">
+        <div className="flex items-center justify-center min-h-100">
           <div className="text-center max-w-md">
             <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-linear-to-br from-border-light to-bg-card border border-border-medium shadow-sm shadow-border-medium mb-6">
               <FileText
@@ -145,8 +237,8 @@ const DocumentListPage = () => {
               No Documents Yet
             </h3>
             <p className="text-sm text-text-muted mb-6 leading-relaxed">
-              Get started by adding your first PDF, DOCX, YouTube video, or
-              website link to begin learning.
+              Get started by adding your first PDF, DOCX, PPTX, YouTube video,
+              or website link to begin learning.
             </p>
             <button
               onClick={() => setIsUploadModalOpen(true)}
@@ -160,9 +252,33 @@ const DocumentListPage = () => {
       );
     }
 
+    if (filteredDocuments.length === 0) {
+      return (
+        <div className="flex items-center justify-center min-h-100">
+          <div className="text-center max-w-md">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-border-light mb-5">
+              <SearchX className="w-7 h-7 text-text-muted" strokeWidth={1.5} />
+            </div>
+            <h3 className="text-lg text-text-heading font-bold tracking-tight mb-2">
+              No matching documents
+            </h3>
+            <p className="text-sm text-text-muted mb-6 leading-relaxed">
+              Try adjusting your search or filters to find what you're looking for.
+            </p>
+            <button
+              onClick={clearFilters}
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-border-medium bg-bg-card text-sm font-semibold text-text-body hover:bg-border-light transition-colors duration-150 cursor-pointer"
+            >
+              Clear filters
+            </button>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-        {documents?.map((doc) => (
+        {filteredDocuments.map((doc) => (
           <DocumentCard
             key={doc._id}
             document={doc}
@@ -199,6 +315,88 @@ const DocumentListPage = () => {
             </Button>
           )}
         </div>
+
+        {/* Stats Grid */}
+        {documents.length > 0 && (
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            {stats.map((stat, index) => (
+              <div
+                key={index}
+                className="bg-bg-card border border-border-light rounded-2xl p-5 flex flex-col gap-4 shadow-sm hover:shadow-md transition-shadow duration-200"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold uppercase tracking-widest text-text-muted">
+                    {stat.label}
+                  </span>
+                  <div className={`w-10 h-10 rounded-xl bg-linear-to-br ${stat.gradient} flex items-center justify-center shadow-sm`}>
+                    <stat.icon className="w-5 h-5 text-white" strokeWidth={2} />
+                  </div>
+                </div>
+                <div>
+                  <div className="text-4xl font-bold text-text-heading tabular-nums">
+                    {stat.value}
+                  </div>
+                  <p className="text-xs text-text-muted mt-1 truncate">{stat.subtext}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Search / Filter / Sort Toolbar */}
+        {documents.length > 0 && (
+          <div className="flex flex-col lg:flex-row lg:items-center gap-3">
+            <div className="relative flex-1 min-w-0">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-muted w-4 h-4" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search documents..."
+                className="w-full h-10 bg-bg-card border border-border-medium rounded-xl pl-10 pr-4 text-sm text-text-heading placeholder:text-text-placeholder focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors duration-150"
+              />
+            </div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <select
+                value={typeFilter}
+                onChange={(e) => setTypeFilter(e.target.value)}
+                className={selectClassName}
+              >
+                <option value="all">All Types</option>
+                {availableTypes.map((type) => (
+                  <option key={type} value={type}>{type.toUpperCase()}</option>
+                ))}
+              </select>
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className={selectClassName}
+              >
+                {STATUS_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+              </select>
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                className={selectClassName}
+              >
+                {SORT_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+              </select>
+              {hasActiveFilters && (
+                <button
+                  onClick={clearFilters}
+                  className="h-10 px-3 rounded-xl text-sm font-semibold text-primary hover:bg-primary-light transition-colors duration-150 cursor-pointer"
+                >
+                  Clear
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
         {renderContent()}
       </div>
 
@@ -218,7 +416,7 @@ const DocumentListPage = () => {
               Add New Document
             </h2>
             <p className="text-sm text-text-muted">
-              Add a PDF/DOCX file, a YouTube video, or a website link
+              Add a PDF/DOCX/PPTX file, a YouTube video, or a website link
             </p>
           </div>
 
@@ -266,7 +464,7 @@ const DocumentListPage = () => {
                   Document File
                 </label>
                 <div className="relative group">
-                  <input id="file-upload" type="file" accept=".pdf,.docx" onChange={handleFileChange} required className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
+                  <input id="file-upload" type="file" accept=".pdf,.docx,.pptx" onChange={handleFileChange} required className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
                   <div className={`flex flex-col items-center justify-center gap-3 px-4 py-8 rounded-xl border-2 border-dashed transition-colors duration-150 ${uploadFile ? 'border-primary bg-primary-light' : 'border-border-medium bg-bg-main group-hover:border-primary '}`}>
                     <div className={`w-11 h-11 rounded-xl flex items-center justify-center ${uploadFile ? 'bg-linear-to-br from-primary to-blue-400' : 'bg-border-light'}`}>
                       <Upload className={`w-5 h-5 ${uploadFile ? 'text-white' : 'text-text-muted'}`} strokeWidth={2} />
@@ -283,7 +481,7 @@ const DocumentListPage = () => {
                         or drag and drop
                       </>
                     )}</p>
-                    <p className="text-xs text-text-placeholder">PDF or DOCX up to 10MB</p>
+                    <p className="text-xs text-text-placeholder">PDF, DOCX or PPTX up to 10MB</p>
                   </div>
                 </div>
               </div>
@@ -317,7 +515,7 @@ const DocumentListPage = () => {
               <button type="submit" disabled={uploading} className="flex-1 h-11 rounded-xl bg-linear-to-r from-primary to-blue-400 text-white text-sm font-semibold hover:from-primary-hover hover:to-cyan-400 transition-all duration-200 shadow-sm shadow-primary-shadow disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer">
                 {uploading ? (
                   <span className="inline-flex items-center justify-center gap-2">
-                    <div className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                    <Spinner size="sm" tone="white" inline />
                     {uploadMode === "link" ? "Adding..." : "Uploading..."}
                   </span>
                 ) : (
@@ -375,7 +573,7 @@ const DocumentListPage = () => {
             >
               {deleting ? (
                 <span className="inline-flex items-center justify-center gap-2">
-                  <div className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                  <Spinner size="sm" tone="white" inline />
                   Deleting...
                 </span>
               ) : (

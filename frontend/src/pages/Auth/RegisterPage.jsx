@@ -1,8 +1,12 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useGoogleLogin } from '@react-oauth/google';
+import { useAuth } from '../../context/AuthContext';
 import authService from '../../services/authService';
 import { BrainCircuit, Mail, Lock, ArrowRight, Eye, EyeOff, User } from 'lucide-react';
 import toast from 'react-hot-toast';
+import Spinner from '../../components/common/Spinner';
+import GoogleIcon from '../../components/common/GoogleIcon';
 
 const RegisterPage = () => {
 
@@ -14,6 +18,7 @@ const RegisterPage = () => {
   const [showPassword, setShowPassword] = useState(false);
 
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -37,6 +42,26 @@ const RegisterPage = () => {
       setLoading(false);
     }
   };
+
+  const handleGoogleLogin = useGoogleLogin({
+    flow: 'auth-code',
+    onSuccess: async (codeResponse) => {
+      setError('');
+      setLoading(true);
+      try {
+        const { token, user } = await authService.googleAuth(codeResponse.code);
+        login(user, token);
+        toast.success('Account created successfully!');
+        navigate('/dashboard');
+      } catch (err) {
+        setError(err.message || 'Google sign-up failed. Please try again.');
+        toast.error(err.message || 'Google sign-up failed.');
+      } finally {
+        setLoading(false);
+      }
+    },
+    onError: () => toast.error('Google sign-up failed. Please try again.'),
+  });
 
   return (
     <div className="min-h-screen bg-bg-main flex flex-col items-center justify-center p-4 relative overflow-hidden select-none">
@@ -143,16 +168,31 @@ const RegisterPage = () => {
               className="w-full mt-4 py-3.5 px-6 rounded-2xl bg-primary hover:bg-primary-hover text-white font-semibold flex items-center justify-center gap-2 shadow-lg shadow-primary-shadow/20 hover:shadow-primary-shadow/30 transition-all duration-300 cursor-pointer disabled:opacity-50 active:scale-[0.98] group"
             >
               {loading ? (
-                <svg className="animate-spin h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                </svg>
+                <Spinner size="sm" tone="white" inline />
               ) : (
                 <>
                   <span>Sign up</span>
                   <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-200" />
                 </>
               )}
+            </button>
+
+            {/* Divider */}
+            <div className="flex items-center gap-3 mt-1">
+              <div className="h-px flex-1 bg-border-medium" />
+              <span className="text-xs font-medium text-text-muted uppercase tracking-wider">or</span>
+              <div className="h-px flex-1 bg-border-medium" />
+            </div>
+
+            {/* Google Sign Up */}
+            <button
+              type="button"
+              onClick={() => handleGoogleLogin()}
+              disabled={loading}
+              className="w-full py-3.5 px-6 rounded-2xl bg-bg-main/50 border border-border-medium text-text-heading font-semibold flex items-center justify-center gap-2.5 hover:bg-bg-main transition-all duration-300 cursor-pointer disabled:opacity-50 active:scale-[0.98]"
+            >
+              <GoogleIcon className="w-5 h-5" />
+              <span>Continue with Google</span>
             </button>
 
             {/* Sign in Redirect */}

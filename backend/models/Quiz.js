@@ -40,6 +40,14 @@ const quizSchema = new mongoose.Schema({
             type: String,
             enum: ['easy', 'medium', 'hard'],
             default: 'medium'
+        },
+        topicId: {
+            type: String,
+            default: null
+        },
+        topicTitle: {
+            type: String,
+            default: null
         }
     }],
     userAnswers: [{
