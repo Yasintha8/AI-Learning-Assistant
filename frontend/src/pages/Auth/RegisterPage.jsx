@@ -1,9 +1,12 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useGoogleLogin } from '@react-oauth/google';
+import { useAuth } from '../../context/AuthContext';
 import authService from '../../services/authService';
 import { BrainCircuit, Mail, Lock, ArrowRight, Eye, EyeOff, User } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Spinner from '../../components/common/Spinner';
+import GoogleIcon from '../../components/common/GoogleIcon';
 
 const RegisterPage = () => {
 
@@ -15,6 +18,7 @@ const RegisterPage = () => {
   const [showPassword, setShowPassword] = useState(false);
 
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -38,6 +42,26 @@ const RegisterPage = () => {
       setLoading(false);
     }
   };
+
+  const handleGoogleLogin = useGoogleLogin({
+    flow: 'auth-code',
+    onSuccess: async (codeResponse) => {
+      setError('');
+      setLoading(true);
+      try {
+        const { token, user } = await authService.googleAuth(codeResponse.code);
+        login(user, token);
+        toast.success('Account created successfully!');
+        navigate('/dashboard');
+      } catch (err) {
+        setError(err.message || 'Google sign-up failed. Please try again.');
+        toast.error(err.message || 'Google sign-up failed.');
+      } finally {
+        setLoading(false);
+      }
+    },
+    onError: () => toast.error('Google sign-up failed. Please try again.'),
+  });
 
   return (
     <div className="min-h-screen bg-bg-main flex flex-col items-center justify-center p-4 relative overflow-hidden select-none">
@@ -151,6 +175,24 @@ const RegisterPage = () => {
                   <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-200" />
                 </>
               )}
+            </button>
+
+            {/* Divider */}
+            <div className="flex items-center gap-3 mt-1">
+              <div className="h-px flex-1 bg-border-medium" />
+              <span className="text-xs font-medium text-text-muted uppercase tracking-wider">or</span>
+              <div className="h-px flex-1 bg-border-medium" />
+            </div>
+
+            {/* Google Sign Up */}
+            <button
+              type="button"
+              onClick={() => handleGoogleLogin()}
+              disabled={loading}
+              className="w-full py-3.5 px-6 rounded-2xl bg-bg-main/50 border border-border-medium text-text-heading font-semibold flex items-center justify-center gap-2.5 hover:bg-bg-main transition-all duration-300 cursor-pointer disabled:opacity-50 active:scale-[0.98]"
+            >
+              <GoogleIcon className="w-5 h-5" />
+              <span>Continue with Google</span>
             </button>
 
             {/* Sign in Redirect */}
