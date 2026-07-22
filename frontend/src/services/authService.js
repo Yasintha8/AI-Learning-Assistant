@@ -13,6 +13,15 @@ const login = async (email, password) => {
     }
 };
 
+const googleAuth = async (code) => {
+    try {
+        const response = await axiosInstance.post(API_PATHS.AUTH.GOOGLE, { code });
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || { message: 'An unknown error occurred' };
+    }
+};
+
 const register = async (username, email, password) => {
     try {
         const response = await axiosInstance.post(API_PATHS.AUTH.REGISTER, {
@@ -70,6 +79,7 @@ const changePassword = async (passwords) => {
 const authService = {
     login,
     register,
+    googleAuth,
     getProfile,
     updateProfile,
     uploadAvatar,
