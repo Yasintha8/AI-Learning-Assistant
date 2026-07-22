@@ -7,13 +7,35 @@ const SIMULATION_TICKS = 300;
 
 const NODE_RADIUS = { document: 34, concept: 20, resource: 12 };
 
-export const RESOURCE_TYPE_STYLES = {
-    article: { colorClass: 'text-sky-500', badgeClass: 'bg-sky-100 text-sky-700' },
-    video: { colorClass: 'text-red-500', badgeClass: 'bg-red-100 text-red-700' },
-    course: { colorClass: 'text-emerald-500', badgeClass: 'bg-emerald-100 text-emerald-700' },
-    paper: { colorClass: 'text-amber-500', badgeClass: 'bg-amber-100 text-amber-700' },
-    website: { colorClass: 'text-violet-500', badgeClass: 'bg-violet-100 text-violet-700' },
+// Every resource `type` from the backend (article, paper, website, video, course) maps down
+// to one of a small set of visual categories, so the mesh reads at a glance from color alone
+// rather than needing five near-identical hues for closely related resource types.
+const RESOURCE_TYPE_CATEGORY = {
+    video: 'video',
+    course: 'course',
+    article: 'resource',
+    paper: 'resource',
+    website: 'resource',
 };
+
+export const getResourceCategory = (resourceType) => RESOURCE_TYPE_CATEGORY[resourceType] || 'resource';
+
+// Single source of truth for node/legend colors: textClass drives the SVG node fill
+// (via currentColor), swatchClass drives the HTML legend dot, badgeClass drives the
+// detail-panel type badge.
+export const CATEGORY_VISUALS = {
+    document: { label: 'Document', textClass: 'text-primary', swatchClass: 'bg-primary' },
+    concept: { label: 'Key Concept', textClass: 'text-blue-500', swatchClass: 'bg-blue-500' },
+    video: { label: 'Video', textClass: 'text-red-500', swatchClass: 'bg-red-500', badgeClass: 'bg-red-100 text-red-700' },
+    course: { label: 'Course', textClass: 'text-emerald-500', swatchClass: 'bg-emerald-500', badgeClass: 'bg-emerald-100 text-emerald-700' },
+    resource: { label: 'Resource', textClass: 'text-violet-500', swatchClass: 'bg-violet-500', badgeClass: 'bg-violet-100 text-violet-700' },
+};
+
+export const LEGEND_ITEMS = ['document', 'concept', 'video', 'course', 'resource'].map((key) => ({
+    key,
+    label: CATEGORY_VISUALS[key].label,
+    swatchClass: CATEGORY_VISUALS[key].swatchClass,
+}));
 
 const truncate = (text, max) => (text && text.length > max ? `${text.slice(0, max - 1)}…` : text);
 
@@ -137,10 +159,10 @@ const ResourceMesh = ({ graph, documentTitle, selectedId, onSelectNode }) => {
                         const isSelected = node.id === selectedId;
                         const colorClass =
                             node.type === 'document'
-                                ? 'text-primary'
+                                ? CATEGORY_VISUALS.document.textClass
                                 : node.type === 'concept'
-                                    ? 'text-blue-400'
-                                    : RESOURCE_TYPE_STYLES[node.resourceType]?.colorClass || 'text-violet-500';
+                                    ? CATEGORY_VISUALS.concept.textClass
+                                    : CATEGORY_VISUALS[getResourceCategory(node.resourceType)].textClass;
 
                         return (
                             <g
