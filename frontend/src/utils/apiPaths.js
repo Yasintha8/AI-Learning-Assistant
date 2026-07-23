@@ -64,4 +64,10 @@ export const API_PATHS = {
         GENERATE: "/api/resources/generate",
         GET_FOR_DOC: (documentId) => `/api/resources/${documentId}`,
     },
+
+    NOTIFICATIONS: {
+        GET_ALL: "/api/notifications",
+        MARK_READ: (id) => `/api/notifications/${id}/read`,
+        MARK_ALL_READ: "/api/notifications/read-all",
+    },
 };
