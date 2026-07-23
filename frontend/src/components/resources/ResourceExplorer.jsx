@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import moment from 'moment';
-import toast from 'react-hot-toast';
+import toast from '../../utils/toast';
 import { Sparkles, RefreshCw, ExternalLink, Loader2, Network } from 'lucide-react';
 import resourceService from '../../services/resourceService';
 import Spinner from '../common/Spinner';

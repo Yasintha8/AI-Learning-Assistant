@@ -4,15 +4,17 @@ import { useGoogleLogin } from '@react-oauth/google';
 import { useAuth } from '../../context/AuthContext';
 import authService from '../../services/authService';
 import { BrainCircuit, Mail, Lock, ArrowRight, Eye, EyeOff } from 'lucide-react';
-import toast from 'react-hot-toast';
 import Spinner from '../../components/common/Spinner';
 import GoogleIcon from '../../components/common/GoogleIcon';
 import AuthLayout from '../../components/auth/AuthLayout';
+import AlertBanner from '../../components/common/AlertBanner';
+
+const SUCCESS_REDIRECT_DELAY = 700;
 
 const LoginPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [notice, setNotice] = useState(null);
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
@@ -21,17 +23,15 @@ const LoginPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
+    setNotice(null);
     setLoading(true);
     try {
       const { token, user } = await authService.login(email, password);
       login(user, token);
-      toast.success('Logged in successfully!');
-      navigate('/dashboard');
+      setNotice({ type: 'success', message: 'Logged in successfully! Redirecting…' });
+      setTimeout(() => navigate('/dashboard'), SUCCESS_REDIRECT_DELAY);
     } catch (err) {
-      setError(err.message || 'Failed to login. Please check your credentials.');
-      toast.error(err.message || 'Failed to login.');
-    } finally {
+      setNotice({ type: 'error', message: err.message || 'Failed to login. Please check your credentials.' });
       setLoading(false);
     }
   };
@@ -39,21 +39,19 @@ const LoginPage = () => {
   const handleGoogleLogin = useGoogleLogin({
     flow: 'auth-code',
     onSuccess: async (codeResponse) => {
-      setError('');
+      setNotice(null);
       setLoading(true);
       try {
         const { token, user } = await authService.googleAuth(codeResponse.code);
         login(user, token);
-        toast.success('Logged in successfully!');
-        navigate('/dashboard');
+        setNotice({ type: 'success', message: 'Logged in successfully! Redirecting…' });
+        setTimeout(() => navigate('/dashboard'), SUCCESS_REDIRECT_DELAY);
       } catch (err) {
-        setError(err.message || 'Google sign-in failed. Please try again.');
-        toast.error(err.message || 'Google sign-in failed.');
-      } finally {
+        setNotice({ type: 'error', message: err.message || 'Google sign-in failed. Please try again.' });
         setLoading(false);
       }
     },
-    onError: () => toast.error('Google sign-in failed. Please try again.'),
+    onError: () => setNotice({ type: 'error', message: 'Google sign-in failed. Please try again.' }),
   });
 
   return (
@@ -80,12 +78,12 @@ const LoginPage = () => {
           </p>
         </div>
 
-        {/* Error Banner */}
-        {error && (
-          <div className="text-xs font-medium text-error bg-error-bg border border-error-border rounded-xl p-3 animate-fade-in">
-            {error}
-          </div>
-        )}
+        {/* Notification */}
+        <AlertBanner
+          type={notice?.type}
+          message={notice?.message}
+          onDismiss={notice?.type === 'error' ? () => setNotice(null) : undefined}
+        />
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-5">
           {/* Email */}

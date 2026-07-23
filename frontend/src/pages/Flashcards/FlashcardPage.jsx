@@ -7,7 +7,7 @@ import {
   ChevronRight,
   Trash2,
 } from "lucide-react";
-import toast from "react-hot-toast";
+import toast from '../../utils/toast';
 
 import flashcardService from "../../services/flashcardService";
 import aiService from "../../services/aiService";

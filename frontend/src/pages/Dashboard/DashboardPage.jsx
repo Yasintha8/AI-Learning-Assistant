@@ -4,7 +4,7 @@ import Spinner from '../../components/common/Spinner';
 import progressService from '../../services/progressService';
 import learningPathService from '../../services/learningPathService';
 import { useAuth } from '../../context/AuthContext';
-import toast from 'react-hot-toast';
+import toast from '../../utils/toast';
 import {
   FileText, BookOpen, BrainCircuit, Flame, Clock, ArrowRight, Target,
   Award, AlertTriangle, ChevronRight, User as UserIcon

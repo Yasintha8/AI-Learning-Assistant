@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import toast from 'react-hot-toast';
+import toast from '../../utils/toast';
 import { Download } from 'lucide-react';
 import documentService from '../../services/documentService';
 import Spinner from '../../components/common/Spinner';

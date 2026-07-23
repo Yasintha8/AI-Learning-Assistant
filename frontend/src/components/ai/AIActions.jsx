@@ -4,7 +4,7 @@ import { Sparkles, BookOpen, Lightbulb, Download } from "lucide-react";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import aiService from "../../services/aiService";
-import toast from "react-hot-toast";
+import toast from '../../utils/toast';
 import MarkdownRenderer from "../common/MarkdownRenderer";
 import Modal from "../common/Modal";
 import Spinner from "../common/Spinner";

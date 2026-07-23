@@ -4,7 +4,7 @@ import { ChevronLeft, ChevronRight, CheckCircle2 } from 'lucide-react';
 import quizService from '../../services/quizService';
 import PageHeader from '../../components/common/PageHeader';
 import Spinner from '../../components/common/Spinner';
-import toast from 'react-hot-toast';
+import toast from '../../utils/toast';
 import Button from '../../components/common/Button';
 
 const QuizTakePage = () => {

@@ -4,17 +4,19 @@ import { useGoogleLogin } from '@react-oauth/google';
 import { useAuth } from '../../context/AuthContext';
 import authService from '../../services/authService';
 import { BrainCircuit, Mail, Lock, ArrowRight, Eye, EyeOff, User } from 'lucide-react';
-import toast from 'react-hot-toast';
 import Spinner from '../../components/common/Spinner';
 import GoogleIcon from '../../components/common/GoogleIcon';
 import AuthLayout from '../../components/auth/AuthLayout';
+import AlertBanner from '../../components/common/AlertBanner';
+
+const SUCCESS_REDIRECT_DELAY = 900;
 
 const RegisterPage = () => {
 
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [notice, setNotice] = useState(null);
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
@@ -25,21 +27,19 @@ const RegisterPage = () => {
     e.preventDefault();
 
     if (password.length < 6) {
-      setError('Password must be at least 6 characters long.');
+      setNotice({ type: 'error', message: 'Password must be at least 6 characters long.' });
       return;
     }
 
-    setError('');
+    setNotice(null);
     setLoading(true);
 
     try {
       await authService.register(username, email, password);
-      toast.success('Registration successful! Please Login.');
-      navigate('/login');
+      setNotice({ type: 'success', message: 'Registration successful! Redirecting you to login…' });
+      setTimeout(() => navigate('/login'), SUCCESS_REDIRECT_DELAY);
     } catch (err) {
-      setError(err.message || 'Failed to register. Please try again.');
-      toast.error(err.message || 'Failed to register.');
-    } finally {
+      setNotice({ type: 'error', message: err.message || 'Failed to register. Please try again.' });
       setLoading(false);
     }
   };
@@ -47,21 +47,19 @@ const RegisterPage = () => {
   const handleGoogleLogin = useGoogleLogin({
     flow: 'auth-code',
     onSuccess: async (codeResponse) => {
-      setError('');
+      setNotice(null);
       setLoading(true);
       try {
         const { token, user } = await authService.googleAuth(codeResponse.code);
         login(user, token);
-        toast.success('Account created successfully!');
-        navigate('/dashboard');
+        setNotice({ type: 'success', message: 'Account created successfully! Redirecting…' });
+        setTimeout(() => navigate('/dashboard'), SUCCESS_REDIRECT_DELAY);
       } catch (err) {
-        setError(err.message || 'Google sign-up failed. Please try again.');
-        toast.error(err.message || 'Google sign-up failed.');
-      } finally {
+        setNotice({ type: 'error', message: err.message || 'Google sign-up failed. Please try again.' });
         setLoading(false);
       }
     },
-    onError: () => toast.error('Google sign-up failed. Please try again.'),
+    onError: () => setNotice({ type: 'error', message: 'Google sign-up failed. Please try again.' }),
   });
 
   return (
@@ -88,12 +86,12 @@ const RegisterPage = () => {
           </p>
         </div>
 
-        {/* Error Banner */}
-        {error && (
-          <div className="text-xs font-medium text-error bg-error-bg border border-error-border rounded-xl p-3 animate-fade-in">
-            {error}
-          </div>
-        )}
+        {/* Notification */}
+        <AlertBanner
+          type={notice?.type}
+          message={notice?.message}
+          onDismiss={notice?.type === 'error' ? () => setNotice(null) : undefined}
+        />
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-5">
           {/* Username */}
