@@ -13,14 +13,9 @@ createRoot(document.getElementById('root')).render(
       <ThemeProvider>
         <AuthProvider>
           <Toaster
-            position='top-right'
-            toastOptions={{
-              duration: 3000,
-              style: {
-                background: '',
-                color: '#333',
-              }
-            }}
+            position="top-right"
+            gutter={12}
+            containerStyle={{ top: 20, right: 20 }}
           />
           <App />
         </AuthProvider>

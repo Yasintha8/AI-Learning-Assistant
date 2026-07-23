@@ -8,7 +8,7 @@ import {
     Sparkles,
     Brain,
 } from "lucide-react";
-import toast from "react-hot-toast";
+import toast from '../../utils/toast';
 import moment from "moment";
 
 import flashcardService from "../../services/flashcardService";

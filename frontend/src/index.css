@@ -30,6 +30,18 @@
   --color-error-bg: var(--color-error-bg);
   --color-error-border: var(--color-error-border);
 
+  --color-success: var(--color-success);
+  --color-success-bg: var(--color-success-bg);
+  --color-success-border: var(--color-success-border);
+
+  --color-warning: var(--color-warning);
+  --color-warning-bg: var(--color-warning-bg);
+  --color-warning-border: var(--color-warning-border);
+
+  --color-info: var(--color-info);
+  --color-info-bg: var(--color-info-bg);
+  --color-info-border: var(--color-info-border);
+
   /* Layout / Breakpoints */
   --breakpoint-3xl: 1920px;
 
@@ -39,6 +51,8 @@
   --animate-float: float 6s ease-in-out infinite;
   --animate-float-slow: float 9s ease-in-out infinite;
   --animate-blink: blink 1s step-end infinite;
+  --animate-toast-in: toast-in 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-toast-out: toast-out 0.25s cubic-bezier(0.4, 0, 1, 1) both;
 
   @keyframes fade-in {
     from {
@@ -77,6 +91,39 @@
     }
     50% {
       opacity: 0;
+    }
+  }
+
+  @keyframes toast-in {
+    from {
+      opacity: 0;
+      transform: translateX(28px) scale(0.94);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0) scale(1);
+    }
+  }
+
+  @keyframes toast-out {
+    from {
+      opacity: 1;
+      transform: translateX(0) scale(1);
+      max-height: 200px;
+    }
+    to {
+      opacity: 0;
+      transform: translateX(28px) scale(0.9);
+      max-height: 0;
+    }
+  }
+
+  @keyframes toast-progress {
+    from {
+      transform: scaleX(1);
+    }
+    to {
+      transform: scaleX(0);
     }
   }
 }

@@ -6,7 +6,7 @@ import PageHeader from "../.././components/common/PageHeader";
 import Spinner from "../.././components/common/Spinner";
 import EmptyState from "../.././components/common/EmptyState";
 import FlashcardSetCard from "../../components/flashcards/FlashcardSetCard";
-import toast from "react-hot-toast";
+import toast from '../../utils/toast';
 
 const SORT_OPTIONS = [
   { value: "newest", label: "Newest First" },

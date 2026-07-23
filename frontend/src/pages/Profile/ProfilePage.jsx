@@ -4,7 +4,7 @@ import Spinner from "../.././components/common/Spinner";
 import authService from "../.././services/authService";
 import progressService from "../.././services/progressService";
 import { useAuth } from "../.././context/AuthContext";
-import toast from "react-hot-toast";
+import toast from '../../utils/toast';
 import moment from "moment";
 import {
   User, Mail, Lock, Shield, Save, KeyRound, Camera, FileText, BookOpen, BrainCircuit

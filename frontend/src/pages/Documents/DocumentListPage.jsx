@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { Plus, Upload, Trash2, FileText, X, Link2, Search, CheckCircle2, BookOpen, BrainCircuit, SearchX } from "lucide-react";
-import toast from "react-hot-toast";
+import toast from '../../utils/toast';
 import documentService from "../../services/documentService";
 import Spinner from "../../components/common/Spinner";
 import Button from "../../components/common/Button";
