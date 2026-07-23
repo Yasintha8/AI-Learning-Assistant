@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import Sidebar from './Sidebar';
 import Header from './Header';
+import Footer from './Footer';
 
 const AppLayout = ({ children }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -17,6 +18,7 @@ const AppLayout = ({ children }) => {
         <main className='flex-1 overflow-hidden overflow-y-auto p-6'>
           {children}
         </main>
+        <Footer />
       </div>
     </div>
   )
