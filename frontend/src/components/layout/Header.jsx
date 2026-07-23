@@ -2,8 +2,10 @@ import { useState, useEffect, useRef } from 'react';
 import { useAuth } from "../../context/AuthContext";
 import { Link, useNavigate } from 'react-router-dom';
 import { Bell, User, Menu, Search, LogOut, Sparkles, ChevronDown, Sun, Moon, FileText, Layers, HelpCircle, Loader2, X } from 'lucide-react';
+import moment from 'moment';
 import { useTheme } from "../../context/ThemeContext";
 import searchService from '../../services/searchService';
+import notificationService from '../../services/notificationService';
 
 const SEARCH_DEBOUNCE_MS = 350;
 const MIN_QUERY_LENGTH = 2;
@@ -15,29 +17,8 @@ const Header = ({ toggleSidebar }) => {
 
     const [isProfileOpen, setIsProfileOpen] = useState(false);
     const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
-    const [notifications, setNotifications] = useState([
-        {
-            id: 1,
-            title: "AI Analysis Complete",
-            description: "Your uploaded PDF 'React Cheat Sheet' has been processed.",
-            time: "5m ago",
-            unread: true
-        },
-        {
-            id: 2,
-            title: "New Quiz Ready",
-            description: "A quiz is ready for you: 'Database Normalization'.",
-            time: "2h ago",
-            unread: true
-        },
-        {
-            id: 3,
-            title: "Daily Goal Reached",
-            description: "You've reviewed 20 flashcards today. Great job!",
-            time: "1d ago",
-            unread: false
-        }
-    ]);
+    const [notifications, setNotifications] = useState([]);
+    const [unreadCount, setUnreadCount] = useState(0);
 
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState({ documents: [], flashcards: [], quizzes: [] });
@@ -48,6 +29,20 @@ const Header = ({ toggleSidebar }) => {
     const notificationsRef = useRef(null);
     const searchInputRef = useRef(null);
     const searchContainerRef = useRef(null);
+
+    // Load notifications once on mount; the backend generates today's (if any conditions are met) on this fetch
+    useEffect(() => {
+        const fetchNotifications = async () => {
+            try {
+                const data = await notificationService.getNotifications();
+                setNotifications(data.notifications || []);
+                setUnreadCount(data.unreadCount || 0);
+            } catch (error) {
+                console.error('Failed to fetch notifications:', error);
+            }
+        };
+        fetchNotifications();
+    }, []);
 
     // Close dropdowns on click outside
     useEffect(() => {
