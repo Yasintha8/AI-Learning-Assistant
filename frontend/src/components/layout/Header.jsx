@@ -99,8 +99,28 @@ const Header = ({ toggleSidebar }) => {
         return () => clearTimeout(timeoutId);
     }, [searchQuery]);
 
-    const handleMarkAllAsRead = () => {
-        setNotifications(prev => prev.map(n => ({ ...n, unread: false })));
+    const handleMarkAllAsRead = async () => {
+        setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+        setUnreadCount(0);
+        try {
+            await notificationService.markAllAsRead();
+        } catch (error) {
+            console.error('Failed to mark notifications as read:', error);
+        }
+    };
+
+    const handleNotificationClick = async (notification) => {
+        setIsNotificationsOpen(false);
+        if (!notification.isRead) {
+            setNotifications(prev => prev.map(n => n._id === notification._id ? { ...n, isRead: true } : n));
+            setUnreadCount(prev => Math.max(0, prev - 1));
+            notificationService.markAsRead(notification._id).catch(error => {
+                console.error('Failed to mark notification as read:', error);
+            });
+        }
+        if (notification.link) {
+            navigate(notification.link);
+        }
     };
 
     const handleSearchResultClick = (path) => {
@@ -116,7 +136,6 @@ const Header = ({ toggleSidebar }) => {
         }
     };
 
-    const unreadCount = notifications.filter(n => n.unread).length;
     const trimmedQuery = searchQuery.trim();
     const hasSearchResults = searchResults.documents.length > 0
         || searchResults.flashcards.length > 0
@@ -293,23 +312,25 @@ const Header = ({ toggleSidebar }) => {
                             <div className="max-h-64 overflow-y-auto">
                                 {notifications.length > 0 ? (
                                     notifications.map(n => (
-                                        <div
-                                            key={n.id}
-                                            className={`px-4 py-3 flex gap-3 hover:bg-border-light/40 transition-colors border-b border-border-light last:border-0 ${n.unread ? 'bg-primary-light/30' : ''
+                                        <button
+                                            key={n._id}
+                                            type="button"
+                                            onClick={() => handleNotificationClick(n)}
+                                            className={`w-full px-4 py-3 flex gap-3 text-left hover:bg-border-light/40 transition-colors border-b border-border-light last:border-0 cursor-pointer ${!n.isRead ? 'bg-primary-light/30' : ''
                                                 }`}
                                         >
                                             <div className="flex-1">
                                                 <div className="flex items-start justify-between gap-2">
-                                                    <p className={`text-xs ${n.unread ? 'font-semibold text-text-heading' : 'text-text-body'}`}>
+                                                    <p className={`text-xs ${!n.isRead ? 'font-semibold text-text-heading' : 'text-text-body'}`}>
                                                         {n.title}
                                                     </p>
-                                                    <span className="text-[10px] text-text-muted shrink-0">{n.time}</span>
+                                                    <span className="text-[10px] text-text-muted shrink-0">{moment(n.createdAt).fromNow()}</span>
                                                 </div>
                                                 <p className="text-[11px] text-text-body mt-0.5 line-clamp-2">
                                                     {n.description}
                                                 </p>
                                             </div>
-                                        </div>
+                                        </button>
                                     ))
                                 ) : (
                                     <div className="py-8 text-center text-text-muted text-xs">
