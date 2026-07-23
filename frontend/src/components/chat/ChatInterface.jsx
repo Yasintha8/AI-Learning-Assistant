@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, MessageSquare, Sparkles } from 'lucide-react';
+import { Send, MessageSquare, Sparkles, Quote } from 'lucide-react';
 import { useParams } from 'react-router-dom';
 import aiService from '../../services/aiService';
 import { useAuth } from '../../context/AuthContext';
@@ -13,6 +13,7 @@ const ChatInterface = () => {
     const [message, setMessage] = useState('');
     const [loading, setLoading] = useState(false);
     const [initialLoading, setInitialLoading] = useState(true);
+    const [openCitation, setOpenCitation] = useState(null);
     const messagesEndRef = useRef(null);
 
     const scrollToBottom = () => {
@@ -72,28 +73,71 @@ const ChatInterface = () => {
 
     const renderMessage = (msg, index) => {
         const isUser = msg.role === 'user';
+        const citations = msg.relevantChunks || [];
+
         return (
-            <div key={index} className={`flex items-end gap-2.5 ${isUser ? 'justify-end' : 'justify-start'}`}>
-                {!isUser && (
-                    <div className="w-8 h-8 rounded-xl bg-linear-to-br from-primary to-blue-400 flex items-center justify-center shrink-0 shadow-sm shadow-primary-shadow">
-                        <Sparkles className="w-4 h-4 text-white" strokeWidth={2} />
+            <div key={index} className={`flex flex-col ${isUser ? 'items-end' : 'items-start'}`}>
+                <div className={`flex items-end gap-2.5 ${isUser ? 'justify-end' : 'justify-start'}`}>
+                    {!isUser && (
+                        <div className="w-8 h-8 rounded-xl bg-linear-to-br from-primary to-blue-400 flex items-center justify-center shrink-0 shadow-sm shadow-primary-shadow">
+                            <Sparkles className="w-4 h-4 text-white" strokeWidth={2} />
+                        </div>
+                    )}
+                    <div className={`max-w-lg px-4 py-3 shadow-sm ${isUser
+                        ? 'bg-linear-to-br from-primary to-blue-400 text-white rounded-2xl rounded-br-sm'
+                        : 'bg-bg-card border border-border-light text-text-body rounded-2xl rounded-bl-sm'
+                        }`}>
+                        {isUser ? (
+                            <p className="text-sm leading-relaxed">{msg.content}</p>
+                        ) : (
+                            <div className="prose prose-sm max-w-none">
+                                <MarkdownRenderer content={msg.content} />
+                            </div>
+                        )}
                     </div>
-                )}
-                <div className={`max-w-lg px-4 py-3 shadow-sm ${isUser
-                    ? 'bg-linear-to-br from-primary to-blue-400 text-white rounded-2xl rounded-br-sm'
-                    : 'bg-bg-card border border-border-light text-text-body rounded-2xl rounded-bl-sm'
-                    }`}>
-                    {isUser ? (
-                        <p className="text-sm leading-relaxed">{msg.content}</p>
-                    ) : (
-                        <div className="prose prose-sm max-w-none">
-                            <MarkdownRenderer content={msg.content} />
+                    {isUser && (
+                        <div className="w-8 h-8 rounded-xl bg-linear-to-br from-border-medium to-border-light flex items-center justify-center shrink-0 text-xs font-bold text-text-body">
+                            {user?.username?.charAt(0).toUpperCase() || 'U'}
                         </div>
                     )}
                 </div>
-                {isUser && (
-                    <div className="w-8 h-8 rounded-xl bg-linear-to-br from-border-medium to-border-light flex items-center justify-center shrink-0 text-xs font-bold text-text-body">
-                        {user?.username?.charAt(0).toUpperCase() || 'U'}
+
+                {!isUser && citations.length > 0 && (
+                    <div className="ml-10 mt-1.5 max-w-lg">
+                        <div className="flex flex-wrap items-center gap-1.5">
+                            <span className="text-[10px] font-semibold text-text-muted uppercase tracking-wide">Sources</span>
+                            {citations.map((citation, citationIndex) => {
+                                const key = `${index}-${citationIndex}`;
+                                const isOpen = openCitation === key;
+                                return (
+                                    <button
+                                        key={key}
+                                        type="button"
+                                        onClick={() => setOpenCitation(isOpen ? null : key)}
+                                        className={`inline-flex items-center gap-1 h-6 px-2.5 rounded-full text-[11px] font-semibold border transition-colors duration-150 cursor-pointer ${isOpen
+                                            ? 'bg-primary-light border-primary text-primary'
+                                            : 'bg-bg-main border-border-light text-text-muted hover:border-primary hover:text-primary'
+                                            }`}
+                                    >
+                                        <Quote className="w-3 h-3" strokeWidth={2.5} />
+                                        {citation.pageNumber > 0 ? `Page ${citation.pageNumber}` : `Source ${citationIndex + 1}`}
+                                    </button>
+                                );
+                            })}
+                        </div>
+
+                        {citations.map((citation, citationIndex) => {
+                            const key = `${index}-${citationIndex}`;
+                            if (openCitation !== key) return null;
+                            return (
+                                <blockquote
+                                    key={key}
+                                    className="mt-2 px-3 py-2.5 rounded-xl bg-bg-main border border-border-light text-xs text-text-body leading-relaxed italic"
+                                >
+                                    "{citation.snippet}"
+                                </blockquote>
+                            );
+                        })}
                     </div>
                 )}
             </div>

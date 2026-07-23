@@ -24,6 +24,17 @@ const resolveTopic = (topicTitle, topicLookup) => {
         : { topicId: null, topicTitle: null };
 };
 
+const CITATION_SNIPPET_LENGTH = 240;
+
+// Chunks only ever store their full text, so trim to a snippet whenever a chunk is surfaced as a citation
+const toCitation = (chunk) => ({
+    chunkIndex: chunk.chunkIndex,
+    pageNumber: chunk.pageNumber,
+    snippet: chunk.content.length > CITATION_SNIPPET_LENGTH
+        ? `${chunk.content.slice(0, CITATION_SNIPPET_LENGTH).trim()}…`
+        : chunk.content
+});
+
 // @desc    Generate flashcards from document
 // @route   POST /api/ai/generate-flashcards
 // @access  Private
@@ -264,6 +275,7 @@ export const chat = async (req, res, next) => {
         // Find relevant chunks
         const relevantChunks = findRelevantChunks(document.chunks, question, 3);
         const chunkIndices = relevantChunks.map(c => c.chunkIndex);
+        const citations = relevantChunks.map(toCitation);
 
         // Get or create chat history
         let chatHistory = await ChatHistory.findOne({
@@ -305,7 +317,7 @@ export const chat = async (req, res, next) => {
             data: {
                 question,
                 answer,
-                relevantChunks: chunkIndices,
+                relevantChunks: citations,
                 chatHistoryId: chatHistory._id
             },
             message: 'Chat response generated successfully'
@@ -398,9 +410,27 @@ export const getChatHistory = async (req, res, next) => {
             });
         }
 
+        // Only indices are persisted per message, so rehydrate snippets from the document's chunks on read
+        const document = await Document.findOne({
+            _id: documentId,
+            userId: req.user._id
+        }).select('chunks');
+        const chunkByIndex = new Map((document?.chunks || []).map(chunk => [chunk.chunkIndex, chunk]));
+
+        const messages = chatHistory.messages.map(message => {
+            const plainMessage = message.toObject();
+            return {
+                ...plainMessage,
+                relevantChunks: plainMessage.relevantChunks
+                    .map(chunkIndex => chunkByIndex.get(chunkIndex))
+                    .filter(Boolean)
+                    .map(toCitation)
+            };
+        });
+
         res.status(200).json({
             success: true,
-            data: chatHistory.messages,
+            data: messages,
             message: 'Chat history retrieved successfully'
         });
     } catch (error) {
