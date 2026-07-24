@@ -7,7 +7,6 @@ import {
   Sparkles,
   Target,
   ListChecks,
-  GraduationCap,
   CheckCircle2,
   Circle,
   BookOpen,
@@ -59,7 +58,8 @@ const LearningPathPage = () => {
   const { user } = useAuth();
 
   const [learningPath, setLearningPath] = useState(null);
-  const [eligibility, setEligibility] = useState(null);
+  const [weakAreasEligibility, setWeakAreasEligibility] = useState(null);
+  const [recentQuizResults, setRecentQuizResults] = useState([]);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -73,7 +73,8 @@ const LearningPathPage = () => {
     try {
       const response = await learningPathService.getStudyPlan(documentId, force);
       setLearningPath(response.data);
-      setEligibility(response.eligibility);
+      setWeakAreasEligibility(response.weakAreasEligibility);
+      setRecentQuizResults(response.recentQuizResults || []);
       if (force) toast.success('Study plan refreshed!');
     } catch (error) {
       if (force) toast.error(error.message || 'Failed to refresh study plan.');
@@ -113,6 +114,8 @@ const LearningPathPage = () => {
       const response = await learningPathService.generateLearningPath(documentId);
       setLearningPath(response.data);
       toast.success('Learning path generated successfully!');
+      // Populate the default study plan immediately rather than waiting for a reload
+      fetchStudyPlan(false);
     } catch (error) {
       toast.error(error.message || 'Failed to generate learning path.');
     } finally {
@@ -219,28 +222,7 @@ const LearningPathPage = () => {
           </div>
         )}
 
-        {/* AI Study Plan (gated) or eligibility progress */}
-        {eligibility && !eligibility.eligible && (
-          <div className="bg-bg-card border border-border-light rounded-2xl p-6 shadow-sm">
-            <div className="flex items-center gap-3 mb-5">
-              <div className="w-8 h-8 rounded-lg bg-primary-light flex items-center justify-center">
-                <GraduationCap className="w-4 h-4 text-primary" strokeWidth={2} />
-              </div>
-              <div>
-                <h3 className="text-sm font-semibold text-text-heading">AI Study Plan</h3>
-                <p className="text-xs text-text-muted">
-                  Complete a bit more practice to unlock a personalized study plan.
-                </p>
-              </div>
-            </div>
-            <div className="space-y-3">
-              {renderEligibilityRow('Quizzes completed', eligibility.completedQuizCount, eligibility.requiredQuizCount)}
-              {renderEligibilityRow('Flashcard sets reviewed', eligibility.reviewedFlashcardSetCount, eligibility.requiredFlashcardSetCount)}
-            </div>
-          </div>
-        )}
-
-        {eligibility?.eligible && studyPlan && studyPlan.length > 0 && (
+        {studyPlan && studyPlan.length > 0 && (
           <div className="bg-bg-card border border-border-light rounded-2xl overflow-hidden shadow-sm">
             <div className="flex items-center gap-3 px-6 py-5 border-b border-border-light">
               <div className="w-8 h-8 rounded-lg bg-primary-light flex items-center justify-center">
@@ -308,8 +290,27 @@ const LearningPathPage = () => {
           </div>
         )}
 
-        {/* Weak Areas (concept-level, mined from wrong quiz answers) */}
-        {eligibility?.eligible && (
+        {/* Weak Areas (concept-level, mined from wrong quiz answers) - unlocks after 3 quizzes */}
+        {weakAreasEligibility && !weakAreasEligibility.eligible && (
+          <div className="bg-bg-card border border-border-light rounded-2xl p-6 shadow-sm">
+            <div className="flex items-center gap-3 mb-5">
+              <div className="w-8 h-8 rounded-lg bg-primary-light flex items-center justify-center">
+                <AlertTriangle className="w-4 h-4 text-primary" strokeWidth={2} />
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold text-text-heading">Weak Areas</h3>
+                <p className="text-xs text-text-muted">
+                  Complete a few quizzes to unlock AI-detected weak concepts.
+                </p>
+              </div>
+            </div>
+            <div className="space-y-3">
+              {renderEligibilityRow('Quizzes completed', weakAreasEligibility.completedQuizCount, weakAreasEligibility.requiredQuizCount)}
+            </div>
+          </div>
+        )}
+
+        {weakAreasEligibility?.eligible && (
           <div className="bg-bg-card border border-border-light rounded-2xl overflow-hidden shadow-sm">
             <div className="flex items-center gap-3 px-6 py-5 border-b border-border-light">
               <div className="w-8 h-8 rounded-lg bg-primary-light flex items-center justify-center">
@@ -320,6 +321,32 @@ const LearningPathPage = () => {
                 <p className="text-xs text-text-muted">Specific concepts you've missed on quizzes so far.</p>
               </div>
             </div>
+
+            {recentQuizResults.length > 0 && (
+              <div className="px-6 py-4 border-b border-border-light">
+                <p className="text-xs font-semibold text-text-heading mb-3">Based on {recentQuizResults.length} quiz result{recentQuizResults.length === 1 ? '' : 's'}</p>
+                <ul className="space-y-2">
+                  {recentQuizResults.map((result) => (
+                    <li key={result.quizId}>
+                      <Link
+                        to={`/quizzes/${result.quizId}/results`}
+                        className="flex items-center justify-between gap-4 px-3 py-2 rounded-lg border border-border-light hover:bg-border-light transition-colors duration-150"
+                      >
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium text-text-heading truncate">{result.title}</p>
+                          <p className="text-xs text-text-muted mt-0.5">
+                            {new Date(result.completedAt).toLocaleDateString()}
+                          </p>
+                        </div>
+                        <span className="shrink-0 text-sm font-semibold text-primary tabular-nums">
+                          {result.score}%
+                        </span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
 
             {(!learningPath.weakConcepts || learningPath.weakConcepts.length === 0) ? (
               <div className="px-6 py-5 text-sm text-text-body">
@@ -466,16 +493,14 @@ const LearningPathPage = () => {
         <PageHeader title="Learning Path" subtitle="Track your topic mastery and see what to study next">
           {learningPath && learningPath.topics?.length > 0 && (
             <div className="flex items-center gap-3">
-              {eligibility?.eligible && (
-                <Button
-                  onClick={() => fetchStudyPlan(true)}
-                  disabled={refreshingStudyPlan}
-                  variant="secondary"
-                >
-                  <ListChecks className={`w-4 h-4 ${refreshingStudyPlan ? 'animate-spin' : ''}`} strokeWidth={2} />
-                  {refreshingStudyPlan ? 'Refreshing...' : 'Refresh Study Plan'}
-                </Button>
-              )}
+              <Button
+                onClick={() => fetchStudyPlan(true)}
+                disabled={refreshingStudyPlan}
+                variant="secondary"
+              >
+                <ListChecks className={`w-4 h-4 ${refreshingStudyPlan ? 'animate-spin' : ''}`} strokeWidth={2} />
+                {refreshingStudyPlan ? 'Refreshing...' : 'Refresh Study Plan'}
+              </Button>
               <Button
                 onClick={handleRefreshMastery}
                 disabled={refreshing}

@@ -1,22 +1,36 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import quizService from '../../services/quizService';
+import learningPathService from '../../services/learningPathService';
 import PageHeader from '../../components/common/PageHeader';
 import Spinner from '../../components/common/Spinner';
 import toast from '../../utils/toast';
-import { ArrowLeft, CheckCircle2, XCircle, Trophy, Target, BookOpen } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, XCircle, Trophy, Target, BookOpen, Map } from 'lucide-react';
 
 const QuizResultPage = () => {
 
     const { quizId } = useParams();
     const [results, setResults] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [weakAreasEligible, setWeakAreasEligible] = useState(false);
 
     useEffect(() => {
         const fetchResults = async () => {
             try {
                 const data = await quizService.getQuizResults(quizId);
                 setResults(data);
+
+                // Once the user has enough completed quizzes for this document, offer a
+                // direct path to their Weak Areas / Learning Path from here.
+                const documentId = data?.data?.quiz?.document?._id;
+                if (documentId) {
+                    try {
+                        const status = await learningPathService.getWeakAreasStatus(documentId);
+                        setWeakAreasEligible(!!status.data?.eligible);
+                    } catch (statusError) {
+                        console.error(statusError);
+                    }
+                }
             } catch (error) {
                 toast.error('Failed to fetch quiz results.');
                 console.error(error);
@@ -229,8 +243,25 @@ const QuizResultPage = () => {
                 })}
             </div>
 
-            {/* Action Button */}
-            <div className="flex justify-center pt-2">
+            {/* Action Buttons */}
+            <div className="flex flex-wrap justify-center gap-3 pt-2">
+                {weakAreasEligible && (
+                    <Link
+                        to={`/documents/${quiz.document._id}/learning-path`}
+                        className="relative inline-flex items-center gap-2 h-11 px-6 rounded-xl text-white text-sm font-semibold overflow-hidden group shadow-sm shadow-primary-shadow"
+                    >
+                        {/* Default background */}
+                        <span className="absolute inset-0 bg-linear-to-r from-emerald-500 to-teal-500" />
+
+                        {/* Hover slide — darker shade slides in from left */}
+                        <span className="absolute inset-0 bg-linear-to-r from-emerald-600 to-teal-600 translate-x-[-100%] group-hover:translate-x-0 transition-transform duration-300 ease-out" />
+
+                        {/* Content */}
+                        <Map className="w-4 h-4 relative z-10" strokeWidth={2} />
+                        <span className="relative z-10">View Your Learning Path</span>
+                    </Link>
+                )}
+
                 <Link
                     to={`/documents/${quiz.document._id}`}
                     className="relative inline-flex items-center gap-2 h-11 px-6 rounded-xl text-white text-sm font-semibold overflow-hidden group shadow-sm shadow-primary-shadow"
