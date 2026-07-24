@@ -1,130 +1,98 @@
 import Document from '../models/Document.js';
 import Quiz from '../models/Quiz.js';
 import Flashcard from '../models/Flashcard.js';
-import Notification from '../models/Notification.js';
 
-const NOTIFICATION_LIST_LIMIT = 20;
 const CARDS_DUE_STALE_DAYS = 3;
+const MAX_QUIZ_ITEMS = 5;
+const MAX_TOTAL_ITEMS = 8;
 
-const dayKey = (date) => new Date(date).toISOString().slice(0, 10);
-
-// Duplicate dedupeKey means today's notification of this type was already generated - safe to ignore
-const createIfNew = async (notification) => {
-    try {
-        await Notification.create(notification);
-    } catch (error) {
-        if (error.code !== 11000) throw error;
-    }
-};
-
-// There's no job scheduler in this app, so notifications are generated lazily whenever
-// a user's notification list is requested, instead of on a cron.
-const generateTodaysNotifications = async (userId) => {
-    const startOfToday = new Date();
-    startOfToday.setHours(0, 0, 0, 0);
-    const startOfYesterday = new Date(startOfToday);
-    startOfYesterday.setDate(startOfYesterday.getDate() - 1);
-    const today = dayKey(startOfToday);
-
-    const flashcardSets = await Flashcard.find({ userId }).select('cards');
-    const allCards = flashcardSets.flatMap(set => set.cards);
-    const hasCardActivity = (from, to) => allCards.some(c => {
-        if (!c.lastReviewed) return false;
-        const reviewedAt = new Date(c.lastReviewed);
-        return reviewedAt >= from && (!to || reviewedAt < to);
-    });
-
-    const [documentToday, quizToday, documentYesterday, quizYesterday] = await Promise.all([
-        Document.exists({ userId, lastAccessed: { $gte: startOfToday } }),
-        Quiz.exists({ userId, completedAt: { $gte: startOfToday } }),
-        Document.exists({ userId, lastAccessed: { $gte: startOfYesterday, $lt: startOfToday } }),
-        Quiz.exists({ userId, completedAt: { $gte: startOfYesterday, $lt: startOfToday } }),
-    ]);
-
-    const activeToday = !!documentToday || !!quizToday || hasCardActivity(startOfToday);
-    const activeYesterday = !!documentYesterday || !!quizYesterday || hasCardActivity(startOfYesterday, startOfToday);
-
-    if (!activeToday && activeYesterday) {
-        await createIfNew({
-            userId,
-            type: 'streak_risk',
-            title: "Don't lose your streak!",
-            description: "You studied yesterday but haven't logged any activity today yet. Review something to keep your streak alive.",
-            link: '/dashboard',
-            dedupeKey: `${userId}_streak_risk_${today}`,
-        });
-    }
-
+const isCardDue = (card) => {
+    if (!card.lastReviewed) return true;
     const staleThreshold = new Date();
     staleThreshold.setDate(staleThreshold.getDate() - CARDS_DUE_STALE_DAYS);
-    const dueCount = allCards.filter(c => !c.lastReviewed || new Date(c.lastReviewed) < staleThreshold).length;
-
-    if (dueCount > 0) {
-        await createIfNew({
-            userId,
-            type: 'cards_due',
-            title: 'Flashcards ready for review',
-            description: `You have ${dueCount} flashcard${dueCount === 1 ? '' : 's'} ${dueCount === 1 ? 'that\'s' : 'that are'} due for review.`,
-            link: '/flashcards',
-            dedupeKey: `${userId}_cards_due_${today}`,
-        });
-    }
+    return new Date(card.lastReviewed) < staleThreshold;
 };
 
-// @desc    Get notifications for the logged-in user (generates today's, if any conditions are met)
+// @desc    Get the user's current to-do items - quizzes to complete, flashcards due for
+// review, and a streak-at-risk nudge. Computed fresh on every call from live data, so an
+// item disappears on its own once the underlying task is actually done (no read/unread state).
 // @route   GET /api/notifications
 // @access  Private
 export const getNotifications = async (req, res, next) => {
     try {
         const userId = req.user._id;
-        await generateTodaysNotifications(userId);
 
-        const [notifications, unreadCount] = await Promise.all([
-            Notification.find({ userId }).sort({ createdAt: -1 }).limit(NOTIFICATION_LIST_LIMIT),
-            Notification.countDocuments({ userId, isRead: false }),
+        const startOfToday = new Date();
+        startOfToday.setHours(0, 0, 0, 0);
+        const startOfYesterday = new Date(startOfToday);
+        startOfYesterday.setDate(startOfYesterday.getDate() - 1);
+
+        const [pendingQuizzes, flashcardSets] = await Promise.all([
+            Quiz.find({ userId, completedAt: null })
+                .sort({ createdAt: -1 })
+                .limit(MAX_QUIZ_ITEMS)
+                .populate('documentId', 'title'),
+            Flashcard.find({ userId }).populate('documentId', 'title'),
         ]);
 
-        res.status(200).json({
-            success: true,
-            data: { notifications, unreadCount },
+        const allCards = flashcardSets.flatMap(set => set.cards);
+        const hasCardActivity = (from, to) => allCards.some(card => {
+            if (!card.lastReviewed) return false;
+            const reviewedAt = new Date(card.lastReviewed);
+            return reviewedAt >= from && (!to || reviewedAt < to);
         });
-    } catch (error) {
-        next(error);
-    }
-};
 
-// @desc    Mark a single notification as read
-// @route   PATCH /api/notifications/:id/read
-// @access  Private
-export const markNotificationRead = async (req, res, next) => {
-    try {
-        const notification = await Notification.findOneAndUpdate(
-            { _id: req.params.id, userId: req.user._id },
-            { isRead: true },
-            { new: true }
-        );
+        const [documentToday, quizToday, documentYesterday, quizYesterday] = await Promise.all([
+            Document.exists({ userId, lastAccessed: { $gte: startOfToday } }),
+            Quiz.exists({ userId, completedAt: { $gte: startOfToday } }),
+            Document.exists({ userId, lastAccessed: { $gte: startOfYesterday, $lt: startOfToday } }),
+            Quiz.exists({ userId, completedAt: { $gte: startOfYesterday, $lt: startOfToday } }),
+        ]);
 
-        if (!notification) {
-            return res.status(404).json({
-                success: false,
-                error: 'Notification not found',
-                statusCode: 404
+        const activeToday = !!documentToday || !!quizToday || hasCardActivity(startOfToday);
+        const activeYesterday = !!documentYesterday || !!quizYesterday || hasCardActivity(startOfYesterday, startOfToday);
+
+        const notifications = [];
+
+        if (!activeToday && activeYesterday) {
+            notifications.push({
+                id: 'streak_risk',
+                type: 'streak_risk',
+                title: "Don't lose your streak!",
+                description: "You studied yesterday but haven't logged any activity today yet.",
+                link: '/dashboard',
             });
         }
 
-        res.status(200).json({ success: true, data: notification });
-    } catch (error) {
-        next(error);
-    }
-};
+        pendingQuizzes.forEach(quiz => {
+            notifications.push({
+                id: `quiz_${quiz._id}`,
+                type: 'quiz_due',
+                title: quiz.title,
+                description: `From "${quiz.documentId?.title || 'a document'}" - not completed yet.`,
+                link: `/quizzes/${quiz._id}`,
+            });
+        });
 
-// @desc    Mark all notifications as read
-// @route   PATCH /api/notifications/read-all
-// @access  Private
-export const markAllNotificationsRead = async (req, res, next) => {
-    try {
-        await Notification.updateMany({ userId: req.user._id, isRead: false }, { isRead: true });
-        res.status(200).json({ success: true, message: 'All notifications marked as read' });
+        flashcardSets.forEach(set => {
+            const dueCount = set.cards.filter(isCardDue).length;
+            if (dueCount === 0 || !set.documentId) return;
+            notifications.push({
+                id: `flashcards_${set._id}`,
+                type: 'flashcards_due',
+                title: `${dueCount} flashcard${dueCount === 1 ? '' : 's'} to review`,
+                description: `In "${set.documentId.title}"`,
+                link: `/documents/${set.documentId._id}/flashcards`,
+            });
+        });
+
+        res.status(200).json({
+            success: true,
+            data: {
+                notifications: notifications.slice(0, MAX_TOTAL_ITEMS),
+                count: notifications.length,
+            },
+        });
     } catch (error) {
         next(error);
     }

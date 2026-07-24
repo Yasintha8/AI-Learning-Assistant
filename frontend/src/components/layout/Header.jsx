@@ -1,14 +1,19 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from "../../context/AuthContext";
 import { Link, useNavigate } from 'react-router-dom';
-import { Bell, User, Menu, Search, LogOut, Sparkles, ChevronDown, Sun, Moon, FileText, Layers, HelpCircle, Loader2, X } from 'lucide-react';
-import moment from 'moment';
+import { Bell, User, Menu, Search, LogOut, Sparkles, ChevronDown, Sun, Moon, FileText, Layers, HelpCircle, Loader2, X, BrainCircuit } from 'lucide-react';
 import { useTheme } from "../../context/ThemeContext";
 import searchService from '../../services/searchService';
 import notificationService from '../../services/notificationService';
 
 const SEARCH_DEBOUNCE_MS = 350;
 const MIN_QUERY_LENGTH = 2;
+
+const NOTIFICATION_ICONS = {
+    streak_risk: { icon: Sparkles, className: 'text-amber-500 bg-amber-50 dark:bg-amber-500/10' },
+    quiz_due: { icon: BrainCircuit, className: 'text-emerald-500 bg-emerald-50 dark:bg-emerald-500/10' },
+    flashcards_due: { icon: Layers, className: 'text-violet-500 bg-violet-50 dark:bg-violet-500/10' },
+};
 
 const Header = ({ toggleSidebar }) => {
     const { user, logout } = useAuth();
@@ -18,7 +23,6 @@ const Header = ({ toggleSidebar }) => {
     const [isProfileOpen, setIsProfileOpen] = useState(false);
     const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
     const [notifications, setNotifications] = useState([]);
-    const [unreadCount, setUnreadCount] = useState(0);
 
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState({ documents: [], flashcards: [], quizzes: [] });
@@ -30,13 +34,13 @@ const Header = ({ toggleSidebar }) => {
     const searchInputRef = useRef(null);
     const searchContainerRef = useRef(null);
 
-    // Load notifications once on mount; the backend generates today's (if any conditions are met) on this fetch
+    // Live to-do items (quizzes to complete, flashcards due, streak risk) - computed fresh by
+    // the backend on every fetch, so an item disappears on its own once actually done.
     useEffect(() => {
         const fetchNotifications = async () => {
             try {
                 const data = await notificationService.getNotifications();
                 setNotifications(data.notifications || []);
-                setUnreadCount(data.unreadCount || 0);
             } catch (error) {
                 console.error('Failed to fetch notifications:', error);
             }
@@ -99,25 +103,8 @@ const Header = ({ toggleSidebar }) => {
         return () => clearTimeout(timeoutId);
     }, [searchQuery]);
 
-    const handleMarkAllAsRead = async () => {
-        setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
-        setUnreadCount(0);
-        try {
-            await notificationService.markAllAsRead();
-        } catch (error) {
-            console.error('Failed to mark notifications as read:', error);
-        }
-    };
-
-    const handleNotificationClick = async (notification) => {
+    const handleNotificationClick = (notification) => {
         setIsNotificationsOpen(false);
-        if (!notification.isRead) {
-            setNotifications(prev => prev.map(n => n._id === notification._id ? { ...n, isRead: true } : n));
-            setUnreadCount(prev => Math.max(0, prev - 1));
-            notificationService.markAsRead(notification._id).catch(error => {
-                console.error('Failed to mark notification as read:', error);
-            });
-        }
         if (notification.link) {
             navigate(notification.link);
         }
@@ -288,9 +275,9 @@ const Header = ({ toggleSidebar }) => {
                         aria-label="Notifications"
                     >
                         <Bell className="w-5 h-5" />
-                        {unreadCount > 0 && (
+                        {notifications.length > 0 && (
                             <span className="absolute top-1.5 right-1.5 w-4 h-4 bg-primary text-white text-[9px] font-bold rounded-full flex items-center justify-center border-2 border-white animate-pulse">
-                                {unreadCount}
+                                {notifications.length}
                             </span>
                         )}
                     </button>
@@ -298,43 +285,37 @@ const Header = ({ toggleSidebar }) => {
                     {/* Notification Dropdown Panel */}
                     {isNotificationsOpen && (
                         <div className="absolute right-0 mt-3 w-80 bg-bg-card border border-border-medium rounded-2xl shadow-xl shadow-slate-200/25 dark:shadow-none py-2 z-50 animate-fade-in origin-top-right transition-all">
-                            <div className="flex items-center justify-between px-4 py-2 border-b border-border-light">
-                                <h3 className="font-semibold text-text-heading text-sm">Notifications</h3>
-                                {unreadCount > 0 && (
-                                    <button
-                                        onClick={handleMarkAllAsRead}
-                                        className="text-xs font-semibold text-primary hover:text-primary-hover cursor-pointer"
-                                    >
-                                        Mark all as read
-                                    </button>
-                                )}
+                            <div className="px-4 py-2 border-b border-border-light">
+                                <h3 className="font-semibold text-text-heading text-sm">To Do</h3>
                             </div>
-                            <div className="max-h-64 overflow-y-auto">
+                            <div className="max-h-72 overflow-y-auto">
                                 {notifications.length > 0 ? (
-                                    notifications.map(n => (
-                                        <button
-                                            key={n._id}
-                                            type="button"
-                                            onClick={() => handleNotificationClick(n)}
-                                            className={`w-full px-4 py-3 flex gap-3 text-left hover:bg-border-light/40 transition-colors border-b border-border-light last:border-0 cursor-pointer ${!n.isRead ? 'bg-primary-light/30' : ''
-                                                }`}
-                                        >
-                                            <div className="flex-1">
-                                                <div className="flex items-start justify-between gap-2">
-                                                    <p className={`text-xs ${!n.isRead ? 'font-semibold text-text-heading' : 'text-text-body'}`}>
+                                    notifications.map(n => {
+                                        const { icon: Icon, className } = NOTIFICATION_ICONS[n.type] || NOTIFICATION_ICONS.quiz_due;
+                                        return (
+                                            <button
+                                                key={n.id}
+                                                type="button"
+                                                onClick={() => handleNotificationClick(n)}
+                                                className="w-full px-4 py-3 flex gap-3 text-left hover:bg-border-light/40 transition-colors border-b border-border-light last:border-0 cursor-pointer"
+                                            >
+                                                <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${className}`}>
+                                                    <Icon className="w-4 h-4" strokeWidth={2} />
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="text-xs font-semibold text-text-heading truncate">
                                                         {n.title}
                                                     </p>
-                                                    <span className="text-[10px] text-text-muted shrink-0">{moment(n.createdAt).fromNow()}</span>
+                                                    <p className="text-[11px] text-text-body mt-0.5 line-clamp-2">
+                                                        {n.description}
+                                                    </p>
                                                 </div>
-                                                <p className="text-[11px] text-text-body mt-0.5 line-clamp-2">
-                                                    {n.description}
-                                                </p>
-                                            </div>
-                                        </button>
-                                    ))
+                                            </button>
+                                        );
+                                    })
                                 ) : (
                                     <div className="py-8 text-center text-text-muted text-xs">
-                                        No notifications yet
+                                        You're all caught up.
                                     </div>
                                 )}
                             </div>
