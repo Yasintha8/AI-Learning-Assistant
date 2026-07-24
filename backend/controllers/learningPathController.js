@@ -19,10 +19,9 @@ const IN_PROGRESS_THRESHOLD = 50;
 // Recommend at most this many weakest topics
 const RECOMMEND_LIMIT = 5;
 
-// Eligibility gate for the AI study plan: needs enough real activity on the document
-// for the classification to be meaningful, not just a cold-start guess
+// Eligibility gate for Weak Areas: needs enough completed quizzes for concept-level
+// clustering (mined from wrong answers) to be meaningful, not just a cold-start guess
 const REQUIRED_COMPLETED_QUIZZES = 3;
-const REQUIRED_REVIEWED_FLASHCARD_SETS = 1;
 
 // Cap how many wrong-answer records are sent to Claude for weak-concept clustering
 const MAX_WRONG_ANSWERS_FOR_ANALYSIS = 40;
@@ -412,17 +411,14 @@ export const getLearningPath = async (req, res, next) => {
     }
 };
 
-// How much real activity the user has on this document, and whether it clears the
-// gate for generating an AI-driven study plan
-const computeEligibility = async (userId, documentId) => {
+// How much real activity the user has on this document. Used both to decide whether the
+// study plan can be upgraded from its deterministic default to an AI classification, and
+// whether Weak Areas (which needs enough wrong answers to cluster meaningfully) unlocks.
+const computeActivityStats = async (userId, documentId) => {
     const [completedQuizCount, flashcardSets] = await Promise.all([
         Quiz.countDocuments({ userId, documentId, completedAt: { $ne: null } }),
         Flashcard.find({ userId, documentId })
     ]);
-
-    const reviewedFlashcardSetCount = flashcardSets.filter(set =>
-        set.cards.some(card => card.reviewCount > 0)
-    ).length;
 
     const totalFlashcardReviews = flashcardSets.reduce(
         (sum, set) => sum + set.cards.reduce((cardSum, card) => cardSum + card.reviewCount, 0),
@@ -430,36 +426,71 @@ const computeEligibility = async (userId, documentId) => {
     );
 
     return {
-        eligible: completedQuizCount >= REQUIRED_COMPLETED_QUIZZES
-            && reviewedFlashcardSetCount >= REQUIRED_REVIEWED_FLASHCARD_SETS,
         completedQuizCount,
-        requiredQuizCount: REQUIRED_COMPLETED_QUIZZES,
-        reviewedFlashcardSetCount,
-        requiredFlashcardSetCount: REQUIRED_REVIEWED_FLASHCARD_SETS,
-        totalFlashcardReviews
+        totalFlashcardReviews,
+        weakAreasEligibility: {
+            eligible: completedQuizCount >= REQUIRED_COMPLETED_QUIZZES,
+            completedQuizCount,
+            requiredQuizCount: REQUIRED_COMPLETED_QUIZZES
+        }
     };
 };
 
-// Regenerate knowledgeLevel per topic + the studyPlan checklist + concept-level weakConcepts,
-// but only calls Claude when the user is eligible AND real activity changed since the plan was
-// last generated (or `force` is set) - keeps this cheap to call on every Learning Path page load.
+// @desc    Lightweight Weak Areas eligibility check (completed quiz count vs the 3-quiz
+//          threshold) for a document. No learning path required and no Claude calls -
+//          used to power "Go to Learning Path" prompts elsewhere (e.g. quiz results page)
+//          without triggering study-plan regeneration.
+// @route   GET /api/learning-path/weak-areas-status/:documentId
+// @access  Private
+export const getWeakAreasStatus = async (req, res, next) => {
+    try {
+        const { documentId } = req.params;
+        const { weakAreasEligibility } = await computeActivityStats(req.user._id, documentId);
+
+        res.status(200).json({
+            success: true,
+            data: weakAreasEligibility
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+// Regenerate the studyPlan checklist (always) + concept-level weakConcepts (once Weak Areas
+// is eligible). The study plan starts as a deterministic, no-AI-call default built from topic
+// state, and upgrades to Claude's classification once the user has any real quiz/flashcard
+// activity. Only recomputes when real activity changed since the plan was last generated (or
+// `force` is set) - keeps this cheap to call on every Learning Path page load.
 const generateStudyPlanForDocument = async (userId, documentId, { force = false } = {}) => {
     const learningPath = await LearningPath.findOne({ userId, documentId });
     if (!learningPath) return null;
 
-    const eligibility = await computeEligibility(userId, documentId);
+    const activityStats = await computeActivityStats(userId, documentId);
+    const { weakAreasEligibility } = activityStats;
+    const hasAnyActivity = learningPath.topics.some(topic => topic.source);
 
-    if (!eligibility.eligible) {
-        return { learningPath, eligibility };
-    }
+    // Evidence for the Weak Areas section - independent of staleness, cheap enough to run
+    // on every load once eligible (only real quiz activity flips eligibility at all).
+    const recentQuizResults = weakAreasEligibility.eligible
+        ? (await Quiz.find({ userId, documentId, completedAt: { $ne: null } })
+            .select('title score totalQuestions completedAt')
+            .sort({ completedAt: -1 }))
+            .map(quiz => ({
+                quizId: quiz._id,
+                title: quiz.title,
+                score: quiz.score,
+                totalQuestions: quiz.totalQuestions,
+                completedAt: quiz.completedAt
+            }))
+        : [];
 
     const isStale = force
         || !learningPath.studyPlanGeneratedAt
-        || learningPath.studyPlanStats?.completedQuizCount !== eligibility.completedQuizCount
-        || learningPath.studyPlanStats?.totalFlashcardReviews !== eligibility.totalFlashcardReviews;
+        || learningPath.studyPlanStats?.completedQuizCount !== activityStats.completedQuizCount
+        || learningPath.studyPlanStats?.totalFlashcardReviews !== activityStats.totalFlashcardReviews;
 
     if (!isStale) {
-        return { learningPath, eligibility };
+        return { learningPath, weakAreasEligibility, recentQuizResults };
     }
 
     const now = Date.now();
@@ -474,13 +505,17 @@ const generateStudyPlanForDocument = async (userId, documentId, { force = false 
             : null
     }));
 
+    // Only spend a Claude call once there's real quiz/flashcard activity to classify - before
+    // that, every topic is untouched and the deterministic fallback below is just as accurate.
     // Best-effort: if Claude fails entirely, fall back to deterministic classification
-    // for every topic rather than blocking the whole feature
+    // for every topic rather than blocking the whole feature.
     let classifications = [];
-    try {
-        classifications = await claudeService.classifyTopicKnowledge(topicStatsInput);
-    } catch (error) {
-        console.error('Failed to classify topic knowledge via Claude, using fallback:', error);
+    if (hasAnyActivity) {
+        try {
+            classifications = await claudeService.classifyTopicKnowledge(topicStatsInput);
+        } catch (error) {
+            console.error('Failed to classify topic knowledge via Claude, using fallback:', error);
+        }
     }
 
     const classificationByTitle = new Map(
@@ -514,42 +549,48 @@ const generateStudyPlanForDocument = async (userId, documentId, { force = false 
         });
 
     // Concept-level weak areas, mined from the user's actual wrong quiz answers (flashcards
-    // carry no correctness signal, so only quizzes can drive this). Best-effort: if Claude
-    // fails, keep whatever weakConcepts were already stored rather than blocking the response.
-    const completedQuizzes = await Quiz.find({ userId, documentId, completedAt: { $ne: null } });
-    const wrongAnswers = collectWrongAnswers(completedQuizzes);
-
-    if (wrongAnswers.length === 0) {
+    // carry no correctness signal, so only quizzes can drive this) - gated on Weak Areas
+    // eligibility (3+ completed quizzes) so clustering has enough signal to be meaningful.
+    // Best-effort: if Claude fails, keep whatever weakConcepts were already stored rather
+    // than blocking the response.
+    if (!weakAreasEligibility.eligible) {
         learningPath.weakConcepts = [];
     } else {
-        try {
-            const concepts = await claudeService.identifyWeakConcepts(wrongAnswers);
-            const topicIdByTitle = new Map(
-                learningPath.topics.map(t => [t.title.toLowerCase(), t.topicId])
-            );
+        const completedQuizzes = await Quiz.find({ userId, documentId, completedAt: { $ne: null } });
+        const wrongAnswers = collectWrongAnswers(completedQuizzes);
 
-            learningPath.weakConcepts = concepts
-                .filter(c => c.action) // drop entries Claude gave no valid action for
-                .map(c => ({
-                    concept: c.concept,
-                    description: c.description,
-                    relatedTopicId: c.relatedTopicTitle
-                        ? topicIdByTitle.get(c.relatedTopicTitle.toLowerCase()) || null
-                        : null,
-                    relatedTopicTitle: c.relatedTopicTitle,
-                    missedCount: c.missedCount,
-                    action: c.action,
-                    reason: c.actionReason
-                }));
-        } catch (error) {
-            console.error('Failed to identify weak concepts via Claude, keeping previous value:', error);
+        if (wrongAnswers.length === 0) {
+            learningPath.weakConcepts = [];
+        } else {
+            try {
+                const concepts = await claudeService.identifyWeakConcepts(wrongAnswers);
+                const topicIdByTitle = new Map(
+                    learningPath.topics.map(t => [t.title.toLowerCase(), t.topicId])
+                );
+
+                learningPath.weakConcepts = concepts
+                    .filter(c => c.action) // drop entries Claude gave no valid action for
+                    .map(c => ({
+                        concept: c.concept,
+                        description: c.description,
+                        relatedTopicId: c.relatedTopicTitle
+                            ? topicIdByTitle.get(c.relatedTopicTitle.toLowerCase()) || null
+                            : null,
+                        relatedTopicTitle: c.relatedTopicTitle,
+                        missedCount: c.missedCount,
+                        action: c.action,
+                        reason: c.actionReason
+                    }));
+            } catch (error) {
+                console.error('Failed to identify weak concepts via Claude, keeping previous value:', error);
+            }
         }
     }
 
     learningPath.studyPlanGeneratedAt = new Date();
     learningPath.studyPlanStats = {
-        completedQuizCount: eligibility.completedQuizCount,
-        totalFlashcardReviews: eligibility.totalFlashcardReviews
+        completedQuizCount: activityStats.completedQuizCount,
+        totalFlashcardReviews: activityStats.totalFlashcardReviews
     };
 
     // Two Claude calls happen between reading and saving this document, which widens the
@@ -574,11 +615,13 @@ const generateStudyPlanForDocument = async (userId, documentId, { force = false 
         savedLearningPath = fresh;
     }
 
-    return { learningPath: savedLearningPath, eligibility };
+    return { learningPath: savedLearningPath, weakAreasEligibility, recentQuizResults };
 };
 
-// @desc    Get (regenerating if stale) the AI knowledge-level classification and study
-//          plan checklist for a document. No-ops until the user has enough activity.
+// @desc    Get (regenerating if stale) the study plan checklist for a document, plus Weak
+//          Areas evidence once eligible. The study plan itself is always returned (starting
+//          as a deterministic default, upgrading to AI classification with real activity);
+//          only Weak Areas is gated behind enough completed quizzes.
 // @route   POST /api/learning-path/study-plan
 // @access  Private
 export const getStudyPlan = async (req, res, next) => {
@@ -606,10 +649,11 @@ export const getStudyPlan = async (req, res, next) => {
         res.status(200).json({
             success: true,
             data: result.learningPath,
-            eligibility: result.eligibility,
-            message: result.eligibility.eligible
+            weakAreasEligibility: result.weakAreasEligibility,
+            recentQuizResults: result.recentQuizResults,
+            message: result.weakAreasEligibility.eligible
                 ? 'Study plan is up to date'
-                : 'Not enough activity yet to generate a study plan'
+                : 'Complete more quizzes to unlock Weak Areas'
         });
     } catch (error) {
         next(error);

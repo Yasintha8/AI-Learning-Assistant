@@ -54,6 +54,7 @@ export const API_PATHS = {
         UPDATE: "/api/learning-path/update",
         STUDY_PLAN: "/api/learning-path/study-plan",
         GET_FOR_USER: (userId) => `/api/learning-path/${userId}`,
+        WEAK_AREAS_STATUS: (documentId) => `/api/learning-path/weak-areas-status/${documentId}`,
     },
 
     SEARCH: {
@@ -63,5 +64,9 @@ export const API_PATHS = {
     RESOURCES: {
         GENERATE: "/api/resources/generate",
         GET_FOR_DOC: (documentId) => `/api/resources/${documentId}`,
+    },
+
+    NOTIFICATIONS: {
+        GET_ALL: "/api/notifications",
     },
 };

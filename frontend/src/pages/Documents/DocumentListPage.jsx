@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { Plus, Upload, Trash2, FileText, X, Link2, Search, CheckCircle2, BookOpen, BrainCircuit, SearchX } from "lucide-react";
+import { Plus, Upload, Trash2, FileText, X, Link2, Search, SearchX } from "lucide-react";
 import toast from '../../utils/toast';
 import documentService from "../../services/documentService";
 import Spinner from "../../components/common/Spinner";
@@ -150,42 +150,6 @@ const DocumentListPage = () => {
     [documents]
   );
 
-  const readyCount = documents.filter((d) => d.status === "ready").length;
-  const processingCount = documents.filter((d) => d.status === "processing" || d.status === "pending").length;
-  const totalFlashcards = documents.reduce((sum, d) => sum + (d.flashcardCount || 0), 0);
-  const totalQuizzes = documents.reduce((sum, d) => sum + (d.quizCount || 0), 0);
-
-  const stats = [
-    {
-      label: "Total Documents",
-      value: documents.length,
-      subtext: `${readyCount} ready to study`,
-      icon: FileText,
-      gradient: "from-blue-400 to-cyan-500",
-    },
-    {
-      label: "Ready to Study",
-      value: readyCount,
-      subtext: processingCount > 0 ? `${processingCount} still processing` : "All up to date",
-      icon: CheckCircle2,
-      gradient: "from-emerald-400 to-teal-500",
-    },
-    {
-      label: "Flashcards",
-      value: totalFlashcards,
-      subtext: "Generated across all documents",
-      icon: BookOpen,
-      gradient: "from-violet-400 to-purple-500",
-    },
-    {
-      label: "Quizzes",
-      value: totalQuizzes,
-      subtext: "Generated across all documents",
-      icon: BrainCircuit,
-      gradient: "from-amber-400 to-orange-500",
-    },
-  ];
-
   const filteredDocuments = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
 
@@ -277,14 +241,19 @@ const DocumentListPage = () => {
     }
 
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-        {filteredDocuments.map((doc) => (
-          <DocumentCard
-            key={doc._id}
-            document={doc}
-            onDelete={handleDeleteRequest}
-          />
-        ))}
+      <div className="space-y-4">
+        <p className="text-xs text-text-muted">
+          Showing {filteredDocuments.length} of {documents.length} document{documents.length === 1 ? "" : "s"}
+        </p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+          {filteredDocuments.map((doc) => (
+            <DocumentCard
+              key={doc._id}
+              document={doc}
+              onDelete={handleDeleteRequest}
+            />
+          ))}
+        </div>
       </div>
     );
   };
@@ -315,33 +284,6 @@ const DocumentListPage = () => {
             </Button>
           )}
         </div>
-
-        {/* Stats Grid */}
-        {documents.length > 0 && (
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            {stats.map((stat, index) => (
-              <div
-                key={index}
-                className="bg-bg-card border border-border-light rounded-2xl p-5 flex flex-col gap-4 shadow-sm hover:shadow-md transition-shadow duration-200"
-              >
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold uppercase tracking-widest text-text-muted">
-                    {stat.label}
-                  </span>
-                  <div className={`w-10 h-10 rounded-xl bg-linear-to-br ${stat.gradient} flex items-center justify-center shadow-sm`}>
-                    <stat.icon className="w-5 h-5 text-white" strokeWidth={2} />
-                  </div>
-                </div>
-                <div>
-                  <div className="text-4xl font-bold text-text-heading tabular-nums">
-                    {stat.value}
-                  </div>
-                  <p className="text-xs text-text-muted mt-1 truncate">{stat.subtext}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
 
         {/* Search / Filter / Sort Toolbar */}
         {documents.length > 0 && (

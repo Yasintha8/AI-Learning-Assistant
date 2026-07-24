@@ -48,12 +48,22 @@ const getAllLearningPaths = async (userId) => {
     }
 };
 
+const getWeakAreasStatus = async (documentId) => {
+    try {
+        const response = await axiosInstance.get(API_PATHS.LEARNING_PATH.WEAK_AREAS_STATUS(documentId));
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || { message: 'Failed to fetch weak areas status' };
+    }
+};
+
 const learningPathService = {
     generateLearningPath,
     updateLearningPath,
     getStudyPlan,
     getLearningPathForDocument,
     getAllLearningPaths,
+    getWeakAreasStatus,
 };
 
 export default learningPathService;

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, Layers, BookOpen, Star, TrendingUp, SearchX, Trash2, X } from "lucide-react";
+import { Search, SearchX, Trash2, X } from "lucide-react";
 import flashcardService from "../.././services/flashcardService";
 import PageHeader from "../.././components/common/PageHeader";
 import Spinner from "../.././components/common/Spinner";
@@ -72,48 +72,6 @@ const FlashcardsListPage = () => {
     }
   };
 
-  const totalSets = flashcardSets.length;
-  const totalCards = flashcardSets.reduce((sum, set) => sum + set.cards.length, 0);
-  const reviewedCards = flashcardSets.reduce(
-    (sum, set) => sum + set.cards.filter((card) => !!card.lastReviewed).length,
-    0
-  );
-  const starredCards = flashcardSets.reduce(
-    (sum, set) => sum + set.cards.filter((card) => card.isStarred).length,
-    0
-  );
-
-  const stats = [
-    {
-      label: "Flashcard Sets",
-      value: totalSets,
-      subtext: "Across all documents",
-      icon: Layers,
-      gradient: "from-blue-400 to-cyan-500",
-    },
-    {
-      label: "Total Cards",
-      value: totalCards,
-      subtext: `${reviewedCards} reviewed`,
-      icon: BookOpen,
-      gradient: "from-violet-400 to-purple-500",
-    },
-    {
-      label: "Reviewed",
-      value: totalCards > 0 ? `${Math.round((reviewedCards / totalCards) * 100)}%` : "0%",
-      subtext: `${reviewedCards}/${totalCards} cards`,
-      icon: TrendingUp,
-      gradient: "from-emerald-400 to-teal-500",
-    },
-    {
-      label: "Starred",
-      value: starredCards,
-      subtext: "Marked for review",
-      icon: Star,
-      gradient: "from-amber-400 to-orange-500",
-    },
-  ];
-
   const filteredSets = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
 
@@ -184,10 +142,15 @@ const FlashcardsListPage = () => {
     }
 
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-        {filteredSets.map((set) => (
-          <FlashcardSetCard key={set._id} flashcardSet={set} onDelete={handleDeleteRequest} />
-        ))}
+      <div className="space-y-4">
+        <p className="text-xs text-text-muted">
+          Showing {filteredSets.length} of {flashcardSets.length} set{flashcardSets.length === 1 ? "" : "s"}
+        </p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          {filteredSets.map((set) => (
+            <FlashcardSetCard key={set._id} flashcardSet={set} onDelete={handleDeleteRequest} />
+          ))}
+        </div>
       </div>
     )
   };
@@ -200,35 +163,8 @@ const FlashcardsListPage = () => {
           subtitle="Review and study your generated flashcard sets"
         />
 
-        {/* Stats Grid */}
-        {totalSets > 0 && (
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            {stats.map((stat, index) => (
-              <div
-                key={index}
-                className="bg-bg-card border border-border-light rounded-2xl p-5 flex flex-col gap-4 shadow-sm hover:shadow-md transition-shadow duration-200"
-              >
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold uppercase tracking-widest text-text-muted">
-                    {stat.label}
-                  </span>
-                  <div className={`w-10 h-10 rounded-xl bg-linear-to-br ${stat.gradient} flex items-center justify-center shadow-sm`}>
-                    <stat.icon className="w-5 h-5 text-white" strokeWidth={2} />
-                  </div>
-                </div>
-                <div>
-                  <div className="text-4xl font-bold text-text-heading tabular-nums">
-                    {stat.value}
-                  </div>
-                  <p className="text-xs text-text-muted mt-1 truncate">{stat.subtext}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
         {/* Search / Sort Toolbar */}
-        {totalSets > 0 && (
+        {flashcardSets.length > 0 && (
           <div className="flex flex-col sm:flex-row sm:items-center gap-3">
             <div className="relative flex-1 min-w-0">
               <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-muted w-4 h-4" />
