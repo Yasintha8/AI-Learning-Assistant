@@ -14,6 +14,7 @@ import {
   BrainCircuit,
   Lightbulb,
   AlertTriangle,
+  ChevronDown,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import learningPathService from '../../services/learningPathService';
@@ -24,7 +25,7 @@ import EmptyState from '../../components/common/EmptyState';
 import Button from '../../components/common/Button';
 import Modal from '../../components/common/Modal';
 import MarkdownRenderer from '../../components/common/MarkdownRenderer';
-import { getStatusStyle, getKnowledgeLevelStyle } from '../../utils/learningPathStatus';
+import { getStatusStyle, getKnowledgeLevelStyle, getProgressBandStyle } from '../../utils/learningPathStatus';
 
 const SOURCE_LABELS = {
   quiz: 'Quiz results',
@@ -65,6 +66,7 @@ const LearningPathPage = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [refreshingStudyPlan, setRefreshingStudyPlan] = useState(false);
   const [selectedTopic, setSelectedTopic] = useState(null);
+  const [quizResultsExpanded, setQuizResultsExpanded] = useState(false);
   const [actionLoadingKey, setActionLoadingKey] = useState(null);
   const [actionModal, setActionModal] = useState({ isOpen: false, title: '', content: '' });
 
@@ -192,8 +194,39 @@ const LearningPathPage = () => {
 
     const { topics, recommendedNext, studyPlan } = learningPath;
 
+    const overallProgress = topics.length > 0
+      ? Math.round(topics.reduce((sum, topic) => sum + topic.masteryScore, 0) / topics.length)
+      : 0;
+    const masteredCount = topics.filter((topic) => topic.status === 'mastered').length;
+    const progressBand = getProgressBandStyle(overallProgress);
+
     return (
       <div className="space-y-8">
+        {/* Overall Progress */}
+        <div className="bg-bg-card border border-border-light rounded-2xl p-6 shadow-sm">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-6">
+            <div className="shrink-0">
+              <p className="text-xs font-semibold text-text-muted uppercase tracking-wide mb-1">Document Progress</p>
+              <div className="flex items-baseline gap-2">
+                <span className={`text-4xl font-black tabular-nums ${progressBand.text}`}>{overallProgress}%</span>
+                <span className="text-sm text-text-muted">complete</span>
+              </div>
+            </div>
+
+            <div className="flex-1 min-w-0">
+              <div className="w-full h-2.5 bg-border-light rounded-full overflow-hidden">
+                <div
+                  className={`h-full rounded-full ${progressBand.bar} transition-all duration-300`}
+                  style={{ width: `${overallProgress}%` }}
+                />
+              </div>
+              <p className="text-xs text-text-muted mt-2">
+                {masteredCount} of {topics.length} topic{topics.length === 1 ? '' : 's'} mastered
+              </p>
+            </div>
+          </div>
+        </div>
+
         {/* Recommended Next */}
         {recommendedNext && recommendedNext.length > 0 && (
           <div className="bg-bg-card border border-border-light rounded-2xl overflow-hidden shadow-sm">
@@ -323,28 +356,43 @@ const LearningPathPage = () => {
             </div>
 
             {recentQuizResults.length > 0 && (
-              <div className="px-6 py-4 border-b border-border-light">
-                <p className="text-xs font-semibold text-text-heading mb-3">Based on {recentQuizResults.length} quiz result{recentQuizResults.length === 1 ? '' : 's'}</p>
-                <ul className="space-y-2">
-                  {recentQuizResults.map((result) => (
-                    <li key={result.quizId}>
-                      <Link
-                        to={`/quizzes/${result.quizId}/results`}
-                        className="flex items-center justify-between gap-4 px-3 py-2 rounded-lg border border-border-light hover:bg-border-light transition-colors duration-150"
-                      >
-                        <div className="min-w-0">
-                          <p className="text-sm font-medium text-text-heading truncate">{result.title}</p>
-                          <p className="text-xs text-text-muted mt-0.5">
-                            {new Date(result.completedAt).toLocaleDateString()}
-                          </p>
-                        </div>
-                        <span className="shrink-0 text-sm font-semibold text-primary tabular-nums">
-                          {result.score}%
-                        </span>
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
+              <div className="border-b border-border-light">
+                <button
+                  type="button"
+                  onClick={() => setQuizResultsExpanded((prev) => !prev)}
+                  className="w-full flex items-center justify-between gap-3 px-6 py-4"
+                >
+                  <p className="text-xs font-semibold text-text-heading">
+                    Based on {recentQuizResults.length} quiz result{recentQuizResults.length === 1 ? '' : 's'}
+                  </p>
+                  <ChevronDown
+                    className={`w-4 h-4 text-text-muted shrink-0 transition-transform duration-200 ${quizResultsExpanded ? 'rotate-180' : ''}`}
+                    strokeWidth={2}
+                  />
+                </button>
+
+                {quizResultsExpanded && (
+                  <ul className="space-y-2 px-6 pb-4">
+                    {recentQuizResults.map((result) => (
+                      <li key={result.quizId}>
+                        <Link
+                          to={`/quizzes/${result.quizId}/results`}
+                          className="flex items-center justify-between gap-4 px-3 py-2 rounded-lg border border-border-light hover:bg-border-light transition-colors duration-150"
+                        >
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium text-text-heading truncate">{result.title}</p>
+                            <p className="text-xs text-text-muted mt-0.5">
+                              {new Date(result.completedAt).toLocaleDateString()}
+                            </p>
+                          </div>
+                          <span className="shrink-0 text-sm font-semibold text-primary tabular-nums">
+                            {result.score}%
+                          </span>
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
             )}
 

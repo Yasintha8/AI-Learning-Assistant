@@ -1,7 +1,8 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FileText, Trash2, BookOpen, BrainCircuit, Clock, Video, Globe, Presentation, ArrowRight } from 'lucide-react';
+import { FileText, Trash2, BookOpen, BrainCircuit, Clock, Video, Globe, Presentation, ArrowRight, Target } from 'lucide-react';
 import moment from 'moment';
+import { getProgressBandStyle } from '../../utils/learningPathStatus';
 
 // Color-coded by file type (à la Google Drive) so a grid of mixed documents
 // is scannable at a glance instead of every card wearing the same icon color.
@@ -96,6 +97,25 @@ const DocumentCard = ({ document, onDelete }) => {
                         </div>
                     )}
                 </div>
+
+                {/* Learning path progress */}
+                {document.learningPathProgress != null && (() => {
+                    const band = getProgressBandStyle(document.learningPathProgress);
+                    return (
+                        <div className='flex items-center gap-2.5'>
+                            <Target className={`w-3.5 h-3.5 shrink-0 ${band.text}`} strokeWidth={2} />
+                            <div className='flex-1 h-1.5 bg-border-light rounded-full overflow-hidden'>
+                                <div
+                                    className={`h-full rounded-full ${band.bar} transition-all duration-300`}
+                                    style={{ width: `${document.learningPathProgress}%` }}
+                                />
+                            </div>
+                            <span className={`text-xs font-semibold tabular-nums shrink-0 ${band.text}`}>
+                                {document.learningPathProgress}%
+                            </span>
+                        </div>
+                    );
+                })()}
             </div>
 
             {/*Footer Section */}

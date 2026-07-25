@@ -1,6 +1,7 @@
 import Document from '../models/Document.js';
 import Flashcard from '../models/Flashcard.js';
 import Quiz from '../models/Quiz.js';
+import LearningPath from '../models/LearningPath.js';
 import { extractTextFromPDF } from '../utils/pdfParser.js';
 import { extractTextFromDOCX } from '../utils/docxParser.js';
 import { extractTextFromPPTX } from '../utils/pptxParser.js';
@@ -213,9 +214,33 @@ export const getDocuments = async (req, res, next) => {
                 }
             },
             {
+                $lookup: {
+                    from: 'learningpaths',
+                    localField: '_id',
+                    foreignField: 'documentId',
+                    as: 'learningPaths'
+                }
+            },
+            {
                 $addFields: {
                     flashcardCount: { $size: "$flashcardSets" },
                     quizCount: { $size: "$quizzes" },
+                    // Overall document progress: average mastery score across every topic in
+                    // its learning path, or null if no learning path/topics exist yet
+                    learningPathProgress: {
+                        $let: {
+                            vars: {
+                                topics: { $ifNull: [{ $arrayElemAt: ["$learningPaths.topics", 0] }, []] }
+                            },
+                            in: {
+                                $cond: [
+                                    { $gt: [{ $size: "$$topics" }, 0] },
+                                    { $round: [{ $avg: "$$topics.masteryScore" }, 0] },
+                                    null
+                                ]
+                            }
+                        }
+                    }
                 }
             },
             {
@@ -224,6 +249,7 @@ export const getDocuments = async (req, res, next) => {
                     chunks: 0,
                     flashcardSets: 0,
                     quizzes: 0,
+                    learningPaths: 0,
                 }
             },
             {
@@ -263,6 +289,12 @@ export const getDocument = async (req, res, next) => {
         const flashcardCount = await Flashcard.countDocuments({ documentId: document._id, userId: req.user._id });
         const quizCount = await Quiz.countDocuments({ documentId: document._id, userId: req.user._id });
 
+        // Overall progress: average mastery score across every topic in the learning path
+        const learningPath = await LearningPath.findOne({ documentId: document._id, userId: req.user._id });
+        const learningPathProgress = learningPath && learningPath.topics.length > 0
+            ? Math.round(learningPath.topics.reduce((sum, topic) => sum + topic.masteryScore, 0) / learningPath.topics.length)
+            : null;
+
         //Update last accessed
         document.lastAccessed = Date.now();
         await document.save();
@@ -271,6 +303,7 @@ export const getDocument = async (req, res, next) => {
         const documentData = document.toObject();
         documentData.flashcardCount = flashcardCount;
         documentData.quizCount = quizCount;
+        documentData.learningPathProgress = learningPathProgress;
 
         res.status(200).json({
             success: true,

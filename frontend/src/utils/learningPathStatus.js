@@ -65,3 +65,15 @@ export const KNOWLEDGE_LEVEL_STYLES = {
 };
 
 export const getKnowledgeLevelStyle = (knowledgeLevel) => KNOWLEDGE_LEVEL_STYLES[knowledgeLevel] || null;
+
+// Overall document/topic progress (0-100) -> visual style, used for mastery progress bars
+// on the Learning Path page and document cards
+export const getProgressBandStyle = (percentage) => {
+    if (percentage >= 75) {
+        return { text: 'text-emerald-600 dark:text-emerald-400', bar: 'bg-emerald-500', bg: 'bg-emerald-50 dark:bg-emerald-500/10' };
+    }
+    if (percentage >= 40) {
+        return { text: 'text-blue-600 dark:text-blue-400', bar: 'bg-blue-500', bg: 'bg-blue-50 dark:bg-blue-500/10' };
+    }
+    return { text: 'text-amber-600 dark:text-amber-400', bar: 'bg-amber-500', bg: 'bg-amber-50 dark:bg-amber-500/10' };
+};
