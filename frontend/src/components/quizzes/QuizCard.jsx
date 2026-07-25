@@ -4,17 +4,18 @@ import moment from 'moment'
 
 const QuizCard = ({ quiz, onDelete }) => {
     return (
-        <div className="relative flex h-full flex-col justify-between overflow-hidden rounded-2xl border border-border-medium bg-bg-card p-6 shadow-xs transition-all duration-300  hover:border-primary-hover">
+        <div className="group relative flex h-full flex-col justify-between overflow-hidden rounded-2xl border border-border-medium bg-bg-card p-6 shadow-sm transition-all duration-300 hover:shadow-md hover:border-primary-hover">
 
-            {/* Delete Button */}
+            {/* Delete action, pinned to the card's corner */}
             <button
                 onClick={(e) => {
                     e.stopPropagation();
                     onDelete(quiz);
                 }}
-                className="absolute right-5 top-5 flex h-10 w-10 items-center justify-center rounded-full bg-error-bg text-error transition-all duration-300 hover:bg-error hover:text-white cursor-pointer"
+                className="absolute right-4 top-4 z-10 flex h-8 w-8 items-center justify-center rounded-lg bg-bg-card border border-border-light text-text-muted shadow-sm transition-all duration-150 opacity-0 group-hover:opacity-100 hover:text-error hover:bg-error-bg cursor-pointer"
+                aria-label="Delete quiz"
             >
-                <Trash2 size={18} strokeWidth={2} />
+                <Trash2 size={15} strokeWidth={2} />
             </button>
 
             <div className="space-y-5">

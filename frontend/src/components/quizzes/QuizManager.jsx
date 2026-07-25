@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Sparkles, BrainCircuit } from 'lucide-react';
 import toast from '../../utils/toast';
 import quizService from '../../services/quizService';
 import aiService from '../../services/aiService';
@@ -7,7 +7,6 @@ import Spinner from '../common/Spinner';
 import Button from '../common/Button';
 import Modal from '../common/Modal';
 import QuizCard from './QuizCard';
-import EmptyState from '../common/EmptyState';
 
 const QuizManager = ({ documentId }) => {
 
@@ -78,15 +77,36 @@ const QuizManager = ({ documentId }) => {
 
     const renderQuizContent = () => {
         if (loading) {
-            return <Spinner />;
+            return (
+                <div className="flex items-center justify-center py-20">
+                    <Spinner />
+                </div>
+            );
         }
 
         if (quizzes.length === 0) {
             return (
-                <EmptyState
-                    title="No Quizzes Yet"
-                    description="Generate a quiz from your document to test your knowledge."
-                />
+                <div className="flex flex-col items-center justify-center text-center gap-4 py-16 px-6">
+                    <div className="w-14 h-14 rounded-2xl bg-linear-to-br from-emerald-400 to-teal-500 flex items-center justify-center shadow-sm">
+                        <BrainCircuit className="w-6 h-6 text-white" strokeWidth={2} />
+                    </div>
+                    <div className="space-y-1.5">
+                        <h3 className="text-base font-bold text-text-heading tracking-tight">
+                            No Quizzes Yet
+                        </h3>
+                        <p className="text-sm text-text-muted leading-relaxed max-w-xs">
+                            Generate a quiz from your document to test your knowledge and
+                            track your mastery.
+                        </p>
+                    </div>
+                    <button
+                        onClick={() => setIsGenerateModalOpen(true)}
+                        className="h-12 px-6 rounded-xl bg-linear-to-r from-primary to-blue-400 hover:from-primary-hover hover:to-cyan-400 text-white text-sm font-semibold inline-flex items-center justify-center gap-2 shadow-sm shadow-primary-shadow transition-all duration-200 cursor-pointer"
+                    >
+                        <Sparkles className="w-4 h-4" strokeWidth={2} />
+                        Generate Quiz
+                    </button>
+                </div>
             );
         }
 
@@ -104,15 +124,30 @@ const QuizManager = ({ documentId }) => {
     };
 
     return (
-        <div className=' border border-border-light rounded-2xl p-6 shadow-xs'>
-            <div className='flex justify-end gap-2 mb-4'>
-                <Button onClick={() => setIsGenerateModalOpen(true)}>
-                    <Plus size={16} />
-                    Generate Quiz
-                </Button>
-            </div>
+        <div className="bg-bg-card border border-border-light rounded-2xl shadow-sm overflow-hidden">
+            {quizzes.length > 0 && (
+                <div className="flex items-center justify-between gap-4 px-6 py-5 border-b border-border-light">
+                    <div className="flex items-center gap-3 min-w-0">
+                        <div className="w-9 h-9 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center shrink-0">
+                            <BrainCircuit className="w-4 h-4 text-emerald-600 dark:text-emerald-400" strokeWidth={2} />
+                        </div>
+                        <div className="min-w-0">
+                            <h3 className="text-sm font-semibold text-text-heading">Quizzes</h3>
+                            <p className="text-xs text-text-muted">
+                                {quizzes.length} {quizzes.length === 1 ? "quiz" : "quizzes"} generated
+                            </p>
+                        </div>
+                    </div>
+                    <Button onClick={() => setIsGenerateModalOpen(true)} className="shrink-0 cursor-pointer">
+                        <Plus size={16} strokeWidth={2.5} />
+                        Generate Quiz
+                    </Button>
+                </div>
+            )}
 
-            {renderQuizContent()}
+            <div className="p-6">
+                {renderQuizContent()}
+            </div>
 
             {/* Generate Quiz */}
             <Modal
@@ -131,7 +166,7 @@ const QuizManager = ({ documentId }) => {
                             onChange={(e) => setNumQuestions(Math.max(1, parseInt(e.target.value) || 1))}
                             min="1"
                             required
-                            className="h-11 px-4 rounded-xl border border-border-medium bg-bg-main text-sm text-text-body placeholder:text-text-placeholder hover:border-primary focus:outline-none  transition-colors duration-150 w-full"
+                            className="h-11 px-4 rounded-xl border border-border-medium bg-bg-main text-sm text-text-body placeholder:text-text-placeholder hover:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors duration-150 w-full"
                         />
                         <p className="text-xs text-text-muted">
                             Specify how many questions you would like the AI to generate based on this document.

@@ -7,6 +7,7 @@ import {
     ArrowLeft,
     Sparkles,
     Brain,
+    TrendingUp,
 } from "lucide-react";
 import toast from '../../utils/toast';
 import moment from "moment";
@@ -180,7 +181,7 @@ const FlashcardManager = ({ documentId }) => {
                             Previous
                         </button>
 
-                        <div className="flex items-center rounded-lg border border-slate-200 px-4 py-2 justify-center">
+                        <div className="flex items-center rounded-lg border border-border-medium px-4 py-2 justify-center">
                             <span className="text-sm font-semibold text-text-heading tabular-nums">
                                 {currentCardIndex + 1}{" "}
                                 <span className="text-text-muted font-normal">/</span>{" "}
@@ -252,86 +253,71 @@ const FlashcardManager = ({ documentId }) => {
         }
 
         return (
-            <div className="flex flex-col gap-5">
-                {/* Header with Generate Button */}
-                <div className="flex items-center justify-between gap-4">
-                    <div className="space-y-0.5">
-                        <h3 className="text-base font-bold text-text-heading tracking-tight">
-                            Your Flashcard Sets
-                        </h3>
-                        <p className="text-xs text-text-muted">
-                            {flashcardSets.length}{" "}
-                            {flashcardSets.length === 1 ? "set" : "sets"} available
-                        </p>
-                    </div>
-                    <button
-                        onClick={handleGenerateFlashcards}
-                        disabled={generating}
-                        className="shrink-0 h-11 px-5 rounded-xl bg-linear-to-r from-primary to-blue-400 hover:from-primary-hover hover:to-cyan-400 text-white text-sm font-semibold inline-flex items-center justify-center gap-2 shadow-sm shadow-primary-shadow transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-                    >
-                        {generating ? (
-                            <>
-                                <Spinner size="sm" tone="white" inline />
-                                Generating...
-                            </>
-                        ) : (
-                            <>
-                                <Plus className="w-4 h-4" strokeWidth={2.5} />
-                                Generate New Set
-                            </>
-                        )}
-                    </button>
-                </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                {flashcardSets.map((set, index) => {
+                    const totalCards = set.cards.length;
+                    const reviewedCount = set.cards.filter((card) => !!card.lastReviewed).length;
+                    const progressPercentage = totalCards > 0 ? Math.round((reviewedCount / totalCards) * 100) : 0;
 
-                {/* Flashcard Sets Grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                    {flashcardSets.map((set) => (
+                    return (
                         <div
                             key={set._id}
                             onClick={() => handleSelectSet(set)}
-                            className="group relative bg-bg-card border px-2 py-4 border-border-medium shadow-xs rounded-2xl flex flex-col cursor-pointer hover:shadow-md hover:border-primary-hover/50 transition-all duration-200 overflow-hidden"
+                            className="group relative h-full flex flex-col gap-4 cursor-pointer rounded-2xl border border-border-medium/50 bg-bg-card p-5 shadow-sm hover:shadow-md hover:border-border-medium transition-all duration-200 overflow-hidden"
                         >
-                            {/* Delete Button */}
+                            {/* Delete action, pinned to the card's corner */}
                             <button
                                 onClick={(e) => handleDeleteRequest(e, set)}
-                                className="absolute top-5 right-4 w-7 h-7 rounded-lg flex items-center justify-center text-text-muted hover:text-error hover:bg-error-bg opacity-0 group-hover:opacity-100 transition-all duration-150 cursor-pointer z-10"
+                                className="absolute top-3 right-3 z-10 w-7 h-7 rounded-lg flex items-center justify-center bg-bg-card border border-border-light text-text-muted hover:text-error hover:bg-error-bg shadow-sm transition-all duration-150 opacity-0 group-hover:opacity-100 cursor-pointer"
+                                aria-label="Delete flashcard set"
                             >
-                                <Trash2 className="4 h-4" strokeWidth={2} />
+                                <Trash2 className="w-3.5 h-3.5" strokeWidth={2} />
                             </button>
 
-                            {/* Icon area — tinted top block */}
-                            <div className="flex px-4 py-4">
-                                <div className="w-12 h-12 rounded-2xl bg-linear-to-br from-primary to-blue-400 flex items-center justify-center shadow-sm shadow-primary-shadow">
-                                    <Brain className="w-6 h-6 text-white" strokeWidth={2} />
-                                </div>
+                            {/* Icon */}
+                            <div className="w-11 h-11 rounded-xl bg-linear-to-br from-primary to-blue-400 flex items-center justify-center shadow-sm shadow-primary-shadow shrink-0 transition-transform duration-300 group-hover:scale-105">
+                                <Brain className="w-5 h-5 text-white" strokeWidth={2} />
                             </div>
 
-                            {/* Card body */}
-                            <div className="flex flex-col gap-3 px-4 pb-5">
-                                <div className="min-w-0">
-                                    <h4 className="text-sm font-bold text-text-heading truncate">
-                                        Flashcard Set
-                                    </h4>
-                                    <p className="text-xs text-text-muted uppercase tracking-wider mt-0.5">
-                                        Created {moment(set.createdAt).format("MMM D, YYYY")}
-                                    </p>
-                                </div>
+                            {/* Title */}
+                            <div className="min-w-0">
+                                <h4 className="text-sm font-semibold text-text-heading truncate">
+                                    Set {index + 1}
+                                </h4>
+                                <p className="mt-1 text-xs text-text-muted">
+                                    Created {moment(set.createdAt).fromNow()}
+                                </p>
+                            </div>
 
-                                <div className="flex items-center">
-                                    <div className="inline-flex items-center gap-2 border border-violet-100 bg-violet-50 px-3 py-1 rounded-lg">
-                                        <span className="text-xs font-semibold text-violet-500">
-                                            {set.cards.length}{" "}
-                                            {set.cards.length === 1 ? "card" : "cards"}
-                                        </span>
+                            {/* Progress */}
+                            <div className="mt-auto flex flex-col gap-2">
+                                <div className="flex items-center justify-between gap-2">
+                                    <div className="flex items-center gap-1.5">
+                                        <span className="text-xs font-medium text-text-body">Progress</span>
+                                        {reviewedCount > 0 && (
+                                            <div className="flex items-center gap-0.5 rounded-full bg-primary-light px-1.5 py-0.5 text-primary">
+                                                <TrendingUp className="w-3 h-3" strokeWidth={2.5} />
+                                                <span className="text-[10px] font-bold">{progressPercentage}%</span>
+                                            </div>
+                                        )}
                                     </div>
+                                    <span className="text-xs text-text-muted">
+                                        {reviewedCount}/{totalCards} reviewed
+                                    </span>
+                                </div>
+                                <div className="h-1.5 overflow-hidden rounded-full bg-border-light">
+                                    <div
+                                        className="h-full rounded-full bg-primary transition-all duration-700"
+                                        style={{ width: `${progressPercentage}%` }}
+                                    />
                                 </div>
                             </div>
 
                             {/* Hover indicator */}
                             <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-linear-to-r from-primary to-blue-400 scale-x-0 group-hover:scale-x-100 transition-transform duration-200 origin-left" />
                         </div>
-                    ))}
-                </div>
+                    );
+                })}
             </div>
         );
     };
@@ -339,8 +325,45 @@ const FlashcardManager = ({ documentId }) => {
     return (
 
         <>
-            <div className="border border-border-light rounded-3xl shadow-xs p-8 ">
-                {selectedSet ? renderFlashcardViewer() : renderSetList()}
+            <div className="bg-bg-card border border-border-light rounded-2xl shadow-sm overflow-hidden">
+                {!selectedSet && (
+                    <div className="flex items-center justify-between gap-4 px-6 py-5 border-b border-border-light">
+                        <div className="flex items-center gap-3 min-w-0">
+                            <div className="w-9 h-9 rounded-lg bg-primary-light flex items-center justify-center shrink-0">
+                                <Brain className="w-4 h-4 text-primary" strokeWidth={2} />
+                            </div>
+                            <div className="min-w-0">
+                                <h3 className="text-sm font-semibold text-text-heading">Flashcard Sets</h3>
+                                <p className="text-xs text-text-muted">
+                                    {flashcardSets.length} {flashcardSets.length === 1 ? "set" : "sets"} available
+                                </p>
+                            </div>
+                        </div>
+                        {flashcardSets.length > 0 && (
+                            <button
+                                onClick={handleGenerateFlashcards}
+                                disabled={generating}
+                                className="shrink-0 h-10 px-4 rounded-xl bg-linear-to-r from-primary to-blue-400 hover:from-primary-hover hover:to-cyan-400 text-white text-sm font-semibold inline-flex items-center justify-center gap-2 shadow-sm shadow-primary-shadow transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                            >
+                                {generating ? (
+                                    <>
+                                        <Spinner size="sm" tone="white" inline />
+                                        Generating...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Plus className="w-4 h-4" strokeWidth={2.5} />
+                                        Generate New Set
+                                    </>
+                                )}
+                            </button>
+                        )}
+                    </div>
+                )}
+
+                <div className="p-6">
+                    {selectedSet ? renderFlashcardViewer() : renderSetList()}
+                </div>
             </div>
 
             {/* Delete Confirmation Modal */}
@@ -385,4 +408,4 @@ const FlashcardManager = ({ documentId }) => {
     )
 }
 
-export default FlashcardManager  
+export default FlashcardManager
