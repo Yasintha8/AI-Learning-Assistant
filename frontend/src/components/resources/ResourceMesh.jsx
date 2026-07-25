@@ -1,9 +1,11 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { forceSimulation, forceLink, forceManyBody, forceCenter, forceCollide } from 'd3-force';
 
 const WIDTH = 800;
 const HEIGHT = 560;
-const SIMULATION_TICKS = 300;
+const SIMULATION_TICKS = 300; // synchronous warm-up so the mesh appears already settled, no visible animation on load
+const DRAG_ALPHA_TARGET = 0.3; // reheats the simulation while dragging so connected nodes react
+const DRAG_THRESHOLD_PX = 4; // pointer movement past this counts as a drag rather than a click
 
 const NODE_RADIUS = { document: 34, concept: 20, resource: 12 };
 
@@ -90,6 +92,9 @@ const buildGraphData = (graph, documentTitle) => {
 const ResourceMesh = ({ graph, documentTitle, selectedId, onSelectNode }) => {
     const graphData = useMemo(() => buildGraphData(graph, documentTitle), [graph, documentTitle]);
     const [layout, setLayout] = useState(null);
+    const svgRef = useRef(null);
+    const simulationRef = useRef(null);
+    const dragRef = useRef(null); // { id, moved, startClientX, startClientY } while a pointer is down on a node
 
     useEffect(() => {
         const nodes = graphData.nodes.map((n) => ({ ...n }));
@@ -120,16 +125,79 @@ const ResourceMesh = ({ graph, documentTitle, selectedId, onSelectNode }) => {
 
         for (let i = 0; i < SIMULATION_TICKS; i++) simulation.tick();
 
-        setLayout({ nodes, links });
+        // Keep the simulation alive (but idle) so dragging can reheat it later and have
+        // connected nodes react live, instead of only ever showing a static layout.
+        simulation.on('tick', () => setLayout({ nodes: simulation.nodes(), links }));
+        simulationRef.current = simulation;
+        setLayout({ nodes: simulation.nodes(), links });
+
+        return () => {
+            simulation.stop();
+            simulationRef.current = null;
+        };
     }, [graphData]);
 
     if (!layout) return null;
 
     const nodesById = new Map(layout.nodes.map((n) => [n.id, n]));
 
+    // Pointer coordinates arrive in screen/CSS pixels; convert into the SVG's own viewBox
+    // coordinate space so dragging tracks the cursor correctly regardless of how the
+    // responsive SVG is currently scaled.
+    const toSvgPoint = (clientX, clientY) => {
+        const svg = svgRef.current;
+        const point = svg.createSVGPoint();
+        point.x = clientX;
+        point.y = clientY;
+        return point.matrixTransform(svg.getScreenCTM().inverse());
+    };
+
+    const handlePointerDown = (event, node) => {
+        event.stopPropagation();
+        event.currentTarget.setPointerCapture(event.pointerId);
+        dragRef.current = {
+            id: node.id,
+            moved: false,
+            startClientX: event.clientX,
+            startClientY: event.clientY,
+        };
+    };
+
+    const handlePointerMove = (event, node) => {
+        const drag = dragRef.current;
+        if (!drag || drag.id !== node.id) return;
+
+        if (!drag.moved) {
+            const dx = event.clientX - drag.startClientX;
+            const dy = event.clientY - drag.startClientY;
+            if (Math.hypot(dx, dy) < DRAG_THRESHOLD_PX) return;
+
+            drag.moved = true;
+            simulationRef.current?.alphaTarget(DRAG_ALPHA_TARGET).restart();
+        }
+
+        const { x, y } = toSvgPoint(event.clientX, event.clientY);
+        node.fx = x;
+        node.fy = y;
+    };
+
+    const handlePointerUp = (event, node) => {
+        const drag = dragRef.current;
+        event.currentTarget.releasePointerCapture(event.pointerId);
+        dragRef.current = null;
+
+        if (drag?.moved) {
+            // Cool the simulation back down; the node stays pinned wherever it was dropped
+            // (the document node is always pinned this way too) so the user's arrangement sticks.
+            simulationRef.current?.alphaTarget(0);
+        } else {
+            onSelectNode(node);
+        }
+    };
+
     return (
         <div className="w-full overflow-auto rounded-xl border border-border-light bg-bg-main">
-            <svg viewBox={`0 0 ${WIDTH} ${HEIGHT}`} className="w-full h-[560px] min-w-[600px]">
+            <svg ref={svgRef} viewBox={`0 0 ${WIDTH} ${HEIGHT}`} className="w-full h-140 min-w-150">
                 <g>
                     {layout.links.map((link, i) => {
                         const source = nodesById.get(link.source.id ?? link.source);
@@ -168,8 +236,11 @@ const ResourceMesh = ({ graph, documentTitle, selectedId, onSelectNode }) => {
                             <g
                                 key={node.id}
                                 transform={`translate(${node.x}, ${node.y})`}
-                                onClick={() => onSelectNode(node)}
-                                className="cursor-pointer"
+                                onPointerDown={(event) => handlePointerDown(event, node)}
+                                onPointerMove={(event) => handlePointerMove(event, node)}
+                                onPointerUp={(event) => handlePointerUp(event, node)}
+                                className="cursor-grab active:cursor-grabbing"
+                                style={{ touchAction: 'none' }}
                             >
                                 <circle
                                     r={radius}
