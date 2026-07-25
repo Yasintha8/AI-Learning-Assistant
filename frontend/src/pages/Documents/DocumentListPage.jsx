@@ -12,14 +12,6 @@ const SORT_OPTIONS = [
   { value: "name", label: "Name (A–Z)" },
 ];
 
-const STATUS_OPTIONS = [
-  { value: "all", label: "All Status" },
-  { value: "ready", label: "Ready" },
-  { value: "processing", label: "Processing" },
-  { value: "pending", label: "Pending" },
-  { value: "error", label: "Error" },
-];
-
 const selectClassName = "h-10 px-3 rounded-xl border border-border-medium bg-bg-card text-sm text-text-body focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors duration-150 cursor-pointer";
 
 const DocumentListPage = () => {
@@ -31,7 +23,6 @@ const DocumentListPage = () => {
   // State for search / filter / sort toolbar
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
-  const [statusFilter, setStatusFilter] = useState("all");
   const [sortBy, setSortBy] = useState("newest");
 
   // State for upload modal
@@ -156,8 +147,7 @@ const DocumentListPage = () => {
     const filtered = documents.filter((doc) => {
       const matchesQuery = !query || doc.title?.toLowerCase().includes(query);
       const matchesType = typeFilter === "all" || doc.fileType === typeFilter;
-      const matchesStatus = statusFilter === "all" || doc.status === statusFilter;
-      return matchesQuery && matchesType && matchesStatus;
+      return matchesQuery && matchesType;
     });
 
     const sorted = [...filtered];
@@ -169,14 +159,13 @@ const DocumentListPage = () => {
       sorted.sort((a, b) => (a.title || "").localeCompare(b.title || ""));
     }
     return sorted;
-  }, [documents, searchQuery, typeFilter, statusFilter, sortBy]);
+  }, [documents, searchQuery, typeFilter, sortBy]);
 
-  const hasActiveFilters = searchQuery.trim() !== "" || typeFilter !== "all" || statusFilter !== "all";
+  const hasActiveFilters = searchQuery.trim() !== "" || typeFilter !== "all";
 
   const clearFilters = () => {
     setSearchQuery("");
     setTypeFilter("all");
-    setStatusFilter("all");
   };
 
   const renderContent = () => {
@@ -307,15 +296,6 @@ const DocumentListPage = () => {
                 <option value="all">All Types</option>
                 {availableTypes.map((type) => (
                   <option key={type} value={type}>{type.toUpperCase()}</option>
-                ))}
-              </select>
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className={selectClassName}
-              >
-                {STATUS_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>{opt.label}</option>
                 ))}
               </select>
               <select

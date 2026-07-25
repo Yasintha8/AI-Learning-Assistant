@@ -26,20 +26,20 @@ const FlashcardSetCard = ({ flashcardSet, onDelete }) => {
             onClick={handleStudyNow}
             className="relative group h-full flex flex-col gap-4 cursor-pointer rounded-2xl border border-border-medium/50 bg-bg-card p-5 shadow-sm hover:shadow-md hover:border-border-medium transition-all duration-200 overflow-hidden"
         >
+            {/* Delete action, pinned to the card's corner */}
+            {onDelete && (
+                <button
+                    onClick={handleDelete}
+                    className="absolute top-3 right-3 z-10 w-7 h-7 rounded-lg flex items-center justify-center bg-bg-card border border-border-light text-text-muted hover:text-error hover:bg-error-bg shadow-sm transition-all duration-150 opacity-0 group-hover:opacity-100 cursor-pointer shrink-0"
+                    aria-label="Delete flashcard set"
+                >
+                    <Trash2 className="w-3.5 h-3.5" strokeWidth={2} />
+                </button>
+            )}
+
             {/* Header */}
-            <div className="flex items-start justify-between gap-3">
-                <div className="w-11 h-11 rounded-xl bg-linear-to-br from-violet-400 to-purple-500 flex items-center justify-center shadow-sm shrink-0">
-                    <BookOpen className="w-5 h-5 text-white" strokeWidth={2} />
-                </div>
-                {onDelete && (
-                    <button
-                        onClick={handleDelete}
-                        className="w-8 h-8 rounded-lg flex items-center justify-center text-text-muted hover:text-error hover:bg-error-bg transition-colors duration-150 opacity-0 group-hover:opacity-100 cursor-pointer shrink-0"
-                        aria-label="Delete flashcard set"
-                    >
-                        <Trash2 className="w-4 h-4" strokeWidth={2} />
-                    </button>
-                )}
+            <div className="w-11 h-11 rounded-xl bg-linear-to-br from-violet-400 to-purple-500 flex items-center justify-center shadow-sm shrink-0 transition-transform duration-300 group-hover:scale-105">
+                <BookOpen className="w-5 h-5 text-white" strokeWidth={2} />
             </div>
 
             {/* Title */}
@@ -50,13 +50,6 @@ const FlashcardSetCard = ({ flashcardSet, onDelete }) => {
                 <p className="mt-1 text-xs text-text-muted">
                     Created {moment(flashcardSet.createdAt).fromNow()}
                 </p>
-            </div>
-
-            {/* Card count badge */}
-            <div>
-                <span className="text-xs text-text-muted font-semibold bg-border-light px-2 py-0.5 rounded-md">
-                    {totalCards} {totalCards === 1 ? "Card" : "Cards"}
-                </span>
             </div>
 
             {/* Progress */}

@@ -1,20 +1,18 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FileText, Trash2, BookOpen, BrainCircuit, Clock, Video, Globe, Presentation, CheckCircle2, Loader2, AlertCircle } from 'lucide-react';
+import { FileText, Trash2, BookOpen, BrainCircuit, Clock, Video, Globe, Presentation, ArrowRight } from 'lucide-react';
 import moment from 'moment';
 
-const FILE_TYPE_ICONS = {
-    youtube: Video,
-    website: Globe,
-    pptx: Presentation,
+// Color-coded by file type (à la Google Drive) so a grid of mixed documents
+// is scannable at a glance instead of every card wearing the same icon color.
+const FILE_TYPE_STYLES = {
+    pdf: { icon: FileText, gradient: 'from-rose-400 to-red-500', shadow: 'shadow-red-500/20' },
+    docx: { icon: FileText, gradient: 'from-blue-400 to-indigo-500', shadow: 'shadow-blue-500/20' },
+    pptx: { icon: Presentation, gradient: 'from-amber-400 to-orange-500', shadow: 'shadow-orange-500/20' },
+    youtube: { icon: Video, gradient: 'from-pink-500 to-fuchsia-600', shadow: 'shadow-pink-500/20' },
+    website: { icon: Globe, gradient: 'from-teal-400 to-cyan-500', shadow: 'shadow-cyan-500/20' },
 };
-
-const STATUS_STYLES = {
-    ready: { label: 'Ready', icon: CheckCircle2, bg: 'bg-emerald-50 dark:bg-emerald-500/10', text: 'text-emerald-600 dark:text-emerald-400' },
-    processing: { label: 'Processing', icon: Loader2, bg: 'bg-amber-50 dark:bg-amber-500/10', text: 'text-amber-600 dark:text-amber-400', spin: true },
-    pending: { label: 'Pending', icon: Loader2, bg: 'bg-amber-50 dark:bg-amber-500/10', text: 'text-amber-600 dark:text-amber-400', spin: true },
-    error: { label: 'Error', icon: AlertCircle, bg: 'bg-rose-50 dark:bg-rose-500/10', text: 'text-rose-600 dark:text-rose-400' },
-};
+const DEFAULT_TYPE_STYLE = { icon: FileText, gradient: 'from-primary to-blue-400', shadow: 'shadow-primary-shadow' };
 
 // Helper function to format file size
 const formatFileSize = (bytes) => {
@@ -44,32 +42,24 @@ const DocumentCard = ({ document, onDelete }) => {
         onDelete(document);
     };
 
-    const TypeIcon = FILE_TYPE_ICONS[document.fileType] || FileText;
-    const statusStyle = STATUS_STYLES[document.status];
-    const StatusIcon = statusStyle?.icon;
+    const typeStyle = FILE_TYPE_STYLES[document.fileType] || DEFAULT_TYPE_STYLE;
+    const TypeIcon = typeStyle.icon;
 
     return (
         <div className='relative group bg-bg-card border border-border-medium/50 rounded-2xl p-5 flex flex-col gap-4 cursor-pointer shadow-sm hover:shadow-md hover:border-border-medium transition-all duration-200 overflow-hidden' onClick={handleNavigate}>
+            {/* Delete action, pinned to the card's corner */}
+            <button
+                onClick={handleDelete}
+                className="absolute top-3 right-3 z-10 w-7 h-7 rounded-lg flex items-center justify-center bg-bg-card border border-border-light text-text-muted hover:text-error hover:bg-error-bg shadow-sm transition-all duration-150 opacity-0 group-hover:opacity-100 cursor-pointer"
+                aria-label="Delete document"
+            >
+                <Trash2 className="w-3.5 h-3.5" strokeWidth={2} />
+            </button>
+
             {/* Header Section */}
             <div className="flex flex-col gap-3">
-                <div className="flex items-start justify-between">
-                    <div className="w-11 h-11 rounded-xl bg-linear-to-br from-primary to-blue-400 flex items-center justify-center shadow-sm shadow-primary-shadow shrink-0">
-                        <TypeIcon className="w-5 h-5 text-white" strokeWidth={2} />
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                        {statusStyle && (
-                            <div className={`flex items-center gap-1 ${statusStyle.bg} px-2 py-1 rounded-lg`}>
-                                <StatusIcon className={`w-3 h-3 ${statusStyle.text} ${statusStyle.spin ? 'animate-spin' : ''}`} strokeWidth={2.5} />
-                                <span className={`text-[10px] font-semibold ${statusStyle.text}`}>{statusStyle.label}</span>
-                            </div>
-                        )}
-                        <button
-                            onClick={handleDelete}
-                            className="w-8 h-8 rounded-lg flex items-center justify-center text-text-muted hover:text-error hover:bg-error-bg transition-colors duration-150 opacity-0 group-hover:opacity-100 cursor-pointer"
-                        >
-                            <Trash2 className="w-4 h-4" strokeWidth={2} />
-                        </button>
-                    </div>
+                <div className={`w-11 h-11 rounded-xl bg-linear-to-br ${typeStyle.gradient} flex items-center justify-center shadow-sm ${typeStyle.shadow} shrink-0 transition-transform duration-300 group-hover:scale-105`}>
+                    <TypeIcon className="w-5 h-5 text-white" strokeWidth={2} />
                 </div>
 
                 {/* Title Section */}
@@ -109,15 +99,16 @@ const DocumentCard = ({ document, onDelete }) => {
             </div>
 
             {/*Footer Section */}
-            <div className='mt-auto pt-3 border-t border-border-light'>
-                <div className='flex items-center gap-1.5'>
-                    <Clock className='w-3.5 h-3.5 text-text-muted' strokeWidth={2} />
-                    <span className='text-xs text-text-muted'>Uploaded {moment(document.lastAccessed).fromNow()}</span>
+            <div className='mt-auto pt-3 border-t border-border-light flex items-center justify-between gap-2'>
+                <div className='flex items-center gap-1.5 min-w-0'>
+                    <Clock className='w-3.5 h-3.5 text-text-muted shrink-0' strokeWidth={2} />
+                    <span className='text-xs text-text-muted truncate'>Uploaded {moment(document.lastAccessed).fromNow()}</span>
                 </div>
+                <ArrowRight className='w-3.5 h-3.5 text-text-muted shrink-0 transition-all duration-200 group-hover:text-primary group-hover:translate-x-0.5' strokeWidth={2} />
             </div>
 
             {/*Hover Indicator*/}
-            <div className='absolute bottom-0 left-0 right-0 h-0.5 bg-linear-to-r from-primary to-blue-400 scale-x-0 group-hover:scale-x-100 transition-transform duration-200 origin-left' />
+            <div className={`absolute bottom-0 left-0 right-0 h-0.5 bg-linear-to-r ${typeStyle.gradient} scale-x-0 group-hover:scale-x-100 transition-transform duration-200 origin-left`} />
         </div>
     )
 };
