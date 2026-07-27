@@ -92,9 +92,11 @@ const buildGraphData = (graph, documentTitle) => {
 const ResourceMesh = ({ graph, documentTitle, selectedId, onSelectNode }) => {
     const graphData = useMemo(() => buildGraphData(graph, documentTitle), [graph, documentTitle]);
     const [layout, setLayout] = useState(null);
+    const [pan, setPan] = useState({ x: 0, y: 0 });
     const svgRef = useRef(null);
     const simulationRef = useRef(null);
     const dragRef = useRef(null); // { id, moved, startClientX, startClientY } while a pointer is down on a node
+    const panDragRef = useRef(null); // { startClientX, startClientY, startPanX, startPanY } while panning empty space
 
     useEffect(() => {
         const nodes = graphData.nodes.map((n) => ({ ...n }));
@@ -143,13 +145,43 @@ const ResourceMesh = ({ graph, documentTitle, selectedId, onSelectNode }) => {
 
     // Pointer coordinates arrive in screen/CSS pixels; convert into the SVG's own viewBox
     // coordinate space so dragging tracks the cursor correctly regardless of how the
-    // responsive SVG is currently scaled.
+    // responsive SVG is currently scaled. Nodes live inside the panned <g>, so their
+    // fx/fy need the current pan offset subtracted back out.
     const toSvgPoint = (clientX, clientY) => {
         const svg = svgRef.current;
         const point = svg.createSVGPoint();
         point.x = clientX;
         point.y = clientY;
-        return point.matrixTransform(svg.getScreenCTM().inverse());
+        const svgPoint = point.matrixTransform(svg.getScreenCTM().inverse());
+        return { x: svgPoint.x - pan.x, y: svgPoint.y - pan.y };
+    };
+
+    const handleBackgroundPointerDown = (event) => {
+        event.currentTarget.setPointerCapture(event.pointerId);
+        panDragRef.current = {
+            startClientX: event.clientX,
+            startClientY: event.clientY,
+            startPanX: pan.x,
+            startPanY: pan.y,
+        };
+    };
+
+    const handleBackgroundPointerMove = (event) => {
+        const drag = panDragRef.current;
+        if (!drag) return;
+
+        // Convert the screen-pixel drag distance into viewBox units using the SVG's
+        // current scale, so panning tracks 1:1 with the cursor at any container width.
+        const ctm = svgRef.current.getScreenCTM();
+        const dx = (event.clientX - drag.startClientX) / ctm.a;
+        const dy = (event.clientY - drag.startClientY) / ctm.d;
+
+        setPan({ x: drag.startPanX + dx, y: drag.startPanY + dy });
+    };
+
+    const handleBackgroundPointerUp = (event) => {
+        event.currentTarget.releasePointerCapture(event.pointerId);
+        panDragRef.current = null;
     };
 
     const handlePointerDown = (event, node) => {
@@ -198,68 +230,82 @@ const ResourceMesh = ({ graph, documentTitle, selectedId, onSelectNode }) => {
     return (
         <div className="w-full overflow-auto rounded-xl border border-border-light bg-bg-main">
             <svg ref={svgRef} viewBox={`0 0 ${WIDTH} ${HEIGHT}`} className="w-full h-140 min-w-150">
-                <g>
-                    {layout.links.map((link, i) => {
-                        const source = nodesById.get(link.source.id ?? link.source);
-                        const target = nodesById.get(link.target.id ?? link.target);
-                        if (!source || !target) return null;
-                        const isMesh = link.kind === 'resource-resource';
+                <rect
+                    x={0}
+                    y={0}
+                    width={WIDTH}
+                    height={HEIGHT}
+                    fill="transparent"
+                    onPointerDown={handleBackgroundPointerDown}
+                    onPointerMove={handleBackgroundPointerMove}
+                    onPointerUp={handleBackgroundPointerUp}
+                    className="cursor-grab active:cursor-grabbing"
+                    style={{ touchAction: 'none' }}
+                />
+                <g transform={`translate(${pan.x}, ${pan.y})`}>
+                    <g>
+                        {layout.links.map((link, i) => {
+                            const source = nodesById.get(link.source.id ?? link.source);
+                            const target = nodesById.get(link.target.id ?? link.target);
+                            if (!source || !target) return null;
+                            const isMesh = link.kind === 'resource-resource';
 
-                        return (
-                            <line
-                                key={i}
-                                x1={source.x}
-                                y1={source.y}
-                                x2={target.x}
-                                y2={target.y}
-                                stroke="currentColor"
-                                className="text-border-medium"
-                                strokeWidth={link.kind === 'document-concept' ? 2 : 1}
-                                strokeDasharray={isMesh ? '3 4' : undefined}
-                                opacity={isMesh ? 0.45 : 0.85}
-                            />
-                        );
-                    })}
-                </g>
-                <g>
-                    {layout.nodes.map((node) => {
-                        const radius = NODE_RADIUS[node.type];
-                        const isSelected = node.id === selectedId;
-                        const colorClass =
-                            node.type === 'document'
-                                ? CATEGORY_VISUALS.document.textClass
-                                : node.type === 'concept'
-                                    ? CATEGORY_VISUALS.concept.textClass
-                                    : CATEGORY_VISUALS[getResourceCategory(node.resourceType)].textClass;
-
-                        return (
-                            <g
-                                key={node.id}
-                                transform={`translate(${node.x}, ${node.y})`}
-                                onPointerDown={(event) => handlePointerDown(event, node)}
-                                onPointerMove={(event) => handlePointerMove(event, node)}
-                                onPointerUp={(event) => handlePointerUp(event, node)}
-                                className="cursor-grab active:cursor-grabbing"
-                                style={{ touchAction: 'none' }}
-                            >
-                                <circle
-                                    r={radius}
-                                    className={colorClass}
-                                    fill="currentColor"
-                                    fillOpacity={node.type === 'document' ? 1 : 0.85}
-                                    stroke={isSelected ? 'var(--color-text-heading)' : 'var(--color-bg-card)'}
-                                    strokeWidth={isSelected ? 3 : 2}
+                            return (
+                                <line
+                                    key={i}
+                                    x1={source.x}
+                                    y1={source.y}
+                                    x2={target.x}
+                                    y2={target.y}
+                                    stroke="currentColor"
+                                    className="text-border-medium"
+                                    strokeWidth={link.kind === 'document-concept' ? 2 : 1}
+                                    strokeDasharray={isMesh ? '3 4' : undefined}
+                                    opacity={isMesh ? 0.45 : 0.85}
                                 />
-                                <text
-                                    y={radius + 14}
-                                    textAnchor="middle"
-                                    className="fill-text-body text-[10px] font-medium select-none"
+                            );
+                        })}
+                    </g>
+                    <g>
+                        {layout.nodes.map((node) => {
+                            const radius = NODE_RADIUS[node.type];
+                            const isSelected = node.id === selectedId;
+                            const colorClass =
+                                node.type === 'document'
+                                    ? CATEGORY_VISUALS.document.textClass
+                                    : node.type === 'concept'
+                                        ? CATEGORY_VISUALS.concept.textClass
+                                        : CATEGORY_VISUALS[getResourceCategory(node.resourceType)].textClass;
+
+                            return (
+                                <g
+                                    key={node.id}
+                                    transform={`translate(${node.x}, ${node.y})`}
+                                    onPointerDown={(event) => handlePointerDown(event, node)}
+                                    onPointerMove={(event) => handlePointerMove(event, node)}
+                                    onPointerUp={(event) => handlePointerUp(event, node)}
+                                    className="cursor-grab active:cursor-grabbing"
+                                    style={{ touchAction: 'none' }}
                                 >
-                                    {truncate(node.label, node.type === 'document' ? 26 : 18)}
-                                </text>
-                            </g>
-                        );
-                    })}
+                                    <circle
+                                        r={radius}
+                                        className={colorClass}
+                                        fill="currentColor"
+                                        fillOpacity={node.type === 'document' ? 1 : 0.85}
+                                        stroke={isSelected ? 'var(--color-text-heading)' : 'var(--color-bg-card)'}
+                                        strokeWidth={isSelected ? 3 : 2}
+                                    />
+                                    <text
+                                        y={radius + 14}
+                                        textAnchor="middle"
+                                        className="fill-text-body text-[10px] font-medium select-none"
+                                    >
+                                        {truncate(node.label, node.type === 'document' ? 26 : 18)}
+                                    </text>
+                                </g>
+                            );
+                        })}
+                    </g>
                 </g>
             </svg>
         </div>
