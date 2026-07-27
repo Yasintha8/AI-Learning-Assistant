@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import {
   BrainCircuit,
@@ -61,9 +61,9 @@ const FORMATS = [
 ];
 
 const HOW_IT_WORKS = [
-  { step: '1', title: 'Add your material', description: 'Upload a PDF/DOCX, or paste a YouTube or website link.' },
-  { step: '2', title: 'AI processes the content', description: 'Get a summary, flashcards, and a quiz generated automatically.' },
-  { step: '3', title: 'Study and track progress', description: 'Review flashcards, take quizzes, and watch your dashboard grow.' },
+  { step: '1', icon: FileText, title: 'Add your material', description: 'Upload a PDF/DOCX, or paste a YouTube or website link.' },
+  { step: '2', icon: Sparkles, title: 'AI processes the content', description: 'Get a summary, flashcards, and a quiz generated automatically.' },
+  { step: '3', icon: BarChart3, title: 'Study and track progress', description: 'Review flashcards, take quizzes, and watch your dashboard grow.' },
 ];
 
 const TERMINAL_STEPS = [
@@ -420,19 +420,32 @@ const LandingPage = () => {
           <p className="text-text-body">Three steps between your notes and knowing the material.</p>
         </Reveal>
 
-        <div className="relative">
-          <div className="hidden sm:block absolute top-5 left-[16.6%] right-[16.6%] h-px bg-border-medium" />
-          <div className="grid sm:grid-cols-3 gap-8 relative">
-            {HOW_IT_WORKS.map(({ step, title, description }, i) => (
-              <Reveal key={step} delay={i * 120} className="flex flex-col gap-4">
-                <div className="relative z-10 w-10 h-10 rounded-xl bg-primary text-white font-display font-bold flex items-center justify-center shadow-lg shadow-primary-shadow/20">
-                  {step}
+        <div className="flex flex-col sm:flex-row items-stretch gap-4">
+          {HOW_IT_WORKS.map(({ step, icon: Icon, title, description }, i) => (
+            <React.Fragment key={step}>
+              <Reveal
+                delay={i * 120}
+                className="group flex-1 bg-bg-card rounded-2xl border border-border-light shadow-sm hover:shadow-xl hover:shadow-slate-200/20 dark:hover:shadow-none hover:-translate-y-1 hover:border-primary/30 transition-all duration-300 p-6 md:p-8 flex flex-col gap-4"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-linear-to-br from-primary to-blue-400 text-white font-display font-bold text-sm flex items-center justify-center shadow-md shadow-primary-shadow/20 shrink-0">
+                    {step}
+                  </div>
+                  <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform duration-300">
+                    <Icon className="w-5 h-5" />
+                  </div>
                 </div>
                 <h3 className="font-display font-semibold text-text-heading text-lg">{title}</h3>
-                <p className="text-sm text-text-body">{description}</p>
+                <p className="text-sm text-text-body leading-relaxed">{description}</p>
               </Reveal>
-            ))}
-          </div>
+
+              {i < HOW_IT_WORKS.length - 1 && (
+                <div className="hidden sm:flex items-center justify-center shrink-0 text-text-muted/40">
+                  <ArrowRight className="w-5 h-5" />
+                </div>
+              )}
+            </React.Fragment>
+          ))}
         </div>
       </section>
 
@@ -457,18 +470,18 @@ const LandingPage = () => {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-border-light">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <footer className="border-t border-border-medium/50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 flex flex-col items-center  text-center">
           <div className="flex items-center gap-2">
-            <div className="p-1.5 bg-primary/10 rounded-lg text-primary flex items-center justify-center">
+            {/* <div className="p-1.5 bg-primary/10 rounded-lg text-primary flex items-center justify-center">
               <BrainCircuit className="w-4 h-4" />
             </div>
             <span className="font-display font-semibold text-text-heading text-sm">
-              AI Learning Assistant
-            </span>
+              NeuroLearn
+            </span> */}
           </div>
           <p className="text-xs text-text-muted">
-            &copy; {new Date().getFullYear()} AI Learning Assistant. All rights reserved.
+            &copy; {new Date().getFullYear()} NeuroLearn. All rights reserved.
           </p>
         </div>
       </footer>
