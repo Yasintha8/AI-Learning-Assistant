@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import toast from '../../utils/toast';
 import {
@@ -15,9 +15,12 @@ import {
   Lightbulb,
   AlertTriangle,
   ChevronDown,
+  Download,
+  MoreVertical,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import learningPathService from '../../services/learningPathService';
+import documentService from '../../services/documentService';
 import aiService from '../../services/aiService';
 import PageHeader from '../../components/common/PageHeader';
 import Spinner from '../../components/common/Spinner';
@@ -26,6 +29,7 @@ import Button from '../../components/common/Button';
 import Modal from '../../components/common/Modal';
 import MarkdownRenderer from '../../components/common/MarkdownRenderer';
 import { getStatusStyle, getKnowledgeLevelStyle, getProgressBandStyle } from '../../utils/learningPathStatus';
+import { generateLearningPathReportPdf } from '../../utils/learningPathReport';
 
 const SOURCE_LABELS = {
   quiz: 'Quiz results',
@@ -59,6 +63,7 @@ const LearningPathPage = () => {
   const { user } = useAuth();
 
   const [learningPath, setLearningPath] = useState(null);
+  const [documentTitle, setDocumentTitle] = useState('');
   const [weakAreasEligibility, setWeakAreasEligibility] = useState(null);
   const [recentQuizResults, setRecentQuizResults] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -67,8 +72,21 @@ const LearningPathPage = () => {
   const [refreshingStudyPlan, setRefreshingStudyPlan] = useState(false);
   const [selectedTopic, setSelectedTopic] = useState(null);
   const [quizResultsExpanded, setQuizResultsExpanded] = useState(false);
+  const [downloadingReport, setDownloadingReport] = useState(false);
   const [actionLoadingKey, setActionLoadingKey] = useState(null);
   const [actionModal, setActionModal] = useState({ isOpen: false, title: '', content: '' });
+  const [moreMenuOpen, setMoreMenuOpen] = useState(false);
+  const moreMenuRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (moreMenuRef.current && !moreMenuRef.current.contains(event.target)) {
+        setMoreMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const fetchStudyPlan = async (force = false) => {
     if (force) setRefreshingStudyPlan(true);
@@ -110,6 +128,16 @@ const LearningPathPage = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [documentId, user]);
 
+  // Fetched independently of the learning path itself - getStudyPlan's response isn't
+  // populated with the document, so relying on learningPath.documentId.title would go
+  // stale as soon as the auto-refresh in fetchLearningPath overwrites it.
+  useEffect(() => {
+    if (!documentId) return;
+    documentService.getDocumentById(documentId)
+      .then((response) => setDocumentTitle(response.data?.title || ''))
+      .catch((error) => console.error(error));
+  }, [documentId]);
+
   const handleGenerate = async () => {
     setGenerating(true);
     try {
@@ -135,6 +163,24 @@ const LearningPathPage = () => {
       toast.error(error.message || 'Failed to update mastery scores.');
     } finally {
       setRefreshing(false);
+    }
+  };
+
+  const handleDownloadReport = () => {
+    setDownloadingReport(true);
+    try {
+      generateLearningPathReportPdf({
+        documentTitle,
+        userName: user?.username,
+        learningPath,
+        weakAreasEligibility,
+        recentQuizResults,
+      });
+    } catch (error) {
+      toast.error('Failed to generate report.');
+      console.error(error);
+    } finally {
+      setDownloadingReport(false);
     }
   };
 
@@ -538,25 +584,63 @@ const LearningPathPage = () => {
           Back to Document
         </Link>
 
-        <PageHeader title="Learning Path" subtitle="Track your topic mastery and see what to study next">
+        <PageHeader
+          title={documentTitle || 'Learning Path'}
+          subtitle={documentTitle ? 'Learning Path · Track your topic mastery and see what to study next' : 'Track your topic mastery and see what to study next'}
+        >
           {learningPath && learningPath.topics?.length > 0 && (
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2.5">
+              {/* Overflow menu: lower-frequency maintenance actions */}
+              <div className="relative" ref={moreMenuRef}>
+                <button
+                  type="button"
+                  onClick={() => setMoreMenuOpen((prev) => !prev)}
+                  disabled={refreshingStudyPlan || refreshing}
+                  aria-label="More actions"
+                  aria-haspopup="true"
+                  aria-expanded={moreMenuOpen}
+                  className={`h-11 w-11 inline-flex items-center justify-center rounded-xl border border-border-medium text-text-body hover:bg-border-light transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer ${moreMenuOpen ? 'bg-border-light' : 'bg-bg-card'}`}
+                >
+                  {(refreshingStudyPlan || refreshing) ? (
+                    <Spinner size="xs" tone="muted" inline />
+                  ) : (
+                    <MoreVertical className="w-4 h-4" strokeWidth={2} />
+                  )}
+                </button>
+
+                {moreMenuOpen && (
+                  <div className="absolute right-0 mt-2 w-56 bg-bg-card border border-border-medium rounded-2xl shadow-xl shadow-slate-200/25 dark:shadow-none py-1.5 z-50 animate-fade-in origin-top-right">
+                    <button
+                      type="button"
+                      onClick={() => { setMoreMenuOpen(false); fetchStudyPlan(true); }}
+                      disabled={refreshingStudyPlan}
+                      className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-left text-sm font-medium text-text-heading hover:bg-border-light/60 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                    >
+                      <ListChecks className={`w-4 h-4 text-primary shrink-0 ${refreshingStudyPlan ? 'animate-spin' : ''}`} strokeWidth={2} />
+                      {refreshingStudyPlan ? 'Refreshing...' : 'Refresh Study Plan'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => { setMoreMenuOpen(false); handleRefreshMastery(); }}
+                      disabled={refreshing}
+                      className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-left text-sm font-medium text-text-heading hover:bg-border-light/60 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                    >
+                      <RefreshCw className={`w-4 h-4 text-primary shrink-0 ${refreshing ? 'animate-spin' : ''}`} strokeWidth={2} />
+                      {refreshing ? 'Refreshing...' : 'Refresh Mastery'}
+                    </button>
+                  </div>
+                )}
+              </div>
+
               <Button
-                onClick={() => fetchStudyPlan(true)}
-                disabled={refreshingStudyPlan}
-                variant="secondary"
+                onClick={handleDownloadReport}
+                disabled={downloadingReport}
+                variant="outline"
               >
-                <ListChecks className={`w-4 h-4 ${refreshingStudyPlan ? 'animate-spin' : ''}`} strokeWidth={2} />
-                {refreshingStudyPlan ? 'Refreshing...' : 'Refresh Study Plan'}
+                <Download className="w-4 h-4" strokeWidth={2} />
+                {downloadingReport ? 'Preparing...' : 'Download Report'}
               </Button>
-              <Button
-                onClick={handleRefreshMastery}
-                disabled={refreshing}
-                variant="secondary"
-              >
-                <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} strokeWidth={2} />
-                {refreshing ? 'Refreshing...' : 'Refresh Mastery'}
-              </Button>
+
               <Button onClick={handleGenerate} disabled={generating}>
                 <Sparkles className="w-4 h-4" strokeWidth={2} />
                 {generating ? 'Generating...' : 'Regenerate Topics'}
