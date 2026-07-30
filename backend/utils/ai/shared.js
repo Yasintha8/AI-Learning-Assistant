@@ -329,6 +329,34 @@ export const buildResourceResearchPrompt = (text) => `I am studying the topic be
 Topic text:
 ${text.substring(0, 8000)}`;
 
+// Used by providers with no built-in web-search tool (e.g. Ollama): asks the model to name
+// the key concepts and turn each into a short, effective search-engine query, so an external
+// search API can be called per concept instead.
+export const CONCEPT_QUERIES_SCHEMA = {
+    type: 'object',
+    properties: {
+        queries: {
+            type: 'array',
+            items: {
+                type: 'object',
+                properties: {
+                    concept: { type: 'string' },
+                    searchQuery: { type: 'string' }
+                },
+                required: ['concept', 'searchQuery'],
+                additionalProperties: false
+            }
+        }
+    },
+    required: ['queries'],
+    additionalProperties: false
+};
+
+export const buildConceptQueriesPrompt = (text) => `Identify 4 to 8 distinct key concepts a student should find more learning resources for, based on the text below. For each concept, write a short, effective web search query (as you'd type into a search engine) to find real articles, videos, or courses about it.
+
+Text:
+${text.substring(0, 8000)}`;
+
 // ---------------------------------------------------------------------------
 // Response post-processing (validates/normalizes whatever JSON the model returned)
 // ---------------------------------------------------------------------------
