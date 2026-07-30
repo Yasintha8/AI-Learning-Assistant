@@ -141,6 +141,10 @@ export const generateRelatedResources = async (text) => {
         try {
             results = await webSearch(q.searchQuery, { maxResults: 3 });
         } catch (error) {
+            // A missing/invalid key affects every query the same way - fail fast with the
+            // real reason instead of repeating the same error N times and burying it under
+            // a generic "no results" message at the end.
+            if (error.message.includes('TAVILY_API_KEY')) throw error;
             console.error(`Web search failed for "${q.searchQuery}":`, error.message);
             continue;
         }
