@@ -2,7 +2,7 @@ import Document from '../models/Document.js';
 import LearningPath from '../models/LearningPath.js';
 import Quiz from '../models/Quiz.js';
 import Flashcard from '../models/Flashcard.js';
-import * as claudeService from '../utils/claudeService.js';
+import * as aiService from '../utils/ai/index.js';
 
 // How many of the most recent quiz-question attempts (per topic) count toward mastery
 const RECENT_QUIZ_ATTEMPTS_LIMIT = 20;
@@ -233,7 +233,7 @@ export const generateLearningPath = async (req, res, next) => {
         }
 
         // Extract topics/subtopics using Claude
-        const rawTopics = await claudeService.generateTopics(document.extractedText);
+        const rawTopics = await aiService.generateTopics(document.extractedText);
         const flatTopics = flattenTopics(rawTopics);
 
         if (flatTopics.length === 0) {
@@ -512,7 +512,7 @@ const generateStudyPlanForDocument = async (userId, documentId, { force = false 
     let classifications = [];
     if (hasAnyActivity) {
         try {
-            classifications = await claudeService.classifyTopicKnowledge(topicStatsInput);
+            classifications = await aiService.classifyTopicKnowledge(topicStatsInput);
         } catch (error) {
             console.error('Failed to classify topic knowledge via Claude, using fallback:', error);
         }
@@ -563,7 +563,7 @@ const generateStudyPlanForDocument = async (userId, documentId, { force = false 
             learningPath.weakConcepts = [];
         } else {
             try {
-                const concepts = await claudeService.identifyWeakConcepts(wrongAnswers);
+                const concepts = await aiService.identifyWeakConcepts(wrongAnswers);
                 const topicIdByTitle = new Map(
                     learningPath.topics.map(t => [t.title.toLowerCase(), t.topicId])
                 );

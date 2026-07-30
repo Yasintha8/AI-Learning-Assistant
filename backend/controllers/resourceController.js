@@ -1,6 +1,6 @@
 import Document from '../models/Document.js';
 import ResourceGraph from '../models/ResourceGraph.js';
-import * as claudeService from '../utils/claudeService.js';
+import * as aiService from '../utils/ai/index.js';
 
 // @desc    Generate (or return cached) AI-suggested related resources for a document
 // @route   POST /api/resources/generate
@@ -42,7 +42,7 @@ export const generateResourceGraph = async (req, res, next) => {
             }
         }
 
-        const { concepts, resources } = await claudeService.generateRelatedResources(document.extractedText);
+        const { concepts, resources } = await aiService.generateRelatedResources(document.extractedText);
 
         const resourceGraph = await ResourceGraph.findOneAndUpdate(
             { userId: req.user._id, documentId },

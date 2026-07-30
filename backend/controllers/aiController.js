@@ -3,7 +3,7 @@ import Flashcard from '../models/Flashcard.js';
 import Quiz from '../models/Quiz.js';
 import ChatHistory from '../models/ChatHistory.js';
 import LearningPath from '../models/LearningPath.js';
-import * as claudeService from '../utils/claudeService.js';
+import * as aiService from '../utils/ai/index.js';
 import { findRelevantChunks } from '../utils/textChunker.js';
 
 // Build a case-insensitive "topic title" -> { topicId, title } lookup from a learning path,
@@ -74,7 +74,7 @@ export const generateFlashcards = async (req, res, next) => {
         const topicTitles = (learningPath?.topics || []).map(t => t.title);
 
         // Generate flashcards using Claude
-        const cards = await claudeService.generateFlashcards(
+        const cards = await aiService.generateFlashcards(
             document.extractedText,
             parseInt(count),
             topicTitles
@@ -161,7 +161,7 @@ export const generateQuiz = async (req, res, next) => {
 
             const batchSize = Math.min(10, remaining);
 
-            const batch = await claudeService.generateQuiz(
+            const batch = await aiService.generateQuiz(
                 document.extractedText,
                 batchSize,
                 topicTitles
@@ -226,7 +226,7 @@ export const generateSummary = async (req, res, next) => {
         }
 
         // Generate summary using Claude
-        const summary = await claudeService.generateSummary(document.extractedText);
+        const summary = await aiService.generateSummary(document.extractedText);
 
         res.status(200).json({
             success: true,
@@ -292,7 +292,7 @@ export const chat = async (req, res, next) => {
         }
 
         // Generate response using Claude
-        const answer = await claudeService.chatWithContext(question, relevantChunks);
+        const answer = await aiService.chatWithContext(question, relevantChunks);
 
         // Save conversation
         chatHistory.messages.push(
@@ -363,7 +363,7 @@ export const explainConcept = async (req, res, next) => {
         const context = relevantChunks.map(c => c.content).join('\n\n');
 
         // Generate explanation using Claude
-        const explanation = await claudeService.explainConcept(concept, context);
+        const explanation = await aiService.explainConcept(concept, context);
 
         res.status(200).json({
             success: true,
