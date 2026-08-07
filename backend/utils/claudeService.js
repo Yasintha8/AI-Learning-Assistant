@@ -15,10 +15,18 @@ const MODEL = 'claude-sonnet-5';
 const VALID_STUDY_ACTIONS = ['reread-summary', 'redo-flashcards', 'retake-quiz', 'ask-ai-explain'];
 const VALID_RESOURCE_TYPES = ['article', 'video', 'course', 'paper', 'website'];
 const VALID_DIFFICULTIES = ['easy', 'medium', 'hard'];
+// The cognitive skill a quiz question primarily exercises - lets Weak Areas surface *what kind*
+// of thinking a student struggles with, not just *which topic*
+const VALID_SKILL_CATEGORIES = ['logical', 'analytical', 'conceptual', 'memory', 'application'];
 
 const normalizeDifficulty = (d) => {
     const diff = (d || '').toString().trim().toLowerCase();
     return VALID_DIFFICULTIES.includes(diff) ? diff : 'medium';
+};
+
+const normalizeSkillCategory = (c) => {
+    const cat = (c || '').toString().trim().toLowerCase();
+    return VALID_SKILL_CATEGORIES.includes(cat) ? cat : null;
 };
 
 // First plain-text block in a response - used for free-form (non-structured) replies
@@ -123,9 +131,10 @@ const QUIZ_SCHEMA = {
                     correctOption: { type: 'integer' },
                     explanation: { type: 'string' },
                     difficulty: { type: 'string', enum: VALID_DIFFICULTIES },
-                    topicTitle: { type: 'string' }
+                    topicTitle: { type: 'string' },
+                    skillCategory: { type: 'string', enum: VALID_SKILL_CATEGORIES }
                 },
-                required: ['question', 'options', 'correctOption', 'explanation', 'difficulty', 'topicTitle'],
+                required: ['question', 'options', 'correctOption', 'explanation', 'difficulty', 'topicTitle', 'skillCategory'],
                 additionalProperties: false
             }
         }
@@ -139,7 +148,7 @@ const QUIZ_SCHEMA = {
  * @param {string} text - Document text
  * @param {number} numQuestions - Number of questions
  * @param {string[]} topicTitles - Optional list of existing learning-path topic titles to tag each question with
- * @returns {Promise<Array<{question: string, options: Array, correctOption: string, explanation: string, difficulty: string, topicTitle: string|null}>>}
+ * @returns {Promise<Array<{question: string, options: Array, correctOption: string, explanation: string, difficulty: string, topicTitle: string|null, skillCategory: string|null}>>}
  */
 export const generateQuiz = async (text, numQuestions = 5, topicTitles = []) => {
     const shouldTagTopics = topicTitles.length > 0;
@@ -150,6 +159,13 @@ Each question needs exactly 4 options, a correctOption (the 1-based index of the
 Also tag each question with the single best matching topic, copied exactly from this list: ${topicTitles.join(' | ')}
 If none of them are relevant, set topicTitle to an empty string.` : `
 Set topicTitle to an empty string for every question - there is no topic list to match against.`}
+
+Also tag each question with the single cognitive skill it primarily tests, chosen from EXACTLY these 5 values:
+- "logical": requires step-by-step reasoning, deduction, or working through cause-and-effect/if-then relationships.
+- "analytical": requires breaking something down into parts, comparing/contrasting, or interpreting data/relationships.
+- "conceptual": tests understanding of what a concept means or why it matters, rather than reasoning through it.
+- "memory": tests recall of a specific fact, term, definition, or detail stated directly in the text.
+- "application": requires applying a concept/rule to a new example or scenario not explicitly given in the text.
 
 Text:
 ${text.substring(0, 15000)}`;
@@ -175,6 +191,7 @@ ${text.substring(0, 15000)}`;
                 explanation: q.explanation || '',
                 difficulty: normalizeDifficulty(q.difficulty),
                 topicTitle: q.topicTitle || null,
+                skillCategory: normalizeSkillCategory(q.skillCategory),
             }));
     } catch (error) {
         rethrowFriendly(error, 'generate quiz');
@@ -409,10 +426,12 @@ const WEAK_CONCEPTS_SCHEMA = {
                     // Empty string means "no clear related topic" - keeps the schema simple (no nullable types)
                     relatedTopicTitle: { type: 'string' },
                     missedCount: { type: 'integer' },
+                    // Empty string means "mixed/unclear" - keeps the schema simple (no nullable types)
+                    skillCategory: { type: 'string', enum: [...VALID_SKILL_CATEGORIES, ''] },
                     action: { type: 'string', enum: VALID_STUDY_ACTIONS },
                     actionReason: { type: 'string' }
                 },
-                required: ['concept', 'description', 'relatedTopicTitle', 'missedCount', 'action', 'actionReason'],
+                required: ['concept', 'description', 'relatedTopicTitle', 'missedCount', 'skillCategory', 'action', 'actionReason'],
                 additionalProperties: false
             }
         }
@@ -425,8 +444,8 @@ const WEAK_CONCEPTS_SCHEMA = {
  * Cluster a user's incorrect quiz answers into a small number of named weak concepts, each
  * with a recommended next study action. Reuses the same action taxonomy as
  * classifyTopicKnowledge so the frontend can render both lists identically.
- * @param {Array<{question: string, correctAnswer: string, selectedAnswer: string, explanation: string, topicTitle: string|null}>} wrongAnswers
- * @returns {Promise<Array<{concept: string, description: string, relatedTopicTitle: string|null, missedCount: number, action: string|null, actionReason: string}>>}
+ * @param {Array<{question: string, correctAnswer: string, selectedAnswer: string, explanation: string, topicTitle: string|null, skillCategory: string|null}>} wrongAnswers
+ * @returns {Promise<Array<{concept: string, description: string, relatedTopicTitle: string|null, missedCount: number, skillCategory: string|null, action: string|null, actionReason: string}>>}
  */
 export const identifyWeakConcepts = async (wrongAnswers) => {
     if (!Array.isArray(wrongAnswers) || wrongAnswers.length === 0) {
@@ -435,6 +454,7 @@ export const identifyWeakConcepts = async (wrongAnswers) => {
 
     const answersList = wrongAnswers.map((a, i) => `${i + 1}. Question: "${a.question}"
    Section: ${a.topicTitle || 'unknown'}
+   Skill type: ${a.skillCategory || 'unknown'}
    Student answered: "${a.selectedAnswer}"
    Correct answer: "${a.correctAnswer}"
    Explanation: ${a.explanation || 'none provided'}`).join('\n\n');
@@ -450,12 +470,13 @@ For each concept, decide:
 2. "description": one plain-language sentence describing the mistake pattern, referencing what the student seems to be getting confused about.
 3. "relatedTopicTitle": the section title (from the questions above) that best matches this concept, or an empty string if unclear.
 4. "missedCount": how many of the numbered questions above relate to this concept.
-5. "action": the single best next study step, chosen from EXACTLY these 4 values:
+5. "skillCategory": the dominant "Skill type" (from the questions grouped into this concept) that best characterizes the kind of thinking the student is struggling with - one of "logical", "analytical", "conceptual", "memory", "application", or an empty string if the grouped questions have no consistent skill type or all say "unknown".
+6. "action": the single best next study step, chosen from EXACTLY these 4 values:
    - "reread-summary": re-read the AI-generated document summary. Best for broad unfamiliarity.
    - "redo-flashcards": review flashcards again. Best when more repetition/practice would help.
    - "retake-quiz": take another quiz. Best when the student has some grasp but needs more testing/reinforcement.
    - "ask-ai-explain": ask the AI to explain the concept again. Best when the mistakes suggest a genuine conceptual misunderstanding.
-6. "actionReason": one short sentence explaining why that specific action was chosen.
+7. "actionReason": one short sentence explaining why that specific action was chosen.
 
 Incorrect answers:
 ${answersList}`;
@@ -477,6 +498,7 @@ ${answersList}`;
                 description: typeof item.description === 'string' ? item.description.trim().slice(0, 300) : '',
                 relatedTopicTitle: item.relatedTopicTitle ? String(item.relatedTopicTitle).trim() : null,
                 missedCount: Number.isFinite(item.missedCount) ? Math.max(0, Math.round(item.missedCount)) : 0,
+                skillCategory: normalizeSkillCategory(item.skillCategory),
                 action: VALID_STUDY_ACTIONS.includes(item.action) ? item.action : null,
                 actionReason: typeof item.actionReason === 'string' ? item.actionReason.trim().slice(0, 300) : '',
             }));

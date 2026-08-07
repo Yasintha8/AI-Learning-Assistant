@@ -16,6 +16,16 @@ const STATUS_LABELS = {
     weak: 'Needs Review',
 };
 
+// Text-only labels for weak-concept skill categories (mirrors SKILL_CATEGORY_STYLES in
+// learningPathStatus.js, kept separate here since this file has no JSX/icons)
+const SKILL_CATEGORY_LABELS = {
+    logical: 'Logical Reasoning',
+    analytical: 'Analytical Thinking',
+    conceptual: 'Conceptual Understanding',
+    memory: 'Memory & Recall',
+    application: 'Applying Knowledge',
+};
+
 const PAGE_WIDTH = 210;
 const PAGE_HEIGHT = 297;
 const MARGIN = 16;
@@ -184,7 +194,8 @@ export const generateLearningPathReportPdf = ({ documentTitle, userName, learnin
             doc.setFont('helvetica', 'bold');
             doc.setFontSize(10);
             setColor(COLORS.heading);
-            doc.text(`• ${concept.concept}`, MARGIN, y);
+            const skillLabel = SKILL_CATEGORY_LABELS[concept.skillCategory];
+            doc.text(`• ${concept.concept}${skillLabel ? ` (${skillLabel})` : ''}`, MARGIN, y);
             y += 5;
 
             if (concept.description) {

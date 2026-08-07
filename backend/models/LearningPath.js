@@ -119,6 +119,13 @@ const learningPathSchema = new mongoose.Schema({
             type: Number,
             default: 0
         },
+        // Dominant cognitive skill behind this cluster of mistakes (e.g. logical reasoning vs.
+        // rote memory) - null when the underlying questions predate skillCategory tagging
+        skillCategory: {
+            type: String,
+            enum: ['logical', 'analytical', 'conceptual', 'memory', 'application', null],
+            default: null
+        },
         action: {
             type: String,
             enum: ['reread-summary', 'redo-flashcards', 'retake-quiz', 'ask-ai-explain'],

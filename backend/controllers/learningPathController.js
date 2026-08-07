@@ -159,6 +159,7 @@ const collectWrongAnswers = (quizzes) => {
                 selectedAnswer: userAnswer.selectedAnswer,
                 explanation: question.explanation,
                 topicTitle: question.topicTitle,
+                skillCategory: question.skillCategory,
                 answeredAt: userAnswer.answeredAt || quiz.completedAt
             });
         });
@@ -578,6 +579,7 @@ const generateStudyPlanForDocument = async (userId, documentId, { force = false 
                             : null,
                         relatedTopicTitle: c.relatedTopicTitle,
                         missedCount: c.missedCount,
+                        skillCategory: c.skillCategory || null,
                         action: c.action,
                         reason: c.actionReason
                     }));

@@ -48,6 +48,13 @@ const quizSchema = new mongoose.Schema({
         topicTitle: {
             type: String,
             default: null
+        },
+        // Cognitive skill the question primarily exercises - lets Weak Areas show not just
+        // *what* topic a student struggles with, but *what kind of thinking* trips them up
+        skillCategory: {
+            type: String,
+            enum: ['logical', 'analytical', 'conceptual', 'memory', 'application', null],
+            default: null
         }
     }],
     userAnswers: [{

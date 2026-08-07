@@ -1,4 +1,4 @@
-import { Circle, Clock, CheckCircle2, AlertTriangle, Sprout, TrendingUp, Award } from 'lucide-react';
+import { Circle, Clock, CheckCircle2, AlertTriangle, Sprout, TrendingUp, Award, Brain, SearchCode, Lightbulb, BookMarked, Puzzle } from 'lucide-react';
 
 // Shared status -> visual style mapping used by the Learning Path page and Dashboard card
 export const STATUS_STYLES = {
@@ -65,6 +65,48 @@ export const KNOWLEDGE_LEVEL_STYLES = {
 };
 
 export const getKnowledgeLevelStyle = (knowledgeLevel) => KNOWLEDGE_LEVEL_STYLES[knowledgeLevel] || null;
+
+// Cognitive skill category behind a weak concept (which kind of thinking tripped the student
+// up - not just which topic) -> visual style, used on the Weak Areas list
+export const SKILL_CATEGORY_STYLES = {
+    logical: {
+        label: 'Logical Reasoning',
+        bg: 'bg-violet-50',
+        text: 'text-violet-600',
+        border: 'border-violet-200',
+        icon: Brain,
+    },
+    analytical: {
+        label: 'Analytical Thinking',
+        bg: 'bg-cyan-50',
+        text: 'text-cyan-600',
+        border: 'border-cyan-200',
+        icon: SearchCode,
+    },
+    conceptual: {
+        label: 'Conceptual Understanding',
+        bg: 'bg-indigo-50',
+        text: 'text-indigo-600',
+        border: 'border-indigo-200',
+        icon: Lightbulb,
+    },
+    memory: {
+        label: 'Memory & Recall',
+        bg: 'bg-pink-50',
+        text: 'text-pink-600',
+        border: 'border-pink-200',
+        icon: BookMarked,
+    },
+    application: {
+        label: 'Applying Knowledge',
+        bg: 'bg-orange-50',
+        text: 'text-orange-600',
+        border: 'border-orange-200',
+        icon: Puzzle,
+    },
+};
+
+export const getSkillCategoryStyle = (skillCategory) => SKILL_CATEGORY_STYLES[skillCategory] || null;
 
 // Overall document/topic progress (0-100) -> visual style, used for mastery progress bars
 // on the Learning Path page and document cards

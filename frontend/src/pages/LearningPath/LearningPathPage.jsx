@@ -28,7 +28,7 @@ import EmptyState from '../../components/common/EmptyState';
 import Button from '../../components/common/Button';
 import Modal from '../../components/common/Modal';
 import MarkdownRenderer from '../../components/common/MarkdownRenderer';
-import { getStatusStyle, getKnowledgeLevelStyle, getProgressBandStyle } from '../../utils/learningPathStatus';
+import { getStatusStyle, getKnowledgeLevelStyle, getProgressBandStyle, getSkillCategoryStyle } from '../../utils/learningPathStatus';
 import { generateLearningPathReportPdf } from '../../utils/learningPathReport';
 
 const SOURCE_LABELS = {
@@ -454,6 +454,8 @@ const LearningPathPage = () => {
                   const key = `weak-${index}-${item.concept}`;
                   const isLoadingThis = actionLoadingKey === key;
                   const link = getActionLink(item.action, documentId);
+                  const skillStyle = getSkillCategoryStyle(item.skillCategory);
+                  const SkillIcon = skillStyle?.icon;
 
                   return (
                     <li
@@ -468,6 +470,12 @@ const LearningPathPage = () => {
                             {item.relatedTopicTitle && (
                               <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-border-light text-text-muted">
                                 {item.relatedTopicTitle}
+                              </span>
+                            )}
+                            {skillStyle && (
+                              <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold ${skillStyle.bg} ${skillStyle.text}`}>
+                                <SkillIcon className="w-3 h-3" strokeWidth={2.5} />
+                                {skillStyle.label}
                               </span>
                             )}
                           </div>
