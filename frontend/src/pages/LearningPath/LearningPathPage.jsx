@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import toast from '../../utils/toast';
 import {
@@ -17,6 +17,10 @@ import {
   ChevronDown,
   Download,
   MoreVertical,
+  Gauge,
+  Map,
+  Compass,
+  X,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import learningPathService from '../../services/learningPathService';
@@ -52,6 +56,10 @@ const ACTION_META = {
   'ask-ai-explain': { label: 'Ask AI to Explain', icon: Lightbulb, type: 'inline' },
 };
 
+// Persists across page visits so the floating outline button's attention-pulse only shows
+// until the user discovers it once, not every time they open a learning path
+const OUTLINE_SEEN_KEY = 'lp-outline-seen';
+
 const getActionLink = (action, documentId) => {
   if (action === 'redo-flashcards') return `/documents/${documentId}/flashcards`;
   if (action === 'retake-quiz') return `/documents/${documentId}?tab=Quizzes`;
@@ -77,16 +85,82 @@ const LearningPathPage = () => {
   const [actionModal, setActionModal] = useState({ isOpen: false, title: '', content: '' });
   const [moreMenuOpen, setMoreMenuOpen] = useState(false);
   const moreMenuRef = useRef(null);
+  const [activeSection, setActiveSection] = useState(null);
+  const [outlineOpen, setOutlineOpen] = useState(false);
+  // Pulses the outline FAB until the user discovers it once, then never again (persisted so
+  // it doesn't nag on every return visit) - standard pattern for a newly-relocated affordance
+  const [outlineSeen, setOutlineSeen] = useState(() => {
+    try { return localStorage.getItem(OUTLINE_SEEN_KEY) === '1'; } catch { return false; }
+  });
+  const outlineRef = useRef(null);
+
+  const openOutline = () => {
+    setOutlineOpen(true);
+    if (!outlineSeen) {
+      setOutlineSeen(true);
+      try { localStorage.setItem(OUTLINE_SEEN_KEY, '1'); } catch { /* localStorage unavailable */ }
+    }
+  };
 
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (moreMenuRef.current && !moreMenuRef.current.contains(event.target)) {
         setMoreMenuOpen(false);
       }
+      if (outlineRef.current && !outlineRef.current.contains(event.target)) {
+        setOutlineOpen(false);
+      }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  // Jump-to-section nav shown at the top of the page - only lists sections that actually
+  // render, since Study Plan / Cognitive Skills / Weak Areas are conditional on real activity
+  const navItems = useMemo(() => {
+    if (!learningPath?.topics?.length) return [];
+
+    return [
+      { id: 'lp-progress', label: 'Progress', icon: Gauge, show: true },
+      { id: 'lp-recommended', label: 'Recommended Next', icon: Target, show: (learningPath.recommendedNext?.length || 0) > 0 },
+      { id: 'lp-study-plan', label: 'Study Plan', icon: ListChecks, show: (learningPath.studyPlan?.length || 0) > 0 },
+      { id: 'lp-skills', label: 'Cognitive Skills', icon: BrainCircuit, show: (learningPath.skillProfile?.length || 0) > 0 },
+      { id: 'lp-weak-areas', label: 'Weak Areas', icon: AlertTriangle, show: !!weakAreasEligibility },
+      { id: 'lp-topics', label: 'Topic Roadmap', icon: Map, show: true },
+    ].filter((item) => item.show);
+  }, [learningPath, weakAreasEligibility]);
+
+  // Falls back to the first nav item until the observer below reports a real intersection
+  // (e.g. right after navItems changes, or before the user has scrolled at all)
+  const displayedActiveSection = (activeSection && navItems.some((item) => item.id === activeSection))
+    ? activeSection
+    : navItems[0]?.id;
+
+  // Scroll-spy: highlights whichever section is currently under the sticky app header as the user scrolls
+  useEffect(() => {
+    if (navItems.length === 0) return undefined;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) setActiveSection(entry.target.id);
+        });
+      },
+      { rootMargin: '-110px 0px -65% 0px', threshold: 0 }
+    );
+
+    navItems.forEach((item) => {
+      const el = document.getElementById(item.id);
+      if (el) observer.observe(el);
+    });
+
+    return () => observer.disconnect();
+  }, [navItems]);
+
+  const scrollToSection = (id) => {
+    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    setOutlineOpen(false);
+  };
 
   const fetchStudyPlan = async (force = false) => {
     if (force) setRefreshingStudyPlan(true);
@@ -249,7 +323,7 @@ const LearningPathPage = () => {
     return (
       <div className="space-y-8">
         {/* Overall Progress */}
-        <div className="bg-bg-card border border-border-light rounded-2xl p-6 shadow-sm">
+        <div id="lp-progress" className="scroll-mt-24 bg-bg-card border border-border-light rounded-2xl p-6 shadow-sm">
           <div className="flex flex-col sm:flex-row sm:items-center gap-6">
             <div className="shrink-0">
               <p className="text-xs font-semibold text-text-muted uppercase tracking-wide mb-1">Document Progress</p>
@@ -275,7 +349,7 @@ const LearningPathPage = () => {
 
         {/* Recommended Next */}
         {recommendedNext && recommendedNext.length > 0 && (
-          <div className="bg-bg-card border border-border-light rounded-2xl overflow-hidden shadow-sm">
+          <div id="lp-recommended" className="scroll-mt-24 bg-bg-card border border-border-light rounded-2xl overflow-hidden shadow-sm">
             <div className="flex items-center gap-3 px-6 py-5 border-b border-border-light">
               <div className="w-8 h-8 rounded-lg bg-primary-light flex items-center justify-center">
                 <Target className="w-4 h-4 text-primary" strokeWidth={2} />
@@ -302,7 +376,7 @@ const LearningPathPage = () => {
         )}
 
         {studyPlan && studyPlan.length > 0 && (
-          <div className="bg-bg-card border border-border-light rounded-2xl overflow-hidden shadow-sm">
+          <div id="lp-study-plan" className="scroll-mt-24 bg-bg-card border border-border-light rounded-2xl overflow-hidden shadow-sm">
             <div className="flex items-center gap-3 px-6 py-5 border-b border-border-light">
               <div className="w-8 h-8 rounded-lg bg-primary-light flex items-center justify-center">
                 <ListChecks className="w-4 h-4 text-primary" strokeWidth={2} />
@@ -369,9 +443,62 @@ const LearningPathPage = () => {
           </div>
         )}
 
+        {/* Cognitive Skills - deterministic accuracy-by-skill-category breakdown from quiz answers,
+            no AI call involved. Shown as soon as any skill-tagged question has been answered. */}
+        {learningPath.skillProfile && learningPath.skillProfile.length > 0 && (
+          <div id="lp-skills" className="scroll-mt-24 bg-bg-card border border-border-light rounded-2xl overflow-hidden shadow-sm">
+            <div className="flex items-center gap-3 px-6 py-5 border-b border-border-light">
+              <div className="w-8 h-8 rounded-lg bg-primary-light flex items-center justify-center">
+                <BrainCircuit className="w-4 h-4 text-primary" strokeWidth={2} />
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold text-text-heading">Cognitive Skills</h3>
+                <p className="text-xs text-text-muted">Quiz accuracy by type of thinking - lowest first.</p>
+              </div>
+            </div>
+            <ul className="divide-y divide-border-light">
+              {learningPath.skillProfile.map((skill) => {
+                const skillStyle = getSkillCategoryStyle(skill.skillCategory);
+                const SkillIcon = skillStyle?.icon;
+                const statusStyle = getStatusStyle(skill.status);
+                const StatusIcon = statusStyle.icon;
+
+                return (
+                  <li key={skill.skillCategory} className="px-6 py-4">
+                    <div className="flex items-center justify-between gap-3 mb-2">
+                      <div className="flex items-center gap-2 min-w-0">
+                        {SkillIcon && <SkillIcon className={`w-4 h-4 shrink-0 ${skillStyle.text}`} strokeWidth={2} />}
+                        <span className="text-sm font-medium text-text-heading truncate">
+                          {skillStyle?.label || skill.skillCategory}
+                        </span>
+                        <span className={`shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold ${statusStyle.bg} ${statusStyle.text}`}>
+                          <StatusIcon className="w-3 h-3" strokeWidth={2.5} />
+                          {statusStyle.label}
+                        </span>
+                      </div>
+                      <span className="shrink-0 text-xs font-semibold text-text-heading tabular-nums">
+                        {skill.accuracy}%
+                      </span>
+                    </div>
+                    <div className="w-full bg-border-light h-1.5 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full rounded-full transition-all duration-300 ${statusStyle.dot}`}
+                        style={{ width: `${skill.accuracy}%` }}
+                      />
+                    </div>
+                    <p className="text-[11px] text-text-muted mt-1.5">
+                      {skill.correctCount} of {skill.totalAnswered} question{skill.totalAnswered === 1 ? '' : 's'} correct
+                    </p>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        )}
+
         {/* Weak Areas (concept-level, mined from wrong quiz answers) - unlocks after 3 quizzes */}
         {weakAreasEligibility && !weakAreasEligibility.eligible && (
-          <div className="bg-bg-card border border-border-light rounded-2xl p-6 shadow-sm">
+          <div id="lp-weak-areas" className="scroll-mt-24 bg-bg-card border border-border-light rounded-2xl p-6 shadow-sm">
             <div className="flex items-center gap-3 mb-5">
               <div className="w-8 h-8 rounded-lg bg-primary-light flex items-center justify-center">
                 <AlertTriangle className="w-4 h-4 text-primary" strokeWidth={2} />
@@ -390,7 +517,7 @@ const LearningPathPage = () => {
         )}
 
         {weakAreasEligibility?.eligible && (
-          <div className="bg-bg-card border border-border-light rounded-2xl overflow-hidden shadow-sm">
+          <div id="lp-weak-areas" className="scroll-mt-24 bg-bg-card border border-border-light rounded-2xl overflow-hidden shadow-sm">
             <div className="flex items-center gap-3 px-6 py-5 border-b border-border-light">
               <div className="w-8 h-8 rounded-lg bg-primary-light flex items-center justify-center">
                 <AlertTriangle className="w-4 h-4 text-primary" strokeWidth={2} />
@@ -517,7 +644,17 @@ const LearningPathPage = () => {
         )}
 
         {/* Topic Roadmap */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div id="lp-topics" className="scroll-mt-24 space-y-4">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-primary-light flex items-center justify-center">
+              <Map className="w-4 h-4 text-primary" strokeWidth={2} />
+            </div>
+            <div>
+              <h3 className="text-sm font-semibold text-text-heading">Topic Roadmap</h3>
+              <p className="text-xs text-text-muted">Every topic extracted from this document - click a card for details.</p>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {topics.map((topic) => {
             const style = getStatusStyle(topic.status);
             const StatusIcon = style.icon;
@@ -576,6 +713,7 @@ const LearningPathPage = () => {
               </div>
             );
           })}
+          </div>
         </div>
       </div>
     );
@@ -659,6 +797,56 @@ const LearningPathPage = () => {
 
         {renderContent()}
       </div>
+
+      {/* Floating page outline - available at any scroll position without ever taking up
+          layout space, unlike the earlier in-flow nav bar. Collapsed by default. */}
+      {navItems.length > 0 && (
+        <div ref={outlineRef} className="fixed bottom-6 right-6 z-40">
+          {outlineOpen && (
+            <div className="mb-3 w-64 bg-bg-card border border-border-medium rounded-2xl shadow-xl shadow-slate-200/25 dark:shadow-none py-2 animate-fade-in origin-bottom-right">
+              <p className="px-4 pt-1.5 pb-2 text-[11px] font-semibold text-text-muted uppercase tracking-wide">
+                On This Page
+              </p>
+              {navItems.map((item) => {
+                const Icon = item.icon;
+                const isActive = displayedActiveSection === item.id;
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => scrollToSection(item.id)}
+                    aria-current={isActive}
+                    className={`w-full flex items-center gap-2.5 px-4 py-2.5 text-left text-sm font-medium transition-colors duration-150 cursor-pointer ${
+                      isActive
+                        ? 'text-primary bg-primary-light'
+                        : 'text-text-heading hover:bg-border-light/60'
+                    }`}
+                  >
+                    <Icon className="w-4 h-4 shrink-0" strokeWidth={2} />
+                    {item.label}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          <div className="relative">
+            {!outlineSeen && !outlineOpen && (
+              <span className="absolute inset-0 rounded-full bg-primary animate-ping" aria-hidden="true" />
+            )}
+            <button
+              type="button"
+              onClick={() => (outlineOpen ? setOutlineOpen(false) : openOutline())}
+              aria-label={outlineOpen ? 'Close page outline' : 'Open page outline'}
+              aria-expanded={outlineOpen}
+              aria-haspopup="true"
+              className="relative h-14 w-14 rounded-full bg-gradient-to-r from-primary to-blue-400 text-white shadow-lg shadow-primary-shadow hover:from-primary-hover hover:to-cyan-400 flex items-center justify-center transition-all duration-200 cursor-pointer"
+            >
+              {outlineOpen ? <X className="w-5 h-5" strokeWidth={2.5} /> : <Compass className="w-5 h-5" strokeWidth={2} />}
+            </button>
+          </div>
+        </div>
+      )}
 
       <Modal
         isOpen={!!selectedTopic}

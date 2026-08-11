@@ -26,6 +26,12 @@ const REQUIRED_COMPLETED_QUIZZES = 3;
 // Cap how many wrong-answer records are sent to Claude for weak-concept clustering
 const MAX_WRONG_ANSWERS_FOR_ANALYSIS = 40;
 
+// Cognitive skill categories a quiz question can be tagged with (see claudeService.js/geminiService.js)
+const SKILL_CATEGORIES = ['logical', 'analytical', 'conceptual', 'memory', 'application'];
+
+// Below this many answered questions in a category, accuracy is too noisy to call weak/strong
+const MIN_SKILL_ATTEMPTS_FOR_STATUS = 3;
+
 // Deterministic fallback bands, used only when Claude's classification is missing/invalid
 // for a topic - keeps knowledgeLevel consistent with the same bands Claude is grounded on
 const KNOWLEDGE_PROFICIENT_THRESHOLD = 75;
@@ -132,6 +138,41 @@ const computeTopicStats = (topicId, quizzes, flashcardSets) => {
         source,
         lastReviewedAt
     };
+};
+
+// Deterministic (no AI call) breakdown of quiz accuracy per cognitive skill category, built
+// directly from each answered question's skillCategory tag and whether it was answered
+// correctly. Reuses the same weak/in-progress/mastered thresholds as topic mastery (deriveStatus)
+// so "weak" means the same thing everywhere in the app. Categories with too few answered
+// questions to be meaningful are marked 'insufficient-data' rather than guessed at.
+const computeSkillCategoryStats = (quizzes) => {
+    const tally = new Map(SKILL_CATEGORIES.map(category => [category, { total: 0, correct: 0 }]));
+
+    for (const quiz of quizzes) {
+        quiz.userAnswers.forEach(userAnswer => {
+            const question = quiz.questions[userAnswer.questionIndex];
+            const bucket = question && tally.get(question.skillCategory);
+            if (!bucket) return;
+
+            bucket.total += 1;
+            if (userAnswer.isCorrect) bucket.correct += 1;
+        });
+    }
+
+    return SKILL_CATEGORIES
+        .map(skillCategory => {
+            const { total, correct } = tally.get(skillCategory);
+            if (total === 0) return null;
+
+            const accuracy = Math.round((correct / total) * 100);
+            const status = total < MIN_SKILL_ATTEMPTS_FOR_STATUS
+                ? 'insufficient-data'
+                : deriveStatus(accuracy, true);
+
+            return { skillCategory, totalAnswered: total, correctCount: correct, accuracy, status };
+        })
+        .filter(Boolean)
+        .sort((a, b) => a.accuracy - b.accuracy);
 };
 
 // Gather every incorrectly-answered quiz question across the user's completed quizzes for a
@@ -316,6 +357,10 @@ export const recalculateMastery = async (userId, documentId) => {
         topic.lastReviewedAt = stats.lastReviewedAt;
         topic.status = deriveStatus(stats.masteryScore, stats.hasActivity);
     });
+
+    // Cognitive skill accuracy only has quiz signal (flashcards carry no correctness), so it's
+    // computed from `quizzes` alone - recomputed every pass, same as topic mastery.
+    learningPath.skillProfile = computeSkillCategoryStats(quizzes);
 
     // Recommend the weakest, not-yet-mastered topics
     learningPath.recommendedNext = learningPath.topics

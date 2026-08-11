@@ -3,7 +3,7 @@ import Flashcard from '../models/Flashcard.js';
 import Quiz from '../models/Quiz.js';
 import ChatHistory from '../models/ChatHistory.js';
 import LearningPath from '../models/LearningPath.js';
-import * as claudeService from '../utils/claudeService.js';
+import * as geminiService from '../utils/geminiService.js';
 import { findRelevantChunks } from '../utils/textChunker.js';
 
 // Build a case-insensitive "topic title" -> { topicId, title } lookup from a learning path,
@@ -73,8 +73,8 @@ export const generateFlashcards = async (req, res, next) => {
         const topicLookup = buildTopicLookup(learningPath);
         const topicTitles = (learningPath?.topics || []).map(t => t.title);
 
-        // Generate flashcards using Claude
-        const cards = await claudeService.generateFlashcards(
+        // Generate flashcards using Gemini
+        const cards = await geminiService.generateFlashcards(
             document.extractedText,
             parseInt(count),
             topicTitles
@@ -150,7 +150,7 @@ export const generateQuiz = async (req, res, next) => {
         const topicLookup = buildTopicLookup(learningPath);
         const topicTitles = (learningPath?.topics || []).map(t => t.title);
 
-        // Generate quiz using Claude
+        // Generate quiz using Gemini
         const totalQuestions = parseInt(numQuestions);
 
         let questions = [];
@@ -161,7 +161,7 @@ export const generateQuiz = async (req, res, next) => {
 
             const batchSize = Math.min(10, remaining);
 
-            const batch = await claudeService.generateQuiz(
+            const batch = await geminiService.generateQuiz(
                 document.extractedText,
                 batchSize,
                 topicTitles
@@ -225,8 +225,8 @@ export const generateSummary = async (req, res, next) => {
             });
         }
 
-        // Generate summary using Claude
-        const summary = await claudeService.generateSummary(document.extractedText);
+        // Generate summary using Gemini
+        const summary = await geminiService.generateSummary(document.extractedText);
 
         res.status(200).json({
             success: true,
@@ -291,8 +291,8 @@ export const chat = async (req, res, next) => {
             });
         }
 
-        // Generate response using Claude
-        const answer = await claudeService.chatWithContext(question, relevantChunks);
+        // Generate response using Gemini
+        const answer = await geminiService.chatWithContext(question, relevantChunks);
 
         // Save conversation
         chatHistory.messages.push(
@@ -362,8 +362,8 @@ export const explainConcept = async (req, res, next) => {
         const relevantChunks = findRelevantChunks(document.chunks, concept, 3);
         const context = relevantChunks.map(c => c.content).join('\n\n');
 
-        // Generate explanation using Claude
-        const explanation = await claudeService.explainConcept(concept, context);
+        // Generate explanation using Gemini
+        const explanation = await geminiService.explainConcept(concept, context);
 
         res.status(200).json({
             success: true,

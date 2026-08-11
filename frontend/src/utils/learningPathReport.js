@@ -185,6 +185,31 @@ export const generateLearningPathReportPdf = ({ documentTitle, userName, learnin
         y += 4;
     }
 
+    // --- Cognitive skills (deterministic quiz-accuracy breakdown, no AI call) ---
+    if (learningPath.skillProfile?.length > 0) {
+        sectionTitle('Cognitive Skills');
+
+        learningPath.skillProfile.forEach((skill) => {
+            ensureSpace(7);
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(9.5);
+            setColor(COLORS.body);
+            const label = SKILL_CATEGORY_LABELS[skill.skillCategory] || skill.skillCategory;
+            doc.text(label, MARGIN, y);
+
+            setColor(COLORS.muted);
+            doc.text(`${skill.correctCount}/${skill.totalAnswered} correct`, MARGIN + 90, y);
+
+            setColor(bandColorFor(skill.accuracy));
+            doc.setFont('helvetica', 'bold');
+            doc.text(`${skill.accuracy}%`, PAGE_WIDTH - MARGIN, y, { align: 'right' });
+
+            y += 6.5;
+        });
+
+        y += 4;
+    }
+
     // --- Weak areas (only once unlocked, mirrors the page's own gating) ---
     if (weakAreasEligibility?.eligible && learningPath.weakConcepts?.length > 0) {
         sectionTitle(`Weak Areas (based on ${recentQuizResults?.length || 0} quiz result${recentQuizResults?.length === 1 ? '' : 's'})`);

@@ -136,6 +136,35 @@ const learningPathSchema = new mongoose.Schema({
             default: ''
         }
     }],
+    // Deterministic (no AI call) breakdown of quiz accuracy per cognitive skill category -
+    // recomputed on every recalculateMastery pass (see learningPathController.js), same as
+    // topic mastery scores. Only categories the user has actually answered questions for appear.
+    skillProfile: [{
+        skillCategory: {
+            type: String,
+            enum: ['logical', 'analytical', 'conceptual', 'memory', 'application'],
+            required: true
+        },
+        totalAnswered: {
+            type: Number,
+            default: 0
+        },
+        correctCount: {
+            type: Number,
+            default: 0
+        },
+        accuracy: {
+            type: Number,
+            default: 0,
+            min: 0,
+            max: 100
+        },
+        status: {
+            type: String,
+            enum: ['weak', 'in-progress', 'mastered', 'insufficient-data'],
+            default: 'insufficient-data'
+        }
+    }],
     // Bookkeeping to avoid re-calling Gemini when nothing has actually changed
     studyPlanGeneratedAt: {
         type: Date,

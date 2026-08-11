@@ -34,6 +34,14 @@ export const STATUS_STYLES = {
         dot: 'bg-rose-400',
         icon: AlertTriangle,
     },
+    'insufficient-data': {
+        label: 'Not Enough Data',
+        bg: 'bg-slate-50',
+        text: 'text-slate-500',
+        border: 'border-slate-200',
+        dot: 'bg-slate-300',
+        icon: Circle,
+    },
 };
 
 export const getStatusStyle = (status) => STATUS_STYLES[status] || STATUS_STYLES['not-started'];
