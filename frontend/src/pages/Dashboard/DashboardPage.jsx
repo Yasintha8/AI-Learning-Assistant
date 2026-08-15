@@ -3,16 +3,13 @@ import { Link } from 'react-router-dom';
 import Spinner from '../../components/common/Spinner';
 import progressService from '../../services/progressService';
 import learningPathService from '../../services/learningPathService';
+import documentService from '../../services/documentService';
 import { useAuth } from '../../context/AuthContext';
 import toast from '../../utils/toast';
 import {
   FileText, BookOpen, BrainCircuit, Flame, Clock, ArrowRight, Target,
   Award, AlertTriangle, ChevronRight, User as UserIcon
 } from 'lucide-react';
-
-// Recommendations only ever contain non-mastered topics, so weak/in-progress is enough context here
-const RECOMMENDATION_LIMIT = 5;
-const WEAK_THRESHOLD = 50;
 
 const getTimeGreeting = () => {
   const hour = new Date().getHours();
@@ -25,9 +22,9 @@ const DashboardPage = () => {
 
   const { user } = useAuth();
   const [dashboardData, setDashboardData] = useState(null);
-  const [recommendations, setRecommendations] = useState([]);
+  const [userDocuments, setUserDocuments] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [recommendationsLoading, setRecommendationsLoading] = useState(true);
+  const [documentsLoading, setDocumentsLoading] = useState(true);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -45,29 +42,46 @@ const DashboardPage = () => {
   }, []);
 
   useEffect(() => {
-    const fetchRecommendations = async () => {
+    const fetchUserDocuments = async () => {
       if (!user) return;
       try {
-        const response = await learningPathService.getAllLearningPaths(user.id || user._id);
-        const learningPaths = response.data || [];
+        setDocumentsLoading(true);
+        const [docsRes, pathsRes] = await Promise.allSettled([
+          documentService.getDocuments(),
+          learningPathService.getAllLearningPaths(user.id || user._id)
+        ]);
 
-        const allRecommendations = learningPaths.flatMap((path) =>
-          (path.recommendedNext || []).map((rec) => ({
-            ...rec,
-            documentId: path.documentId?._id,
-            documentTitle: path.documentId?.title,
-          }))
-        ).filter((rec) => rec.documentId);
+        const rawDocs = docsRes.status === 'fulfilled' ? (docsRes.value || []) : [];
+        const learningPaths = pathsRes.status === 'fulfilled' ? (pathsRes.value?.data || []) : [];
 
-        allRecommendations.sort((a, b) => a.masteryScore - b.masteryScore);
-        setRecommendations(allRecommendations.slice(0, RECOMMENDATION_LIMIT));
+        const pathProgressMap = new Map();
+        learningPaths.forEach(path => {
+          const dId = path.documentId?._id || path.documentId;
+          if (dId) {
+            const topics = path.topics || [];
+            const prog = topics.length > 0
+              ? Math.round(topics.reduce((sum, t) => sum + (t.masteryScore || 0), 0) / topics.length)
+              : 0;
+            pathProgressMap.set(dId.toString(), prog);
+          }
+        });
+
+        const docsWithProgress = rawDocs.map(doc => {
+          const prog = pathProgressMap.get(doc._id?.toString()) || 0;
+          return {
+            ...doc,
+            overallProgress: prog
+          };
+        });
+
+        setUserDocuments(docsWithProgress);
       } catch (error) {
-        console.error(error);
+        console.error('Error fetching documents for dashboard:', error);
       } finally {
-        setRecommendationsLoading(false);
+        setDocumentsLoading(false);
       }
     };
-    fetchRecommendations();
+    fetchUserDocuments();
   }, [user]);
 
   const hasData = !loading && !!(dashboardData && dashboardData.overview);
@@ -244,55 +258,75 @@ const DashboardPage = () => {
               </div>
             </div>
 
-            {/* Recommended for you */}
+            {/* My Documents Section */}
             <div className="bg-bg-card border border-border-light rounded-2xl overflow-hidden shadow-sm">
-              <div className="flex items-center gap-3 px-6 py-5 border-b border-border-light">
-                <div className="w-8 h-8 rounded-lg bg-primary-light flex items-center justify-center">
-                  <Target className="w-4 h-4 text-primary" strokeWidth={2} />
+              <div className="flex items-center justify-between px-6 py-5 border-b border-border-light">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-primary-light flex items-center justify-center">
+                    <FileText className="w-4 h-4 text-primary" strokeWidth={2} />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-semibold text-text-heading">
+                      My Documents
+                    </h3>
+                    <p className="text-xs text-text-muted">
+                      Your uploaded documents & overall mastery progress
+                    </p>
+                  </div>
                 </div>
-                <h3 className="text-sm font-semibold text-text-heading">
-                  Recommended for You
-                </h3>
+                <Link
+                  to="/documents"
+                  className="text-xs font-semibold text-primary hover:text-primary-hover transition-colors flex items-center gap-1"
+                >
+                  View All
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </Link>
               </div>
 
-              {recommendationsLoading ? (
+              {documentsLoading ? (
                 <div className="flex items-center justify-center py-10">
                   <Spinner />
                 </div>
-              ) : recommendations.length > 0 ? (
+              ) : userDocuments.length > 0 ? (
                 <ul className="divide-y divide-border-light">
-                  {recommendations.map((rec, index) => {
-                    const isWeak = rec.masteryScore < WEAK_THRESHOLD;
+                  {userDocuments.slice(0, 6).map((doc) => {
+                    const progress = doc.overallProgress || 0;
 
                     return (
                       <li
-                        key={`${rec.documentId}-${rec.topicId}-${index}`}
+                        key={doc._id}
                         className="flex items-center justify-between gap-4 px-6 py-4 hover:bg-border-light/40 transition-colors duration-150"
                       >
-                        <div className="flex items-start gap-3 min-w-0">
-                          <span className={`mt-1.5 shrink-0 w-2 h-2 rounded-full ${isWeak ? 'bg-rose-400' : 'bg-blue-400'}`} />
-                          <div className="min-w-0">
-                            <p className="text-sm font-medium text-text-heading truncate">
-                              {rec.title}
+                        <div className="flex items-center gap-3 min-w-0 flex-1">
+                          <div className="p-2.5 bg-primary-light rounded-xl shrink-0 text-primary">
+                            <FileText className="w-4 h-4" />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm font-bold text-text-heading truncate">
+                              {doc.title}
                             </p>
-                            <p className="text-xs text-text-muted mt-0.5 truncate">
-                              {rec.reason}
-                              {rec.documentTitle && ` · ${rec.documentTitle}`}
-                            </p>
+                            <div className="flex items-center gap-3 mt-1.5 max-w-xs">
+                              <div className="flex-1 bg-border-light h-1.5 rounded-full overflow-hidden">
+                                <div
+                                  className="h-full bg-primary rounded-full transition-all duration-300"
+                                  style={{ width: `${progress}%` }}
+                                />
+                              </div>
+                              <span className="text-xs font-bold text-primary tabular-nums shrink-0">
+                                {progress}%
+                              </span>
+                            </div>
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-3 shrink-0">
-                          <span className={`text-xs font-semibold tabular-nums ${isWeak ? 'text-rose-600' : 'text-blue-600'}`}>
-                            {rec.masteryScore}%
-                          </span>
-                          <a
-                            href={`/documents/${rec.documentId}/learning-path`}
-                            className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:text-primary-hover transition-colors duration-150"
+                        <div className="flex items-center gap-2 shrink-0">
+                          <Link
+                            to={`/documents/${doc._id}/learning-path`}
+                            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-border-light hover:bg-primary-light text-xs font-semibold text-text-body hover:text-primary transition-colors duration-150"
                           >
-                            Study
-                            <ArrowRight className="w-3.5 h-3.5" strokeWidth={2.5} />
-                          </a>
+                            Learning Path
+                            <ArrowRight className="w-3.5 h-3.5" strokeWidth={2} />
+                          </Link>
                         </div>
                       </li>
                     );
@@ -301,10 +335,16 @@ const DashboardPage = () => {
               ) : (
                 <div className="flex flex-col items-center justify-center py-16 px-6 text-center space-y-2">
                   <div className="w-12 h-12 rounded-2xl bg-border-light flex items-center justify-center mb-1">
-                    <Target className="w-5 h-5 text-text-muted" strokeWidth={1.5} />
+                    <FileText className="w-5 h-5 text-text-muted" strokeWidth={1.5} />
                   </div>
-                  <p className="text-sm font-medium text-text-body">No recommendations yet.</p>
-                  <p className="text-xs text-text-muted">Generate a learning path from one of your documents to get personalized suggestions.</p>
+                  <p className="text-sm font-medium text-text-body">No documents uploaded yet.</p>
+                  <p className="text-xs text-text-muted">Upload your first PDF or document to start building learning paths!</p>
+                  <Link
+                    to="/documents"
+                    className="mt-2 inline-flex items-center gap-1.5 px-4 py-2 bg-primary text-white rounded-xl text-xs font-semibold hover:bg-primary-hover transition-colors shadow-xs"
+                  >
+                    Upload Document
+                  </Link>
                 </div>
               )}
             </div>
