@@ -201,23 +201,36 @@ export const updateMilestoneProgress = async (req, res, next) => {
             });
         }
 
-        // Update topic completion if topicIndex is provided
-        if (typeof topicIndex === 'number' && milestone.topics[topicIndex]) {
+        // Case 1: Direct status update from milestone dropdown ('completed', 'not-started', 'in-progress')
+        if (status && ['not-started', 'in-progress', 'completed'].includes(status)) {
+            milestone.status = status;
+
+            // When user selects 'completed', automatically check all key topics
+            if (status === 'completed') {
+                milestone.topics.forEach(t => { t.isCompleted = true; });
+            }
+            // When user selects 'not-started', automatically uncheck all key topics
+            else if (status === 'not-started') {
+                milestone.topics.forEach(t => { t.isCompleted = false; });
+            }
+        }
+        // Case 2: Individual topic checkbox toggle
+        else if (typeof topicIndex === 'number' && milestone.topics[topicIndex]) {
             milestone.topics[topicIndex].isCompleted = typeof isCompleted === 'boolean'
                 ? isCompleted
                 : !milestone.topics[topicIndex].isCompleted;
-        }
 
-        // Update milestone status if provided directly
-        if (status && ['not-started', 'in-progress', 'completed'].includes(status)) {
-            milestone.status = status;
-        } else {
-            // Auto update milestone status based on topics
+            // Auto-sync milestone status based on topics state
             const allCompleted = milestone.topics.length > 0 && milestone.topics.every(t => t.isCompleted);
             const anyCompleted = milestone.topics.some(t => t.isCompleted);
 
-            if (allCompleted) milestone.status = 'completed';
-            else if (anyCompleted) milestone.status = 'in-progress';
+            if (allCompleted) {
+                milestone.status = 'completed';
+            } else if (anyCompleted) {
+                milestone.status = 'in-progress';
+            } else {
+                milestone.status = 'not-started';
+            }
         }
 
         // Recalculate overall readiness score
