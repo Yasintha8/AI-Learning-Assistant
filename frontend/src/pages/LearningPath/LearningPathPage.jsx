@@ -85,28 +85,38 @@ const LearningPathPage = () => {
   const [highlightedStudyPlanTopicId, setHighlightedStudyPlanTopicId] = useState(null);
 
   const studyPlanItems = useMemo(() => {
-    if (learningPath?.studyPlan && learningPath.studyPlan.length > 0) {
-      return learningPath.studyPlan;
+    if (!learningPath?.topics || learningPath.topics.length === 0) return [];
+
+    const existingPlanMap = new Map();
+    if (learningPath?.studyPlan && Array.isArray(learningPath.studyPlan)) {
+      learningPath.studyPlan.forEach((sp) => {
+        if (sp.topicId) existingPlanMap.set(String(sp.topicId), sp);
+        if (sp.title) existingPlanMap.set(sp.title.toLowerCase().trim(), sp);
+      });
     }
-    if (learningPath?.topics && learningPath.topics.length > 0) {
-      return learningPath.topics
-        .slice()
-        .sort((a, b) => a.masteryScore - b.masteryScore)
-        .map((t) => {
-          const isMastered = t.status === 'mastered' || t.knowledgeLevel === 'proficient' || t.masteryScore >= 80;
-          return {
-            topicId: t.topicId,
-            title: t.title,
-            knowledgeLevel: t.knowledgeLevel || (isMastered ? 'proficient' : 'developing'),
-            action: isMastered ? 'reread-summary' : (t.status === 'weak' ? 'redo-flashcards' : 'retake-quiz'),
-            reason: isMastered ? 'Mastered topic! Review periodically to maintain top retention.' : `Current mastery score: ${t.masteryScore}%.`
-          };
-        });
-    }
-    return [];
+
+    return learningPath.topics
+      .slice()
+      .sort((a, b) => a.masteryScore - b.masteryScore)
+      .map((t) => {
+        const isMastered = t.status === 'mastered' || t.knowledgeLevel === 'proficient' || t.masteryScore >= 80;
+        const matchedSp = existingPlanMap.get(String(t.topicId)) || existingPlanMap.get(t.title?.toLowerCase().trim());
+
+        return {
+          topicId: t.topicId,
+          title: t.title,
+          knowledgeLevel: t.knowledgeLevel || (isMastered ? 'proficient' : 'developing'),
+          action: isMastered ? 'reread-summary' : (matchedSp?.action || (t.status === 'weak' ? 'redo-flashcards' : 'retake-quiz')),
+          reason: isMastered ? 'Mastered topic! Review periodically to maintain top retention.' : (matchedSp?.reason || `Current mastery score: ${t.masteryScore}%.`),
+          isMastered
+        };
+      });
   }, [learningPath]);
 
   const handleTopicCardClick = (topic) => {
+    const isMastered = topic.status === 'mastered' || topic.knowledgeLevel === 'proficient' || topic.masteryScore >= 80;
+    if (isMastered) return;
+
     const planItem = studyPlanItems.find((sp) =>
       (sp.topicId && topic.topicId && String(sp.topicId) === String(topic.topicId)) ||
       (sp.title && topic.title && sp.title.toLowerCase().trim() === topic.title.toLowerCase().trim())
@@ -126,8 +136,6 @@ const LearningPathPage = () => {
       setTimeout(() => {
         setHighlightedStudyPlanTopicId(null);
       }, 4000);
-    } else {
-      setSelectedTopic(topic);
     }
   };
   const [quizResultsExpanded, setQuizResultsExpanded] = useState(false);
@@ -760,30 +768,38 @@ const LearningPathPage = () => {
             const levelStyle = getKnowledgeLevelStyle(topic.knowledgeLevel);
             const LevelIcon = levelStyle?.icon;
 
-            const isMastered = topic.status === 'mastered' || topic.knowledgeLevel === 'proficient';
+            const isMastered = topic.status === 'mastered' || topic.knowledgeLevel === 'proficient' || topic.masteryScore >= 80;
 
-            const planIndex = (!isMastered && studyPlan)
-              ? studyPlan.findIndex((sp) =>
+            const planIndex = studyPlanItems
+              ? studyPlanItems.findIndex((sp) =>
                   (sp.topicId && topic.topicId && String(sp.topicId) === String(topic.topicId)) ||
                   (sp.title && topic.title && sp.title.toLowerCase().trim() === topic.title.toLowerCase().trim())
                 )
               : -1;
-            const planItem = planIndex !== -1 ? studyPlan[planIndex] : null;
+            const planItem = planIndex !== -1 ? studyPlanItems[planIndex] : null;
 
             return (
               <div
                 key={topic.topicId}
-                onClick={() => handleTopicCardClick(topic)}
-                className={`bg-bg-card border ${planItem ? 'border-primary/40 ring-1 ring-primary/20' : style.border} rounded-2xl p-5 flex flex-col justify-between gap-4 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer relative group`}
+                onClick={() => !isMastered && handleTopicCardClick(topic)}
+                className={`bg-bg-card border ${
+                  isMastered
+                    ? 'border-emerald-200 dark:border-emerald-900/40 cursor-default'
+                    : 'border-primary/40 ring-1 ring-primary/20 cursor-pointer shadow-sm hover:shadow-md'
+                } rounded-2xl p-5 flex flex-col justify-between gap-4 transition-all duration-200 relative group`}
               >
                 <div className="space-y-4">
                   <div className="flex items-start justify-between gap-3">
                     <div className="space-y-1 min-w-0 flex-1">
-                      <h4 className="text-sm font-bold text-text-heading group-hover:text-primary transition-colors leading-snug truncate">
+                      <h4 className={`text-sm font-bold text-text-heading ${isMastered ? '' : 'group-hover:text-primary'} transition-colors leading-snug truncate`}>
                         {topic.title}
                       </h4>
                       {planItem && (
-                        <span className="inline-flex items-center gap-1 text-[10px] font-extrabold text-primary bg-primary-light px-2 py-0.5 rounded-full border border-primary/30">
+                        <span className={`inline-flex items-center gap-1 text-[10px] font-extrabold px-2 py-0.5 rounded-full border ${
+                          isMastered
+                            ? 'text-emerald-700 bg-emerald-100 border-emerald-300 dark:bg-emerald-900/40 dark:text-emerald-300'
+                            : 'text-primary bg-primary-light border-primary/30'
+                        }`}>
                           <Target className="w-3 h-3 shrink-0" />
                           <span>Study Plan #{planIndex + 1}</span>
                         </span>
@@ -821,18 +837,18 @@ const LearningPathPage = () => {
                   </div>
                 </div>
 
-                {/* Footer redirection link */}
+                {/* Footer status link */}
                 <div className="flex items-center justify-between text-xs text-text-muted pt-3 border-t border-border-light">
                   <span className="capitalize text-[11px]">{topic.difficulty} difficulty</span>
-                  {planItem ? (
+                  {isMastered ? (
+                    <span className="inline-flex items-center gap-1 text-[11px] font-extrabold text-emerald-600 dark:text-emerald-400">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                      <span>Mastered ✓</span>
+                    </span>
+                  ) : (
                     <span className="inline-flex items-center gap-1 text-xs font-bold text-primary group-hover:underline">
                       <span>View in Study Plan</span>
                       <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center gap-1 text-xs font-semibold text-text-muted group-hover:text-primary transition-colors">
-                      <span>Details</span>
-                      <ArrowRight className="w-3.5 h-3.5" />
                     </span>
                   )}
                 </div>
