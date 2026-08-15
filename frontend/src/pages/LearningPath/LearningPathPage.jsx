@@ -84,15 +84,33 @@ const LearningPathPage = () => {
   const [selectedTopic, setSelectedTopic] = useState(null);
   const [highlightedStudyPlanTopicId, setHighlightedStudyPlanTopicId] = useState(null);
 
+  const studyPlanItems = useMemo(() => {
+    if (learningPath?.studyPlan && learningPath.studyPlan.length > 0) {
+      return learningPath.studyPlan;
+    }
+    if (learningPath?.topics && learningPath.topics.length > 0) {
+      return learningPath.topics
+        .slice()
+        .sort((a, b) => a.masteryScore - b.masteryScore)
+        .map((t) => {
+          const isMastered = t.status === 'mastered' || t.knowledgeLevel === 'proficient' || t.masteryScore >= 80;
+          return {
+            topicId: t.topicId,
+            title: t.title,
+            knowledgeLevel: t.knowledgeLevel || (isMastered ? 'proficient' : 'developing'),
+            action: isMastered ? 'reread-summary' : (t.status === 'weak' ? 'redo-flashcards' : 'retake-quiz'),
+            reason: isMastered ? 'Mastered topic! Review periodically to maintain top retention.' : `Current mastery score: ${t.masteryScore}%.`
+          };
+        });
+    }
+    return [];
+  }, [learningPath]);
+
   const handleTopicCardClick = (topic) => {
-    const isMastered = topic.status === 'mastered' || topic.knowledgeLevel === 'proficient';
-    const studyPlan = learningPath?.studyPlan || [];
-    const planItem = !isMastered
-      ? studyPlan.find((sp) =>
-          (sp.topicId && topic.topicId && String(sp.topicId) === String(topic.topicId)) ||
-          (sp.title && topic.title && sp.title.toLowerCase().trim() === topic.title.toLowerCase().trim())
-        )
-      : null;
+    const planItem = studyPlanItems.find((sp) =>
+      (sp.topicId && topic.topicId && String(sp.topicId) === String(topic.topicId)) ||
+      (sp.title && topic.title && sp.title.toLowerCase().trim() === topic.title.toLowerCase().trim())
+    );
 
     if (planItem) {
       const targetId = planItem.topicId || topic.topicId;
@@ -429,7 +447,7 @@ const LearningPathPage = () => {
           </div>
         )}
 
-        {studyPlan && studyPlan.length > 0 && (
+        {studyPlanItems && studyPlanItems.length > 0 && (
           <div id="lp-study-plan" className="scroll-mt-24 bg-bg-card border border-border-light rounded-2xl overflow-hidden shadow-sm">
             <div className="flex items-center gap-3 px-6 py-5 border-b border-border-light">
               <div className="w-8 h-8 rounded-lg bg-primary-light flex items-center justify-center">
@@ -437,15 +455,20 @@ const LearningPathPage = () => {
               </div>
               <div>
                 <h3 className="text-sm font-semibold text-text-heading">Your Study Plan</h3>
-                <p className="text-xs text-text-muted">Weakest topics first - work through this at your own pace.</p>
+                <p className="text-xs text-text-muted">Personalized topic checklist — weakest topics first.</p>
               </div>
             </div>
             <ul className="divide-y divide-border-light">
-              {studyPlan.map((item, index) => {
+              {studyPlanItems.map((item, index) => {
                 const isHighlighted = highlightedStudyPlanTopicId && (
                   String(highlightedStudyPlanTopicId) === String(item.topicId) ||
-                  (item.title && String(highlightedStudyPlanTopicId).toLowerCase() === item.title.toLowerCase())
+                  (item.title && String(highlightedStudyPlanTopicId).toLowerCase().trim() === item.title.toLowerCase().trim())
                 );
+                const topicObj = learningPath?.topics?.find((t) =>
+                  (t.topicId && item.topicId && String(t.topicId) === String(item.topicId)) ||
+                  (t.title && item.title && t.title.toLowerCase().trim() === item.title.toLowerCase().trim())
+                );
+                const isMastered = item.knowledgeLevel === 'proficient' || topicObj?.status === 'mastered' || topicObj?.knowledgeLevel === 'proficient' || (topicObj?.masteryScore >= 80);
                 const levelStyle = getKnowledgeLevelStyle(item.knowledgeLevel);
                 const meta = ACTION_META[item.action];
                 const ActionIcon = meta?.icon;
@@ -458,21 +481,34 @@ const LearningPathPage = () => {
                     id={`study-plan-item-${item.topicId}`}
                     className={`flex items-center justify-between gap-4 px-6 py-4 transition-all duration-500 ${
                       isHighlighted
-                        ? 'bg-primary-light/90 border-l-4 border-primary ring-2 ring-primary/40 animate-pulse'
-                        : 'hover:bg-border-light/30'
+                        ? 'bg-primary-light/95 border-l-4 border-primary ring-4 ring-primary/40 shadow-lg animate-pulse'
+                        : isMastered
+                          ? 'bg-emerald-50/90 dark:bg-emerald-950/30 border-l-4 border-emerald-500'
+                          : 'hover:bg-border-light/30'
                     }`}
                   >
                     <div className="flex items-start gap-3 min-w-0">
-                      <span className="mt-0.5 shrink-0 w-6 h-6 rounded-full bg-border-light text-text-muted text-xs font-bold flex items-center justify-center">
+                      <span className={`mt-0.5 shrink-0 w-6 h-6 rounded-full text-xs font-bold flex items-center justify-center ${
+                        isMastered
+                          ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300'
+                          : 'bg-border-light text-text-muted'
+                      }`}>
                         {index + 1}
                       </span>
                       <div className="min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <p className="text-sm font-medium text-text-heading">{item.title}</p>
-                          {levelStyle && (
-                            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold ${levelStyle.bg} ${levelStyle.text}`}>
-                              {levelStyle.label}
+                          <p className="text-sm font-semibold text-text-heading">{item.title}</p>
+                          {isMastered ? (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-emerald-100 text-emerald-800 border border-emerald-300 dark:bg-emerald-900/50 dark:text-emerald-300 dark:border-emerald-700">
+                              <CheckCircle2 className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
+                              <span>Mastered ✓</span>
                             </span>
+                          ) : (
+                            levelStyle && (
+                              <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold ${levelStyle.bg} ${levelStyle.text}`}>
+                                {levelStyle.label}
+                              </span>
+                            )
                           )}
                         </div>
                         <p className="text-xs text-text-muted mt-0.5">{item.reason}</p>

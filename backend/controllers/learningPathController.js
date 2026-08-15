@@ -576,19 +576,20 @@ const generateStudyPlanForDocument = async (userId, documentId, { force = false 
             || `Based on a mastery score of ${topic.masteryScore}%.`;
     });
 
-    // Ordered checklist: weakest topics first, excluding anything already proficient
+    // Ordered checklist: weakest topics first, including mastered topics at the end
     learningPath.studyPlan = learningPath.topics
-        .filter(topic => topic.knowledgeLevel !== 'proficient')
+        .slice()
         .sort((a, b) => a.masteryScore - b.masteryScore)
         .map(topic => {
             const classification = classificationByTitle.get(topic.title.toLowerCase());
-            const action = classification?.action || deriveFallbackAction(topic);
-            const reason = classification?.actionReason || FALLBACK_ACTION_REASONS[action];
+            const isMastered = topic.status === 'mastered' || topic.knowledgeLevel === 'proficient' || topic.masteryScore >= 80;
+            const action = isMastered ? 'reread-summary' : (classification?.action || deriveFallbackAction(topic));
+            const reason = isMastered ? 'Mastered topic! Review periodically to maintain top retention.' : (classification?.actionReason || FALLBACK_ACTION_REASONS[action]);
 
             return {
                 topicId: topic.topicId,
                 title: topic.title,
-                knowledgeLevel: topic.knowledgeLevel,
+                knowledgeLevel: topic.knowledgeLevel || (isMastered ? 'proficient' : 'developing'),
                 action,
                 reason
             };
