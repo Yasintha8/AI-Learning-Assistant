@@ -283,13 +283,21 @@ export const sendCounselorMessage = async (req, res, next) => {
             timestamp: new Date()
         });
 
-        // Call Gemini AI Career Counselor Chat
-        const aiResponse = await chatWithCareerCounselor(
-            message,
-            careerPath.chatHistory,
-            profile,
-            careerPath
-        );
+        // Call Gemini AI Career Counselor Chat with resilient error handling
+        let aiResponse;
+        try {
+            aiResponse = await chatWithCareerCounselor(
+                message,
+                careerPath.chatHistory,
+                profile,
+                careerPath
+            );
+        } catch (aiError) {
+            console.error('Gemini Career Chat Error:', aiError);
+            aiResponse = aiError.message && aiError.message.includes('rate limit')
+                ? "Gemini AI's free-tier rate limit was reached. Please wait a few seconds and try asking again!"
+                : "I encountered a brief connection issue with Gemini AI. Please try asking your question again in a moment.";
+        }
 
         // Push AI response
         careerPath.chatHistory.push({

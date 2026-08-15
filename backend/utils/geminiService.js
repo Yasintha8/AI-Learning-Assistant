@@ -358,7 +358,12 @@ Readiness Score: ${careerPath.readinessScore || 0}%
 Milestones: ${(careerPath.milestones || []).map(m => `[${m.status}] ${m.title}`).join(' | ')}
 ` : '';
 
-    const formattedHistory = chatHistory.slice(-8).map(msg => `${msg.role === 'user' ? 'User' : 'Counselor'}: ${msg.content}`).join('\n');
+    const safeHistory = Array.isArray(chatHistory) ? chatHistory : [];
+    const formattedHistory = safeHistory.slice(-8).map(msg => {
+        if (!msg) return '';
+        const sender = msg.role === 'user' ? 'User' : 'Counselor';
+        return `${sender}: ${msg.content || ''}`;
+    }).filter(Boolean).join('\n');
 
     const prompt = `You are a supportive, highly knowledgeable AI Career Counselor and Tech Industry Mentor.
 
@@ -378,8 +383,7 @@ Provide clear, encouraging, and actionable guidance, interview prep advice, or p
     try {
         return await generateText(prompt, 2048);
     } catch (error) {
-        console.error('Gemini API career chat error:', error);
-        throw new Error('Failed to process career counselor chat request');
+        rethrowFriendly(error, 'process career counselor chat request');
     }
 };
 
