@@ -62,6 +62,7 @@ const LearningPathsOverviewPage = () => {
     const totalTopics = topics.length;
     const masteredCount = topics.filter(t => t.status === 'mastered').length;
     const weakCount = topics.filter(t => t.status === 'weak').length;
+    const inProgressCount = topics.filter(t => t.status === 'in-progress').length;
     const overallScore = totalTopics > 0
       ? Math.round(topics.reduce((sum, topic) => sum + (topic.masteryScore || 0), 0) / totalTopics)
       : 0;
