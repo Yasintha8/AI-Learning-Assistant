@@ -18,6 +18,7 @@ import learningPathRoutes from './routes/learningPathRoutes.js';
 import searchRoutes from './routes/searchRoutes.js';
 import resourceRoutes from './routes/resourceRoutes.js';
 import notificationRoutes from './routes/notificationRoutes.js';
+import careerRoutes from './routes/careerRoutes.js';
 
 //ES6 module _dirname alternative
 const __filename = fileURLToPath(import.meta.url);
@@ -56,6 +57,7 @@ app.use('/api/learning-path', learningPathRoutes);
 app.use('/api/search', searchRoutes);
 app.use('/api/resources', resourceRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/career', careerRoutes);
 
 
 app.use(errorHandler);

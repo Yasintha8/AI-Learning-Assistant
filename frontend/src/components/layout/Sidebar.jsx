@@ -4,6 +4,7 @@ import {
   LayoutDashboard,
   FileText,
   BrainCircuit,
+  Compass,
   User,
   X
 } from 'lucide-react';
@@ -14,6 +15,7 @@ const Sidebar = ({ isSidebarOpen, toggleSidebar }) => {
   const menuItems = [
     { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
     { label: 'My Documents', path: '/documents', icon: FileText },
+    { label: 'Career Path', path: '/career', icon: Compass },
     { label: 'Flashcards', path: '/flashcards', icon: BrainCircuit },
     { label: 'My Profile', path: '/profile', icon: User },
   ];

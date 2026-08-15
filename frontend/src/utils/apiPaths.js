@@ -69,4 +69,11 @@ export const API_PATHS = {
     NOTIFICATIONS: {
         GET_ALL: "/api/notifications",
     },
+
+    CAREER: {
+        SAVE_PROFILE: "/api/career/profile",
+        GET_DATA: "/api/career/data",
+        UPDATE_MILESTONE: "/api/career/milestone",
+        CHAT: "/api/career/chat",
+    },
 };

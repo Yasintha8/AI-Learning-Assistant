@@ -259,3 +259,127 @@ ${context.substring(0, 10000)}`;
         throw new Error('Failed to explain concept');
     }
 };
+
+const CAREER_ROADMAP_SCHEMA = {
+    type: 'OBJECT',
+    properties: {
+        summary: { type: 'STRING' },
+        skillGaps: {
+            type: 'ARRAY',
+            items: {
+                type: 'OBJECT',
+                properties: {
+                    skill: { type: 'STRING' },
+                    importance: { type: 'STRING', enum: ['critical', 'recommended', 'optional'] },
+                },
+                required: ['skill', 'importance'],
+            },
+        },
+        milestones: {
+            type: 'ARRAY',
+            items: {
+                type: 'OBJECT',
+                properties: {
+                    title: { type: 'STRING' },
+                    description: { type: 'STRING' },
+                    estimatedWeeks: { type: 'INTEGER' },
+                    topics: { type: 'ARRAY', items: { type: 'STRING' } },
+                    suggestedProjects: {
+                        type: 'ARRAY',
+                        items: {
+                            type: 'OBJECT',
+                            properties: {
+                                title: { type: 'STRING' },
+                                description: { type: 'STRING' },
+                            },
+                            required: ['title', 'description'],
+                        },
+                    },
+                },
+                required: ['title', 'description', 'estimatedWeeks', 'topics', 'suggestedProjects'],
+            },
+        },
+    },
+    required: ['summary', 'skillGaps', 'milestones'],
+};
+
+/**
+ * Generate a personalized career path roadmap
+ * @param {Object} profileData - User intake profile data
+ * @returns {Promise<Object>} Structured career roadmap data
+ */
+export const generateCareerRoadmap = async (profileData) => {
+    const skillsText = (profileData.currentSkills || [])
+        .map(s => `${s.skillName} (${s.proficiency || 'beginner'})`)
+        .join(', ') || 'None specified';
+
+    const prompt = `You are an expert AI Career Counselor and Technical Advisor. Analyze the user's background and create a step-by-step career path roadmap to achieve their target role.
+
+Current Role/Background: ${profileData.currentRole}
+Education Level: ${profileData.educationLevel || 'Not specified'}
+Current Known Skills: ${skillsText}
+Target Role/Goal: ${profileData.targetRole}
+Target Timeline: ${profileData.timelineMonths || 6} month(s)
+Weekly Study Commitment: ${profileData.weeklyHours || 10} hours/week
+Preferred Learning Style: ${profileData.preferredLearningStyle || 'hands-on'}
+
+Instructions:
+1. Write a 2-3 sentence executive summary of the career transition plan.
+2. Identify 4-8 key skill gaps required to transition from their current skills to the target role, categorizing each by importance: 'critical', 'recommended', or 'optional'.
+3. Create 4 to 6 sequential milestones tailored to their timeline and weekly hours.
+   - Each milestone needs a title, description, estimated duration in weeks, a list of 3-5 specific topics to master, and 1-2 practical hands-on portfolio project ideas.`;
+
+    try {
+        return await generateJson(prompt, CAREER_ROADMAP_SCHEMA, 4096);
+    } catch (error) {
+        rethrowFriendly(error, 'generate career roadmap');
+    }
+};
+
+/**
+ * Interactive Chat with AI Career Counselor
+ * @param {string} userMessage - User's question or message
+ * @param {Array} chatHistory - Previous chat messages
+ * @param {Object} careerProfile - User's career profile
+ * @param {Object} careerPath - User's active career roadmap
+ * @returns {Promise<string>} AI response
+ */
+export const chatWithCareerCounselor = async (userMessage, chatHistory = [], careerProfile, careerPath) => {
+    const profileSummary = careerProfile ? `
+User Background: ${careerProfile.currentRole}
+Target Role: ${careerProfile.targetRole}
+Current Skills: ${(careerProfile.currentSkills || []).map(s => s.skillName).join(', ')}
+Timeline: ${careerProfile.timelineMonths} months (${careerProfile.weeklyHours} hrs/week)
+` : '';
+
+    const roadmapSummary = careerPath ? `
+Active Roadmap Summary: ${careerPath.summary || ''}
+Readiness Score: ${careerPath.readinessScore || 0}%
+Milestones: ${(careerPath.milestones || []).map(m => `[${m.status}] ${m.title}`).join(' | ')}
+` : '';
+
+    const formattedHistory = chatHistory.slice(-8).map(msg => `${msg.role === 'user' ? 'User' : 'Counselor'}: ${msg.content}`).join('\n');
+
+    const prompt = `You are a supportive, highly knowledgeable AI Career Counselor and Tech Industry Mentor.
+
+User Profile:
+${profileSummary}
+
+Current Roadmap Context:
+${roadmapSummary}
+
+Recent Conversation History:
+${formattedHistory}
+
+User Question: ${userMessage}
+
+Provide clear, encouraging, and actionable guidance, interview prep advice, or project recommendations tailored to the user's background and career goals. Format your response clearly using Markdown formatting.`;
+
+    try {
+        return await generateText(prompt, 2048);
+    } catch (error) {
+        console.error('Gemini API career chat error:', error);
+        throw new Error('Failed to process career counselor chat request');
+    }
+};
+

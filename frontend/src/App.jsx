@@ -14,6 +14,7 @@ import QuizTakePage from './pages/Quizzes/QuizTakePage'
 import QuizResultPage from './pages/Quizzes/QuizResultPage'
 import LearningPathPage from './pages/LearningPath/LearningPathPage'
 import ProfilePage from './pages/Profile/ProfilePage'
+import CareerPage from './pages/Career/CareerPage'
 import ProtectedRoute from './components/auth/ProtectedRoute'
 import { useAuth } from './context/AuthContext'
 
@@ -46,6 +47,7 @@ const App = () => {
           <Route path="/quizzes/:quizId" element={<QuizTakePage />} />
           <Route path="/quizzes/:quizId/results" element={<QuizResultPage />} />
           <Route path="/documents/:id/learning-path" element={<LearningPathPage />} />
+          <Route path="/career" element={<CareerPage />} />
           <Route path="/profile" element={<ProfilePage />} />
         </Route>
 
