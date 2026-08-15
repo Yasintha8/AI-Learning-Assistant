@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { BASE_URL } from '../../utils/apiPaths';
 import {
   LayoutDashboard,
   FileText,
@@ -36,6 +37,14 @@ const Sidebar = ({ isSidebarOpen, toggleSidebar }) => {
     return name.slice(0, 2).toUpperCase();
   };
 
+  const getAvatarUrl = (userObj) => {
+    const img = userObj?.profileImage || userObj?.avatar;
+    if (!img) return null;
+    if (img.startsWith('http://') || img.startsWith('https://')) return img;
+    return `${BASE_URL}${img.startsWith('/') ? '' : '/'}${img}`;
+  };
+
+  const avatarUrl = getAvatarUrl(user);
   const isProfileActive = location.pathname.startsWith('/profile');
 
   return (
@@ -162,10 +171,18 @@ const Sidebar = ({ isSidebarOpen, toggleSidebar }) => {
                 : 'hover:bg-white/5 text-slate-300'
             }`}
           >
-            {/* User Avatar Circle */}
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-extrabold text-xs shadow-sm shrink-0 border border-white/10">
-              {getUserInitials(user?.name || user?.username)}
-            </div>
+            {/* User Avatar Circle or Profile Image */}
+            {avatarUrl ? (
+              <img
+                src={avatarUrl}
+                alt={user?.name || user?.username || 'User Avatar'}
+                className="w-10 h-10 rounded-xl object-cover border border-white/20 shadow-xs shrink-0"
+              />
+            ) : (
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-extrabold text-xs shadow-xs shrink-0 border border-white/10">
+                {getUserInitials(user?.name || user?.username)}
+              </div>
+            )}
 
             {/* User Name & Details */}
             <div className="flex-1 min-w-0">

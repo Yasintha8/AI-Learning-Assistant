@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from "../../context/AuthContext";
-import { Link, useNavigate } from 'react-router-dom';
-import { Bell, User, Menu, Search, LogOut, Sparkles, ChevronDown, Sun, Moon, FileText, Layers, HelpCircle, Loader2, X, BrainCircuit } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Bell, Menu, Search, LogOut, Sparkles, Sun, Moon, FileText, Layers, HelpCircle, Loader2, X, BrainCircuit } from 'lucide-react';
 import { useTheme } from "../../context/ThemeContext";
 import searchService from '../../services/searchService';
 import notificationService from '../../services/notificationService';
@@ -16,11 +16,10 @@ const NOTIFICATION_ICONS = {
 };
 
 const Header = ({ toggleSidebar }) => {
-    const { user, logout } = useAuth();
+    const { logout } = useAuth();
     const { theme, toggleTheme } = useTheme();
     const navigate = useNavigate();
 
-    const [isProfileOpen, setIsProfileOpen] = useState(false);
     const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
     const [notifications, setNotifications] = useState([]);
 
@@ -29,13 +28,11 @@ const Header = ({ toggleSidebar }) => {
     const [isSearching, setIsSearching] = useState(false);
     const [showSearchResults, setShowSearchResults] = useState(false);
 
-    const profileRef = useRef(null);
     const notificationsRef = useRef(null);
     const searchInputRef = useRef(null);
     const searchContainerRef = useRef(null);
 
-    // Live to-do items (quizzes to complete, flashcards due, streak risk) - computed fresh by
-    // the backend on every fetch, so an item disappears on its own once actually done.
+    // Live to-do items fetch
     useEffect(() => {
         const fetchNotifications = async () => {
             try {
@@ -51,9 +48,6 @@ const Header = ({ toggleSidebar }) => {
     // Close dropdowns on click outside
     useEffect(() => {
         const handleClickOutside = (event) => {
-            if (profileRef.current && !profileRef.current.contains(event.target)) {
-                setIsProfileOpen(false);
-            }
             if (notificationsRef.current && !notificationsRef.current.contains(event.target)) {
                 setIsNotificationsOpen(false);
             }
@@ -66,7 +60,7 @@ const Header = ({ toggleSidebar }) => {
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    // Listen for Cmd+K / Ctrl+K keyboard shortcut to focus search input
+    // Keyboard shortcut Cmd+K / Ctrl+K
     useEffect(() => {
         const handleKeyDown = (e) => {
             if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
@@ -78,7 +72,7 @@ const Header = ({ toggleSidebar }) => {
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, []);
 
-    // Debounced global search across documents, flashcards and quizzes
+    // Debounced global search
     useEffect(() => {
         const query = searchQuery.trim();
 
@@ -251,8 +245,8 @@ const Header = ({ toggleSidebar }) => {
                 </div>
             </div>
 
-            {/* Right Section: Theme Toggle, Notifications & Profile */}
-            <div className="flex items-center gap-4">
+            {/* Right Section: Theme Toggle, Notifications & Direct Logout Button */}
+            <div className="flex items-center gap-3">
                 {/* Theme Toggle Button */}
                 <button
                     onClick={toggleTheme}
@@ -266,7 +260,7 @@ const Header = ({ toggleSidebar }) => {
                     )}
                 </button>
 
-                {/* Notification Dropdown Container */}
+                {/* Notification Dropdown */}
                 <div className="relative" ref={notificationsRef}>
                     <button
                         onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
@@ -323,73 +317,16 @@ const Header = ({ toggleSidebar }) => {
                     )}
                 </div>
 
-                {/* Profile Dropdown Container */}
-                <div className="relative" ref={profileRef}>
-                    <button
-                        onClick={() => setIsProfileOpen(!isProfileOpen)}
-                        className="flex items-center gap-2 p-1.5 pr-3 rounded-2xl hover:bg-border-light transition-all duration-300 border border-transparent hover:border-border-medium cursor-pointer"
-                    >
-                        {user?.profileImage ? (
-                            <img
-                                src={user.profileImage}
-                                alt={user.username || 'User'}
-                                className="w-8 h-8 rounded-xl object-cover border border-border-medium"
-                            />
-                        ) : (
-                            <div className="w-8 h-8 rounded-xl bg-linear-to-tr from-primary to-primary-hover flex items-center justify-center shadow-md shadow-primary-shadow/15">
-                                <User className="w-4 h-4 text-white" strokeWidth={2.5} />
-                            </div>
-                        )}
-                        <ChevronDown className={`w-3.5 h-3.5 text-text-muted transition-transform duration-300 ${isProfileOpen ? 'rotate-180' : ''
-                            }`} />
-                    </button>
+                {/* Direct Logout Button */}
+                <button
+                    onClick={logout}
+                    className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-500/10 border border-rose-200 dark:border-rose-500/20 transition-all cursor-pointer shadow-xs ml-1"
+                    title="Log Out"
+                >
+                    <LogOut className="w-4 h-4" />
+                    <span className="hidden sm:inline">Logout</span>
+                </button>
 
-                    {/* Profile Dropdown Panel */}
-                    {isProfileOpen && (
-                        <div className="absolute right-0 mt-3 w-56 bg-bg-card border border-border-medium rounded-2xl shadow-xl shadow-slate-200/25 dark:shadow-none py-2 z-50 animate-fade-in origin-top-right transition-all">
-                            {/* User details */}
-                            <div className="px-4 py-3 border-b border-border-light flex flex-col">
-                                <span className="font-bold text-text-heading text-sm truncate">
-                                    {user?.username || 'Guest'}
-                                </span>
-                                <span className="text-xs text-text-body truncate">
-                                    {user?.email || ''}
-                                </span>
-                            </div>
-
-                            {/* Dropdown Items */}
-                            <div className="p-1">
-                                <Link
-                                    to="/dashboard"
-                                    onClick={() => setIsProfileOpen(false)}
-                                    className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-text-heading font-medium hover:bg-border-light/40 transition-colors"
-                                >
-                                    <Sparkles className="w-4 h-4 text-primary" />
-                                    <span>Dashboard</span>
-                                </Link>
-                                <Link
-                                    to="/profile"
-                                    onClick={() => setIsProfileOpen(false)}
-                                    className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-text-heading font-medium hover:bg-border-light/40 transition-colors"
-                                >
-                                    <User className="w-4 h-4 text-text-muted" />
-                                    <span>My Profile</span>
-                                </Link>
-                                <hr className="my-1 border-border-light" />
-                                <button
-                                    onClick={() => {
-                                        setIsProfileOpen(false);
-                                        logout();
-                                    }}
-                                    className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-error font-medium hover:bg-error-bg/60 transition-colors cursor-pointer text-left"
-                                >
-                                    <LogOut className="w-4 h-4" />
-                                    <span>Log Out</span>
-                                </button>
-                            </div>
-                        </div>
-                    )}
-                </div>
             </div>
         </header>
     );
