@@ -6,6 +6,7 @@ import {
   FileText,
   BrainCircuit,
   Compass,
+  Map,
   User as UserIcon,
   ChevronRight,
   X
@@ -22,6 +23,7 @@ const Sidebar = ({ isSidebarOpen, toggleSidebar }) => {
   ];
 
   const toolsNavItems = [
+    { label: 'Learning Paths', path: '/learning-paths', icon: Map },
     { label: 'Career Path', path: '/career', icon: Compass },
   ];
 

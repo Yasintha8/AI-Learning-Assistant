@@ -13,6 +13,7 @@ import FlashcardPage from './pages/Flashcards/FlashcardPage'
 import QuizTakePage from './pages/Quizzes/QuizTakePage'
 import QuizResultPage from './pages/Quizzes/QuizResultPage'
 import LearningPathPage from './pages/LearningPath/LearningPathPage'
+import LearningPathsOverviewPage from './pages/LearningPath/LearningPathsOverviewPage'
 import ProfilePage from './pages/Profile/ProfilePage'
 import CareerPage from './pages/Career/CareerPage'
 import ProtectedRoute from './components/auth/ProtectedRoute'
@@ -46,6 +47,7 @@ const App = () => {
           <Route path="/documents/:id/flashcards" element={<FlashcardPage />} />
           <Route path="/quizzes/:quizId" element={<QuizTakePage />} />
           <Route path="/quizzes/:quizId/results" element={<QuizResultPage />} />
+          <Route path="/learning-paths" element={<LearningPathsOverviewPage />} />
           <Route path="/documents/:id/learning-path" element={<LearningPathPage />} />
           <Route path="/career" element={<CareerPage />} />
           <Route path="/profile" element={<ProfilePage />} />
