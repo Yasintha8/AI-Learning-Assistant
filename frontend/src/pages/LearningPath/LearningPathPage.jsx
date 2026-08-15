@@ -684,54 +684,115 @@ const LearningPathPage = () => {
             const levelStyle = getKnowledgeLevelStyle(topic.knowledgeLevel);
             const LevelIcon = levelStyle?.icon;
 
+            const planIndex = studyPlan?.findIndex((sp) =>
+              (sp.topicId && String(sp.topicId) === String(topic.topicId)) ||
+              (sp.title && topic.title && sp.title.toLowerCase() === topic.title.toLowerCase())
+            );
+            const planItem = (planIndex !== undefined && planIndex !== -1) ? studyPlan[planIndex] : null;
+            const meta = planItem ? ACTION_META[planItem.action] : null;
+            const ActionIcon = meta?.icon;
+            const link = planItem ? getActionLink(planItem.action, documentId) : null;
+            const isLoadingThis = planItem && actionLoadingKey === planItem.topicId;
+
             return (
               <div
                 key={topic.topicId}
                 onClick={() => setSelectedTopic(topic)}
-                className={`bg-bg-card border ${style.border} rounded-2xl p-5 flex flex-col gap-4 shadow-sm hover:shadow-md transition-shadow duration-200 cursor-pointer`}
+                className={`bg-bg-card border ${style.border} rounded-2xl p-5 flex flex-col justify-between gap-4 shadow-sm hover:shadow-md transition-shadow duration-200 cursor-pointer relative group`}
               >
-                <div className="flex items-start justify-between gap-3">
-                  <h4 className="text-sm font-bold text-text-heading leading-snug">
-                    {topic.title}
-                  </h4>
-                  <span
-                    className={`shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${style.bg} ${style.text}`}
-                  >
-                    <StatusIcon className="w-3 h-3" strokeWidth={2.5} />
-                    {style.label}
-                  </span>
-                </div>
-
-                {levelStyle && (
-                  <span className={`w-fit inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold ${levelStyle.bg} ${levelStyle.text}`}>
-                    <LevelIcon className="w-3 h-3" strokeWidth={2.5} />
-                    {levelStyle.label}
-                  </span>
-                )}
-
-                {/* Mastery bar */}
-                <div>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <span className="text-xs text-text-muted">Mastery</span>
-                    <span className="text-xs font-semibold text-text-heading tabular-nums">
-                      {topic.masteryScore}%
+                <div className="space-y-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="space-y-1 min-w-0 flex-1">
+                      <h4 className="text-sm font-bold text-text-heading leading-snug truncate">
+                        {topic.title}
+                      </h4>
+                      {planItem && (
+                        <span className="inline-flex items-center gap-1 text-[10px] font-extrabold text-primary bg-primary-light px-2 py-0.5 rounded-full border border-primary/20">
+                          <Target className="w-3 h-3 shrink-0" />
+                          <span>Study Plan #{planIndex + 1}</span>
+                        </span>
+                      )}
+                    </div>
+                    <span
+                      className={`shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${style.bg} ${style.text}`}
+                    >
+                      <StatusIcon className="w-3 h-3" strokeWidth={2.5} />
+                      {style.label}
                     </span>
                   </div>
-                  <div className="w-full bg-border-light h-2 rounded-full overflow-hidden">
-                    <div
-                      className={`h-full rounded-full transition-all duration-300 ${style.dot}`}
-                      style={{ width: `${topic.masteryScore}%` }}
-                    />
+
+                  {levelStyle && (
+                    <span className={`w-fit inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold ${levelStyle.bg} ${levelStyle.text}`}>
+                      <LevelIcon className="w-3 h-3" strokeWidth={2.5} />
+                      {levelStyle.label}
+                    </span>
+                  )}
+
+                  {/* Mastery bar */}
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="text-xs text-text-muted">Mastery</span>
+                      <span className="text-xs font-semibold text-text-heading tabular-nums">
+                        {topic.masteryScore}%
+                      </span>
+                    </div>
+                    <div className="w-full bg-border-light h-2 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full rounded-full transition-all duration-300 ${style.dot}`}
+                        style={{ width: `${topic.masteryScore}%` }}
+                      />
+                    </div>
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between text-xs text-text-muted pt-1 border-t border-border-light">
-                  <span className="capitalize">{topic.difficulty} difficulty</span>
-                  <span>
-                    {topic.lastReviewedAt
-                      ? `Reviewed ${new Date(topic.lastReviewedAt).toLocaleDateString()}`
-                      : 'Not reviewed yet'}
-                  </span>
+                {/* Direct Study Action Link */}
+                <div className="flex items-center justify-between text-xs text-text-muted pt-3 border-t border-border-light">
+                  {planItem ? (
+                    link ? (
+                      <Link
+                        to={link}
+                        onClick={(e) => e.stopPropagation()}
+                        className="w-full flex items-center justify-between gap-1.5 px-3 py-2 rounded-xl bg-primary-light hover:bg-primary text-primary hover:text-white text-xs font-bold transition-all duration-200 shadow-xs group/btn"
+                      >
+                        <span className="flex items-center gap-1.5 truncate">
+                          {ActionIcon && <ActionIcon className="w-3.5 h-3.5 shrink-0" />}
+                          <span>{meta?.label || 'Study Topic'}</span>
+                        </span>
+                        <ArrowRight className="w-3.5 h-3.5 shrink-0 group-hover/btn:translate-x-0.5 transition-transform" />
+                      </Link>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleInlineAction(planItem, planItem.topicId, planItem.title);
+                        }}
+                        disabled={isLoadingThis}
+                        className="w-full flex items-center justify-between gap-1.5 px-3 py-2 rounded-xl bg-primary-light hover:bg-primary text-primary hover:text-white text-xs font-bold transition-all duration-200 shadow-xs disabled:opacity-50 group/btn"
+                      >
+                        <span className="flex items-center gap-1.5 truncate">
+                          {isLoadingThis ? <Spinner size="xs" tone="muted" inline /> : (ActionIcon && <ActionIcon className="w-3.5 h-3.5 shrink-0" />)}
+                          <span>{meta?.label || 'Study Topic'}</span>
+                        </span>
+                        <ArrowRight className="w-3.5 h-3.5 shrink-0 group-hover/btn:translate-x-0.5 transition-transform" />
+                      </button>
+                    )
+                  ) : (
+                    <>
+                      <span className="capitalize text-[11px]">{topic.difficulty} difficulty</span>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedTopic(topic);
+                        }}
+                        className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline cursor-pointer"
+                      >
+                        <span>Details</span>
+                        <ArrowRight className="w-3 h-3" />
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
             );
@@ -965,6 +1026,70 @@ const LearningPathPage = () => {
                   </p>
                 </div>
               </div>
+
+              {/* Study Plan Alignment Section in Modal */}
+              {(() => {
+                const planIndex = studyPlan?.findIndex((sp) =>
+                  (sp.topicId && String(sp.topicId) === String(selectedTopic.topicId)) ||
+                  (sp.title && selectedTopic.title && sp.title.toLowerCase() === selectedTopic.title.toLowerCase())
+                );
+                const planItem = (planIndex !== undefined && planIndex !== -1) ? studyPlan[planIndex] : null;
+
+                if (!planItem) return null;
+                const meta = ACTION_META[planItem.action];
+                const ActionIcon = meta?.icon;
+                const link = getActionLink(planItem.action, documentId);
+                const isLoadingThis = actionLoadingKey === planItem.topicId;
+
+                return (
+                  <div className="p-4 rounded-2xl bg-primary-light/60 border border-primary/20 space-y-3 pt-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1.5 text-xs font-bold text-primary">
+                        <Target className="w-4 h-4" />
+                        <span>Study Plan Priority #{planIndex + 1}</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedTopic(null);
+                          scrollToSection('lp-study-plan');
+                        }}
+                        className="text-xs font-semibold text-primary hover:underline cursor-pointer flex items-center gap-1"
+                      >
+                        View in Plan <ArrowRight className="w-3 h-3" />
+                      </button>
+                    </div>
+
+                    <p className="text-xs text-text-heading font-medium">{planItem.reason}</p>
+
+                    <div>
+                      {link ? (
+                        <Link
+                          to={link}
+                          onClick={() => setSelectedTopic(null)}
+                          className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-white text-xs font-bold hover:bg-primary-hover transition-colors shadow-xs"
+                        >
+                          {ActionIcon && <ActionIcon className="w-4 h-4" />}
+                          <span>{meta?.label || 'Study Topic'}</span>
+                        </Link>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedTopic(null);
+                            handleInlineAction(planItem, planItem.topicId, planItem.title);
+                          }}
+                          disabled={isLoadingThis}
+                          className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-white text-xs font-bold hover:bg-primary-hover transition-colors shadow-xs disabled:opacity-50"
+                        >
+                          {isLoadingThis ? <Spinner size="xs" tone="white" inline /> : (ActionIcon && <ActionIcon className="w-4 h-4" />)}
+                          <span>{meta?.label || 'Study Topic'}</span>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
           );
         })()}
