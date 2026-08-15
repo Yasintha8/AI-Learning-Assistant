@@ -82,6 +82,25 @@ const LearningPathPage = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [refreshingStudyPlan, setRefreshingStudyPlan] = useState(false);
   const [selectedTopic, setSelectedTopic] = useState(null);
+  const [highlightedStudyPlanTopicId, setHighlightedStudyPlanTopicId] = useState(null);
+
+  const handleTopicCardClick = (topic) => {
+    const studyPlan = learningPath?.studyPlan || [];
+    const planItem = studyPlan.find((sp) =>
+      (sp.topicId && String(sp.topicId) === String(topic.topicId)) ||
+      (sp.title && topic.title && sp.title.toLowerCase() === topic.title.toLowerCase())
+    );
+
+    if (planItem) {
+      setHighlightedStudyPlanTopicId(planItem.topicId || topic.topicId);
+      scrollToSection('lp-study-plan');
+      setTimeout(() => {
+        setHighlightedStudyPlanTopicId(null);
+      }, 3500);
+    } else {
+      setSelectedTopic(topic);
+    }
+  };
   const [quizResultsExpanded, setQuizResultsExpanded] = useState(false);
   const [downloadingReport, setDownloadingReport] = useState(false);
   const [actionLoadingKey, setActionLoadingKey] = useState(null);
@@ -412,6 +431,10 @@ const LearningPathPage = () => {
             </div>
             <ul className="divide-y divide-border-light">
               {studyPlan.map((item, index) => {
+                const isHighlighted = highlightedStudyPlanTopicId && (
+                  String(highlightedStudyPlanTopicId) === String(item.topicId) ||
+                  (item.title && String(highlightedStudyPlanTopicId).toLowerCase() === item.title.toLowerCase())
+                );
                 const levelStyle = getKnowledgeLevelStyle(item.knowledgeLevel);
                 const meta = ACTION_META[item.action];
                 const ActionIcon = meta?.icon;
@@ -421,7 +444,12 @@ const LearningPathPage = () => {
                 return (
                   <li
                     key={`${item.topicId}-${index}`}
-                    className="flex items-center justify-between gap-4 px-6 py-4"
+                    id={`study-plan-item-${item.topicId}`}
+                    className={`flex items-center justify-between gap-4 px-6 py-4 transition-all duration-500 ${
+                      isHighlighted
+                        ? 'bg-primary-light/90 border-l-4 border-primary ring-2 ring-primary/40 animate-pulse'
+                        : 'hover:bg-border-light/30'
+                    }`}
                   >
                     <div className="flex items-start gap-3 min-w-0">
                       <span className="mt-0.5 shrink-0 w-6 h-6 rounded-full bg-border-light text-text-muted text-xs font-bold flex items-center justify-center">
@@ -690,25 +718,21 @@ const LearningPathPage = () => {
               (sp.title && topic.title && sp.title.toLowerCase() === topic.title.toLowerCase())
             );
             const planItem = (planIndex !== undefined && planIndex !== -1) ? studyPlan[planIndex] : null;
-            const meta = planItem ? ACTION_META[planItem.action] : null;
-            const ActionIcon = meta?.icon;
-            const link = planItem ? getActionLink(planItem.action, documentId) : null;
-            const isLoadingThis = planItem && actionLoadingKey === planItem.topicId;
 
             return (
               <div
                 key={topic.topicId}
-                onClick={() => setSelectedTopic(topic)}
-                className={`bg-bg-card border ${style.border} rounded-2xl p-5 flex flex-col justify-between gap-4 shadow-sm hover:shadow-md transition-shadow duration-200 cursor-pointer relative group`}
+                onClick={() => handleTopicCardClick(topic)}
+                className={`bg-bg-card border ${planItem ? 'border-primary/40 ring-1 ring-primary/20' : style.border} rounded-2xl p-5 flex flex-col justify-between gap-4 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer relative group`}
               >
                 <div className="space-y-4">
                   <div className="flex items-start justify-between gap-3">
                     <div className="space-y-1 min-w-0 flex-1">
-                      <h4 className="text-sm font-bold text-text-heading leading-snug truncate">
+                      <h4 className="text-sm font-bold text-text-heading group-hover:text-primary transition-colors leading-snug truncate">
                         {topic.title}
                       </h4>
                       {planItem && (
-                        <span className="inline-flex items-center gap-1 text-[10px] font-extrabold text-primary bg-primary-light px-2 py-0.5 rounded-full border border-primary/20">
+                        <span className="inline-flex items-center gap-1 text-[10px] font-extrabold text-primary bg-primary-light px-2 py-0.5 rounded-full border border-primary/30">
                           <Target className="w-3 h-3 shrink-0" />
                           <span>Study Plan #{planIndex + 1}</span>
                         </span>
@@ -746,53 +770,19 @@ const LearningPathPage = () => {
                   </div>
                 </div>
 
-                {/* Direct Study Action Link */}
+                {/* Footer redirection link */}
                 <div className="flex items-center justify-between text-xs text-text-muted pt-3 border-t border-border-light">
+                  <span className="capitalize text-[11px]">{topic.difficulty} difficulty</span>
                   {planItem ? (
-                    link ? (
-                      <Link
-                        to={link}
-                        onClick={(e) => e.stopPropagation()}
-                        className="w-full flex items-center justify-between gap-1.5 px-3 py-2 rounded-xl bg-primary-light hover:bg-primary text-primary hover:text-white text-xs font-bold transition-all duration-200 shadow-xs group/btn"
-                      >
-                        <span className="flex items-center gap-1.5 truncate">
-                          {ActionIcon && <ActionIcon className="w-3.5 h-3.5 shrink-0" />}
-                          <span>{meta?.label || 'Study Topic'}</span>
-                        </span>
-                        <ArrowRight className="w-3.5 h-3.5 shrink-0 group-hover/btn:translate-x-0.5 transition-transform" />
-                      </Link>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleInlineAction(planItem, planItem.topicId, planItem.title);
-                        }}
-                        disabled={isLoadingThis}
-                        className="w-full flex items-center justify-between gap-1.5 px-3 py-2 rounded-xl bg-primary-light hover:bg-primary text-primary hover:text-white text-xs font-bold transition-all duration-200 shadow-xs disabled:opacity-50 group/btn"
-                      >
-                        <span className="flex items-center gap-1.5 truncate">
-                          {isLoadingThis ? <Spinner size="xs" tone="muted" inline /> : (ActionIcon && <ActionIcon className="w-3.5 h-3.5 shrink-0" />)}
-                          <span>{meta?.label || 'Study Topic'}</span>
-                        </span>
-                        <ArrowRight className="w-3.5 h-3.5 shrink-0 group-hover/btn:translate-x-0.5 transition-transform" />
-                      </button>
-                    )
+                    <span className="inline-flex items-center gap-1 text-xs font-bold text-primary group-hover:underline">
+                      <span>View in Study Plan</span>
+                      <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+                    </span>
                   ) : (
-                    <>
-                      <span className="capitalize text-[11px]">{topic.difficulty} difficulty</span>
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSelectedTopic(topic);
-                        }}
-                        className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline cursor-pointer"
-                      >
-                        <span>Details</span>
-                        <ArrowRight className="w-3 h-3" />
-                      </button>
-                    </>
+                    <span className="inline-flex items-center gap-1 text-xs font-semibold text-text-muted group-hover:text-primary transition-colors">
+                      <span>Details</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </span>
                   )}
                 </div>
               </div>
