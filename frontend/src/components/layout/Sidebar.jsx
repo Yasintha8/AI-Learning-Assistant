@@ -160,12 +160,12 @@ const Sidebar = ({ isSidebarOpen, toggleSidebar }) => {
 
         </nav>
 
-        {/* Bottom User Profile Section */}
-        <div className="p-4 border-t border-white/5 shrink-0">
+        {/* Bottom User Profile Section - Compact & Reduced */}
+        <div className="p-3 border-t border-white/5 shrink-0">
           <Link
             to="/profile"
             onClick={() => { if (isSidebarOpen) toggleSidebar(); }}
-            className={`flex items-center gap-3 p-3 rounded-2xl transition-all duration-200 group ${
+            className={`flex items-center gap-2.5 p-2 rounded-xl transition-all duration-200 group ${
               isProfileActive
                 ? 'bg-primary/20 border border-primary/30 text-white'
                 : 'hover:bg-white/5 text-slate-300'
@@ -176,25 +176,25 @@ const Sidebar = ({ isSidebarOpen, toggleSidebar }) => {
               <img
                 src={avatarUrl}
                 alt={user?.name || user?.username || 'User Avatar'}
-                className="w-10 h-10 rounded-xl object-cover border border-white/20 shadow-xs shrink-0"
+                className="w-8 h-8 rounded-lg object-cover border border-white/20 shadow-xs shrink-0"
               />
             ) : (
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-extrabold text-xs shadow-xs shrink-0 border border-white/10">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-extrabold text-[11px] shadow-xs shrink-0 border border-white/10">
                 {getUserInitials(user?.name || user?.username)}
               </div>
             )}
 
             {/* User Name & Details */}
             <div className="flex-1 min-w-0">
-              <div className="text-xs font-bold text-white truncate group-hover:text-primary-hover transition-colors">
+              <div className="text-xs font-bold text-white truncate group-hover:text-primary-hover transition-colors leading-snug">
                 {user?.name || user?.username || 'User Profile'}
               </div>
-              <div className="text-[11px] text-slate-400 truncate">
+              <div className="text-[10px] text-slate-400 truncate leading-none mt-0.5">
                 {user?.email || 'View Profile'}
               </div>
             </div>
 
-            <ChevronRight className={`w-4 h-4 shrink-0 transition-transform ${
+            <ChevronRight className={`w-3.5 h-3.5 shrink-0 transition-transform ${
               isProfileActive ? 'text-primary-hover translate-x-0.5' : 'text-slate-500 group-hover:text-slate-300'
             }`} />
           </Link>

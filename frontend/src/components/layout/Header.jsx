@@ -344,17 +344,17 @@ const Header = ({ toggleSidebar }) => {
                 <div className="relative ml-1" ref={profileRef}>
                     <button
                         onClick={() => setIsProfileOpen(!isProfileOpen)}
-                        className="flex items-center justify-center cursor-pointer rounded-full focus:outline-none ring-offset-2 hover:ring-2 hover:ring-primary/40 transition-all duration-200"
+                        className="flex items-center justify-center cursor-pointer rounded-full focus:outline-none ring-2 ring-primary/60 hover:ring-primary transition-all duration-200"
                         title={user?.name || user?.username || 'User Profile'}
                     >
                         {avatarUrl ? (
                             <img
                                 src={avatarUrl}
                                 alt={user?.name || user?.username || 'User'}
-                                className="w-9 h-9 rounded-full object-cover border border-border-medium shadow-xs"
+                                className="w-9 h-9 rounded-full object-cover border-2 border-primary shadow-xs"
                             />
                         ) : (
-                            <div className="w-9 h-9 rounded-full bg-linear-to-tr from-primary to-primary-hover flex items-center justify-center text-white font-extrabold text-xs shadow-xs border border-white/20">
+                            <div className="w-9 h-9 rounded-full bg-linear-to-tr from-primary to-primary-hover flex items-center justify-center text-white font-extrabold text-xs shadow-xs border-2 border-primary">
                                 {getUserInitials(user?.name || user?.username)}
                             </div>
                         )}
