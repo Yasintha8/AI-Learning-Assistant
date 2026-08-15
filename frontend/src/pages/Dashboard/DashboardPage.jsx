@@ -301,24 +301,24 @@ const DashboardPage = () => {
                           to={`/documents/${doc._id}`}
                           className="flex items-center justify-between gap-4 px-6 py-4 hover:bg-border-light/40 transition-colors duration-150 group"
                         >
-                          <div className="flex items-center gap-3 min-w-0 flex-1">
+                          <div className="flex items-center gap-3.5 min-w-0 flex-1">
                             <div className="p-2.5 bg-primary-light rounded-xl shrink-0 text-primary group-hover:scale-105 transition-transform">
                               <FileText className="w-4 h-4" />
                             </div>
                             <div className="min-w-0 flex-1">
-                              <p className="text-sm font-bold text-text-heading group-hover:text-primary transition-colors truncate">
-                                {doc.title}
-                              </p>
-                              <div className="flex items-center gap-3 mt-1.5 max-w-xs">
-                                <div className="flex-1 bg-border-light h-1.5 rounded-full overflow-hidden">
-                                  <div
-                                    className="h-full bg-primary rounded-full transition-all duration-300"
-                                    style={{ width: `${progress}%` }}
-                                  />
-                                </div>
+                              <div className="flex items-center justify-between gap-3 mb-1.5">
+                                <p className="text-sm font-bold text-text-heading group-hover:text-primary transition-colors truncate">
+                                  {doc.title}
+                                </p>
                                 <span className="text-xs font-bold text-primary tabular-nums shrink-0">
                                   {progress}%
                                 </span>
+                              </div>
+                              <div className="w-full bg-border-light h-1.5 rounded-full overflow-hidden">
+                                <div
+                                  className="h-full bg-primary rounded-full transition-all duration-300"
+                                  style={{ width: `${progress}%` }}
+                                />
                               </div>
                             </div>
                           </div>
