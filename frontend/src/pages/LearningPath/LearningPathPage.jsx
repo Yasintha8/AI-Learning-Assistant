@@ -160,12 +160,28 @@ const LearningPathPage = () => {
   }, [navItems]);
 
   const scrollToSection = (id) => {
-    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    const el = document.getElementById(id);
+    if (el) {
+      const mainEl = document.querySelector('main');
+      if (mainEl) {
+        const mainRect = mainEl.getBoundingClientRect();
+        const elRect = el.getBoundingClientRect();
+        const targetPos = mainEl.scrollTop + (elRect.top - mainRect.top) - 20;
+        mainEl.scrollTo({ top: Math.max(0, targetPos), behavior: 'smooth' });
+      } else {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }
     setOutlineOpen(false);
   };
 
   const scrollToTop = () => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    const mainEl = document.querySelector('main');
+    if (mainEl) {
+      mainEl.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
     setOutlineOpen(false);
   };
 
@@ -814,10 +830,14 @@ const LearningPathPage = () => {
           onMouseLeave={() => setOutlineOpen(false)}
         >
           {outlineOpen && (
-            <div className="mb-2.5 w-64 bg-bg-card border border-border-medium rounded-2xl shadow-2xl shadow-slate-200/40 dark:shadow-none py-2 z-50 animate-fade-in origin-bottom-right">
-              <p className="px-4 pt-1 pb-2 text-[10px] font-extrabold text-text-muted uppercase tracking-wider border-b border-border-light mb-1">
-                On This Page
-              </p>
+            <div className="mb-3 w-64 bg-bg-card border border-border-medium rounded-2xl shadow-2xl shadow-slate-900/15 dark:shadow-none py-2 z-50 animate-fade-in origin-bottom-right backdrop-blur-lg">
+              <div className="px-4 pt-1 pb-2 flex items-center justify-between border-b border-border-light mb-1">
+                <span className="text-[10px] font-extrabold text-text-muted uppercase tracking-wider">
+                  On This Page
+                </span>
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" title="Active Section Spying" />
+              </div>
+
               <div className="max-h-64 overflow-y-auto custom-scrollbar">
                 {navItems.map((item) => {
                   const Icon = item.icon;
@@ -827,9 +847,9 @@ const LearningPathPage = () => {
                       key={item.id}
                       type="button"
                       onClick={() => scrollToSection(item.id)}
-                      className={`w-full flex items-center gap-2.5 px-4 py-2 text-left text-xs font-semibold transition-colors duration-150 cursor-pointer ${
+                      className={`w-full flex items-center gap-2.5 px-4 py-2 text-left text-xs font-semibold transition-all duration-150 cursor-pointer ${
                         isActive
-                          ? 'text-primary bg-primary-light font-bold'
+                          ? 'text-primary bg-primary-light font-bold border-l-2 border-primary'
                           : 'text-text-heading hover:bg-border-light/60'
                       }`}
                     >
@@ -845,13 +865,13 @@ const LearningPathPage = () => {
                 <button
                   type="button"
                   onClick={scrollToTop}
-                  className="w-full flex items-center justify-between px-3 py-1.5 rounded-xl text-xs font-semibold text-text-muted hover:text-primary hover:bg-primary-light transition-colors cursor-pointer"
+                  className="w-full flex items-center justify-between px-3 py-1.5 rounded-xl text-xs font-bold text-primary hover:bg-primary-light transition-colors cursor-pointer"
                 >
                   <span className="flex items-center gap-2">
-                    <ArrowUp className="w-3.5 h-3.5 text-primary" />
+                    <ArrowUp className="w-3.5 h-3.5 text-primary" strokeWidth={2.5} />
                     <span>Back to Top</span>
                   </span>
-                  <span className="text-[10px] font-mono opacity-70">↑</span>
+                  <span className="text-[10px] font-mono opacity-80">↑</span>
                 </button>
               </div>
             </div>
@@ -862,11 +882,11 @@ const LearningPathPage = () => {
             onClick={() => setOutlineOpen((prev) => !prev)}
             aria-label="Jump to section"
             aria-expanded={outlineOpen}
-            className="flex items-center gap-2 px-4 py-2.5 bg-bg-card/95 hover:bg-bg-card border border-border-medium shadow-xl shadow-slate-200/25 dark:shadow-none rounded-full text-xs font-bold text-text-heading hover:text-primary transition-all duration-200 cursor-pointer group hover:scale-105"
+            className="flex items-center gap-2.5 px-4.5 py-3 bg-gradient-to-r from-primary via-indigo-600 to-blue-600 text-white shadow-xl shadow-primary/30 hover:shadow-2xl hover:shadow-primary/40 rounded-full text-xs font-extrabold tracking-wide transition-all duration-300 cursor-pointer group hover:scale-105 ring-2 ring-primary/20"
           >
-            <Compass className="w-4 h-4 text-primary group-hover:rotate-45 transition-transform duration-300" strokeWidth={2} />
+            <Compass className="w-4.5 h-4.5 text-white group-hover:rotate-45 transition-transform duration-300" strokeWidth={2.5} />
             <span>Jump to Section</span>
-            <ChevronUp className={`w-3.5 h-3.5 text-text-muted transition-transform duration-200 ${outlineOpen ? 'rotate-180' : ''}`} />
+            <ChevronUp className={`w-3.5 h-3.5 text-white/80 transition-transform duration-200 ${outlineOpen ? 'rotate-180' : ''}`} strokeWidth={2.5} />
           </button>
         </div>
       )}
