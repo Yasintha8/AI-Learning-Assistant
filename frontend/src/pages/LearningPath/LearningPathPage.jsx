@@ -85,18 +85,29 @@ const LearningPathPage = () => {
   const [highlightedStudyPlanTopicId, setHighlightedStudyPlanTopicId] = useState(null);
 
   const handleTopicCardClick = (topic) => {
+    const isMastered = topic.status === 'mastered' || topic.knowledgeLevel === 'proficient';
     const studyPlan = learningPath?.studyPlan || [];
-    const planItem = studyPlan.find((sp) =>
-      (sp.topicId && String(sp.topicId) === String(topic.topicId)) ||
-      (sp.title && topic.title && sp.title.toLowerCase() === topic.title.toLowerCase())
-    );
+    const planItem = !isMastered
+      ? studyPlan.find((sp) =>
+          (sp.topicId && topic.topicId && String(sp.topicId) === String(topic.topicId)) ||
+          (sp.title && topic.title && sp.title.toLowerCase().trim() === topic.title.toLowerCase().trim())
+        )
+      : null;
 
     if (planItem) {
-      setHighlightedStudyPlanTopicId(planItem.topicId || topic.topicId);
-      scrollToSection('lp-study-plan');
+      const targetId = planItem.topicId || topic.topicId;
+      setHighlightedStudyPlanTopicId(targetId);
+
+      const itemEl = document.getElementById(`study-plan-item-${targetId}`);
+      if (itemEl) {
+        scrollToSection(`study-plan-item-${targetId}`);
+      } else {
+        scrollToSection('lp-study-plan');
+      }
+
       setTimeout(() => {
         setHighlightedStudyPlanTopicId(null);
-      }, 3500);
+      }, 4000);
     } else {
       setSelectedTopic(topic);
     }
@@ -713,11 +724,15 @@ const LearningPathPage = () => {
             const levelStyle = getKnowledgeLevelStyle(topic.knowledgeLevel);
             const LevelIcon = levelStyle?.icon;
 
-            const planIndex = studyPlan?.findIndex((sp) =>
-              (sp.topicId && String(sp.topicId) === String(topic.topicId)) ||
-              (sp.title && topic.title && sp.title.toLowerCase() === topic.title.toLowerCase())
-            );
-            const planItem = (planIndex !== undefined && planIndex !== -1) ? studyPlan[planIndex] : null;
+            const isMastered = topic.status === 'mastered' || topic.knowledgeLevel === 'proficient';
+
+            const planIndex = (!isMastered && studyPlan)
+              ? studyPlan.findIndex((sp) =>
+                  (sp.topicId && topic.topicId && String(sp.topicId) === String(topic.topicId)) ||
+                  (sp.title && topic.title && sp.title.toLowerCase().trim() === topic.title.toLowerCase().trim())
+                )
+              : -1;
+            const planItem = planIndex !== -1 ? studyPlan[planIndex] : null;
 
             return (
               <div
