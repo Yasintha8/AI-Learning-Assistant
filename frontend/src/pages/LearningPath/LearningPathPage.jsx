@@ -798,10 +798,14 @@ const LearningPathPage = () => {
         {renderContent()}
       </div>
 
-      {/* Floating page outline - available at any scroll position without ever taking up
-          layout space, unlike the earlier in-flow nav bar. Collapsed by default. */}
+      {/* Floating page outline - displays navigation items on hover and click */}
       {navItems.length > 0 && (
-        <div ref={outlineRef} className="fixed bottom-6 right-6 z-40">
+        <div
+          ref={outlineRef}
+          className="fixed bottom-6 right-6 z-40"
+          onMouseEnter={openOutline}
+          onMouseLeave={() => setOutlineOpen(false)}
+        >
           {outlineOpen && (
             <div className="mb-3 w-64 bg-bg-card border border-border-medium rounded-2xl shadow-xl shadow-slate-200/25 dark:shadow-none py-2 animate-fade-in origin-bottom-right">
               <p className="px-4 pt-1.5 pb-2 text-[11px] font-semibold text-text-muted uppercase tracking-wide">
