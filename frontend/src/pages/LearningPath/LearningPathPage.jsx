@@ -778,6 +778,49 @@ const LearningPathPage = () => {
                 )}
               </div>
 
+              {/* Jump to Section Dropdown Button */}
+              {navItems.length > 0 && (
+                <div className="relative" ref={outlineRef}>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setOutlineOpen((prev) => !prev)}
+                    className="flex items-center gap-2"
+                  >
+                    <Compass className="w-4 h-4 text-primary" strokeWidth={2} />
+                    <span>Jump to section</span>
+                    <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${outlineOpen ? 'rotate-180' : ''}`} />
+                  </Button>
+
+                  {outlineOpen && (
+                    <div className="absolute right-0 mt-2 w-60 bg-bg-card border border-border-medium rounded-2xl shadow-xl shadow-slate-200/25 dark:shadow-none py-2 z-50 animate-fade-in origin-top-right">
+                      <p className="px-4 pt-1.5 pb-2 text-[11px] font-bold text-text-muted uppercase tracking-wider border-b border-border-light mb-1">
+                        On This Page
+                      </p>
+                      {navItems.map((item) => {
+                        const Icon = item.icon;
+                        const isActive = displayedActiveSection === item.id;
+                        return (
+                          <button
+                            key={item.id}
+                            type="button"
+                            onClick={() => scrollToSection(item.id)}
+                            className={`w-full flex items-center gap-2.5 px-4 py-2.5 text-left text-xs font-semibold transition-colors duration-150 cursor-pointer ${
+                              isActive
+                                ? 'text-primary bg-primary-light'
+                                : 'text-text-heading hover:bg-border-light/60'
+                            }`}
+                          >
+                            <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-primary' : 'text-text-muted'}`} strokeWidth={2} />
+                            <span>{item.label}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
+
               <Button
                 onClick={handleDownloadReport}
                 disabled={downloadingReport}
@@ -794,36 +837,6 @@ const LearningPathPage = () => {
             </div>
           )}
         </PageHeader>
-
-        {/* Sticky Sub-Header Section Navigation Rail */}
-        {navItems.length > 0 && (
-          <div className="sticky top-16 z-30 bg-bg-card/95 backdrop-blur-md border border-border-light rounded-2xl p-1.5 shadow-sm overflow-x-auto custom-scrollbar flex items-center gap-1.5 transition-all">
-            <span className="px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-text-muted shrink-0 flex items-center gap-1.5 border-r border-border-light mr-1">
-              <Compass className="w-3.5 h-3.5 text-primary" />
-              <span className="hidden sm:inline">Sections</span>
-            </span>
-            {navItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = displayedActiveSection === item.id;
-
-              return (
-                <button
-                  key={item.id}
-                  type="button"
-                  onClick={() => scrollToSection(item.id)}
-                  className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all duration-200 cursor-pointer shrink-0 ${
-                    isActive
-                      ? 'bg-primary text-white shadow-xs shadow-primary-shadow'
-                      : 'text-text-body hover:bg-border-light hover:text-text-heading'
-                  }`}
-                >
-                  <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-white' : 'text-text-muted'}`} strokeWidth={2} />
-                  <span>{item.label}</span>
-                </button>
-              );
-            })}
-          </div>
-        )}
 
         {renderContent()}
       </div>
