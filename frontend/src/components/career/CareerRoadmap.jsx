@@ -162,7 +162,7 @@ const CareerRoadmap = ({ careerPath, onToggleTopic, onUpdateMilestoneStatus }) =
                           : 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/30 hover:bg-emerald-100'
                       }`}
                     >
-                      {isCompleted ? 'Mark Incomplete' : 'Complete Milestone'}
+                      {isCompleted ? 'Mark Incomplete' : 'Mark as Complete Milestone'}
                     </button>
                   </div>
 
