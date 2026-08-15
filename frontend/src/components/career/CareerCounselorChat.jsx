@@ -156,6 +156,12 @@ const CareerCounselorChat = ({ chatHistory = [], onSendMessage, isLoading, targe
           type="text"
           value={inputMessage}
           onChange={(e) => setInputMessage(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+              e.preventDefault();
+              handleSubmit(e);
+            }
+          }}
           placeholder={`Ask your AI Career Counselor about ${targetRole || 'your target role'}...`}
           disabled={isLoading}
           className="flex-1 px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-indigo-600 transition-colors disabled:opacity-50 font-sans"

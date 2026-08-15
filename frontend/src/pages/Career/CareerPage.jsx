@@ -101,9 +101,24 @@ const CareerPage = () => {
   };
 
   const handleSendMessage = async (messageText) => {
+    if (!messageText || !messageText.trim()) return;
+
+    const trimmed = messageText.trim();
+    const userMsg = {
+      role: 'user',
+      content: trimmed,
+      timestamp: new Date().toISOString()
+    };
+
+    // Optimistically add user message to chat history immediately
+    setCareerPath(prev => ({
+      ...prev,
+      chatHistory: [...(prev?.chatHistory || []), userMsg]
+    }));
+
     try {
       setIsSendingChat(true);
-      const response = await sendCounselorMessage(messageText);
+      const response = await sendCounselorMessage(trimmed);
       if (response.success && response.data) {
         setCareerPath(prev => ({
           ...prev,
@@ -112,7 +127,7 @@ const CareerPage = () => {
       }
     } catch (error) {
       console.error('Error sending chat message:', error);
-      toast.error('Failed to get response from AI counselor');
+      toast.error(error.response?.data?.error || 'Failed to get response from AI counselor');
     } finally {
       setIsSendingChat(false);
     }
