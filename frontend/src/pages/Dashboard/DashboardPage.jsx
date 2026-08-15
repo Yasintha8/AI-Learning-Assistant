@@ -74,6 +74,9 @@ const DashboardPage = () => {
           };
         });
 
+        // Sort by most recent date (newest first)
+        docsWithProgress.sort((a, b) => new Date(b.createdAt || b.updatedAt || 0) - new Date(a.createdAt || a.updatedAt || 0));
+
         setUserDocuments(docsWithProgress);
       } catch (error) {
         console.error('Error fetching documents for dashboard:', error);
@@ -270,7 +273,7 @@ const DashboardPage = () => {
                       My Documents
                     </h3>
                     <p className="text-xs text-text-muted">
-                      Your uploaded documents & overall mastery progress
+                      Recent documents & overall progress percentage
                     </p>
                   </div>
                 </div>
@@ -289,45 +292,41 @@ const DashboardPage = () => {
                 </div>
               ) : userDocuments.length > 0 ? (
                 <ul className="divide-y divide-border-light">
-                  {userDocuments.slice(0, 6).map((doc) => {
+                  {userDocuments.slice(0, 5).map((doc) => {
                     const progress = doc.overallProgress || 0;
 
                     return (
-                      <li
-                        key={doc._id}
-                        className="flex items-center justify-between gap-4 px-6 py-4 hover:bg-border-light/40 transition-colors duration-150"
-                      >
-                        <div className="flex items-center gap-3 min-w-0 flex-1">
-                          <div className="p-2.5 bg-primary-light rounded-xl shrink-0 text-primary">
-                            <FileText className="w-4 h-4" />
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <p className="text-sm font-bold text-text-heading truncate">
-                              {doc.title}
-                            </p>
-                            <div className="flex items-center gap-3 mt-1.5 max-w-xs">
-                              <div className="flex-1 bg-border-light h-1.5 rounded-full overflow-hidden">
-                                <div
-                                  className="h-full bg-primary rounded-full transition-all duration-300"
-                                  style={{ width: `${progress}%` }}
-                                />
+                      <li key={doc._id}>
+                        <Link
+                          to={`/documents/${doc._id}`}
+                          className="flex items-center justify-between gap-4 px-6 py-4 hover:bg-border-light/40 transition-colors duration-150 group"
+                        >
+                          <div className="flex items-center gap-3 min-w-0 flex-1">
+                            <div className="p-2.5 bg-primary-light rounded-xl shrink-0 text-primary group-hover:scale-105 transition-transform">
+                              <FileText className="w-4 h-4" />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-sm font-bold text-text-heading group-hover:text-primary transition-colors truncate">
+                                {doc.title}
+                              </p>
+                              <div className="flex items-center gap-3 mt-1.5 max-w-xs">
+                                <div className="flex-1 bg-border-light h-1.5 rounded-full overflow-hidden">
+                                  <div
+                                    className="h-full bg-primary rounded-full transition-all duration-300"
+                                    style={{ width: `${progress}%` }}
+                                  />
+                                </div>
+                                <span className="text-xs font-bold text-primary tabular-nums shrink-0">
+                                  {progress}%
+                                </span>
                               </div>
-                              <span className="text-xs font-bold text-primary tabular-nums shrink-0">
-                                {progress}%
-                              </span>
                             </div>
                           </div>
-                        </div>
 
-                        <div className="flex items-center gap-2 shrink-0">
-                          <Link
-                            to={`/documents/${doc._id}/learning-path`}
-                            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-border-light hover:bg-primary-light text-xs font-semibold text-text-body hover:text-primary transition-colors duration-150"
-                          >
-                            Learning Path
-                            <ArrowRight className="w-3.5 h-3.5" strokeWidth={2} />
-                          </Link>
-                        </div>
+                          <div className="flex items-center gap-2 shrink-0 text-text-muted group-hover:text-primary transition-colors">
+                            <ArrowRight className="w-4 h-4" strokeWidth={2} />
+                          </div>
+                        </Link>
                       </li>
                     );
                   })}
