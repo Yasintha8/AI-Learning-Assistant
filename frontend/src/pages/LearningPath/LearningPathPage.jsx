@@ -21,7 +21,7 @@ import {
   Download,
   MoreVertical,
   Gauge,
-  Map,
+  Map as MapIcon,
   Compass,
   X,
 } from 'lucide-react';
@@ -185,7 +185,7 @@ const LearningPathPage = () => {
       { id: 'lp-study-plan', label: 'Study Plan', icon: ListChecks, show: (learningPath.studyPlan?.length || 0) > 0 },
       { id: 'lp-skills', label: 'Cognitive Skills', icon: BrainCircuit, show: (learningPath.skillProfile?.length || 0) > 0 },
       { id: 'lp-weak-areas', label: 'Weak Areas', icon: AlertTriangle, show: !!weakAreasEligibility },
-      { id: 'lp-topics', label: 'Topic Roadmap', icon: Map, show: true },
+      { id: 'lp-topics', label: 'Topic Roadmap', icon: MapIcon, show: true },
     ].filter((item) => item.show);
   }, [learningPath, weakAreasEligibility]);
 
@@ -754,7 +754,7 @@ const LearningPathPage = () => {
         <div id="lp-topics" className="scroll-mt-24 space-y-4">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-lg bg-primary-light flex items-center justify-center">
-              <Map className="w-4 h-4 text-primary" strokeWidth={2} />
+              <MapIcon className="w-4 h-4 text-primary" strokeWidth={2} />
             </div>
             <div>
               <h3 className="text-sm font-semibold text-text-heading">Topic Roadmap</h3>
