@@ -15,6 +15,8 @@ import {
   Lightbulb,
   AlertTriangle,
   ChevronDown,
+  ChevronUp,
+  ArrowUp,
   Download,
   MoreVertical,
   Gauge,
@@ -159,6 +161,11 @@ const LearningPathPage = () => {
 
   const scrollToSection = (id) => {
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    setOutlineOpen(false);
+  };
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
     setOutlineOpen(false);
   };
 
@@ -778,49 +785,6 @@ const LearningPathPage = () => {
                 )}
               </div>
 
-              {/* Jump to Section Dropdown Button */}
-              {navItems.length > 0 && (
-                <div className="relative" ref={outlineRef}>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setOutlineOpen((prev) => !prev)}
-                    className="flex items-center gap-2"
-                  >
-                    <Compass className="w-4 h-4 text-primary" strokeWidth={2} />
-                    <span>Jump to section</span>
-                    <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${outlineOpen ? 'rotate-180' : ''}`} />
-                  </Button>
-
-                  {outlineOpen && (
-                    <div className="absolute right-0 mt-2 w-60 bg-bg-card border border-border-medium rounded-2xl shadow-xl shadow-slate-200/25 dark:shadow-none py-2 z-50 animate-fade-in origin-top-right">
-                      <p className="px-4 pt-1.5 pb-2 text-[11px] font-bold text-text-muted uppercase tracking-wider border-b border-border-light mb-1">
-                        On This Page
-                      </p>
-                      {navItems.map((item) => {
-                        const Icon = item.icon;
-                        const isActive = displayedActiveSection === item.id;
-                        return (
-                          <button
-                            key={item.id}
-                            type="button"
-                            onClick={() => scrollToSection(item.id)}
-                            className={`w-full flex items-center gap-2.5 px-4 py-2.5 text-left text-xs font-semibold transition-colors duration-150 cursor-pointer ${
-                              isActive
-                                ? 'text-primary bg-primary-light'
-                                : 'text-text-heading hover:bg-border-light/60'
-                            }`}
-                          >
-                            <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-primary' : 'text-text-muted'}`} strokeWidth={2} />
-                            <span>{item.label}</span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              )}
-
               <Button
                 onClick={handleDownloadReport}
                 disabled={downloadingReport}
@@ -840,6 +804,72 @@ const LearningPathPage = () => {
 
         {renderContent()}
       </div>
+
+      {/* Floating Labeled Pill Button at Bottom-Right */}
+      {navItems.length > 0 && (
+        <div
+          ref={outlineRef}
+          className="fixed bottom-6 right-6 z-40 flex flex-col items-end"
+          onMouseEnter={openOutline}
+          onMouseLeave={() => setOutlineOpen(false)}
+        >
+          {outlineOpen && (
+            <div className="mb-2.5 w-64 bg-bg-card border border-border-medium rounded-2xl shadow-2xl shadow-slate-200/40 dark:shadow-none py-2 z-50 animate-fade-in origin-bottom-right">
+              <p className="px-4 pt-1 pb-2 text-[10px] font-extrabold text-text-muted uppercase tracking-wider border-b border-border-light mb-1">
+                On This Page
+              </p>
+              <div className="max-h-64 overflow-y-auto custom-scrollbar">
+                {navItems.map((item) => {
+                  const Icon = item.icon;
+                  const isActive = displayedActiveSection === item.id;
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => scrollToSection(item.id)}
+                      className={`w-full flex items-center gap-2.5 px-4 py-2 text-left text-xs font-semibold transition-colors duration-150 cursor-pointer ${
+                        isActive
+                          ? 'text-primary bg-primary-light font-bold'
+                          : 'text-text-heading hover:bg-border-light/60'
+                      }`}
+                    >
+                      <Icon className={`w-3.5 h-3.5 shrink-0 ${isActive ? 'text-primary' : 'text-text-muted'}`} strokeWidth={2} />
+                      <span className="truncate">{item.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Back to Top */}
+              <div className="pt-1.5 mt-1 border-t border-border-light px-2">
+                <button
+                  type="button"
+                  onClick={scrollToTop}
+                  className="w-full flex items-center justify-between px-3 py-1.5 rounded-xl text-xs font-semibold text-text-muted hover:text-primary hover:bg-primary-light transition-colors cursor-pointer"
+                >
+                  <span className="flex items-center gap-2">
+                    <ArrowUp className="w-3.5 h-3.5 text-primary" />
+                    <span>Back to Top</span>
+                  </span>
+                  <span className="text-[10px] font-mono opacity-70">↑</span>
+                </button>
+              </div>
+            </div>
+          )}
+
+          <button
+            type="button"
+            onClick={() => setOutlineOpen((prev) => !prev)}
+            aria-label="Jump to section"
+            aria-expanded={outlineOpen}
+            className="flex items-center gap-2 px-4 py-2.5 bg-bg-card/95 hover:bg-bg-card border border-border-medium shadow-xl shadow-slate-200/25 dark:shadow-none rounded-full text-xs font-bold text-text-heading hover:text-primary transition-all duration-200 cursor-pointer group hover:scale-105"
+          >
+            <Compass className="w-4 h-4 text-primary group-hover:rotate-45 transition-transform duration-300" strokeWidth={2} />
+            <span>Jump to Section</span>
+            <ChevronUp className={`w-3.5 h-3.5 text-text-muted transition-transform duration-200 ${outlineOpen ? 'rotate-180' : ''}`} />
+          </button>
+        </div>
+      )}
 
       <Modal
         isOpen={!!selectedTopic}
