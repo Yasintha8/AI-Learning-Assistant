@@ -52,7 +52,7 @@ const CareerRoadmap = ({ careerPath, onToggleTopic, onUpdateMilestoneStatus }) =
           </div>
           <h3 className="text-base font-bold text-slate-900 dark:text-white tracking-tight">AI Strategy & Career Overview</h3>
         </div>
-        <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed font-sans">
+        <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed font-body">
           {summary || 'Your custom roadmap is engineered to build essential competencies step-by-step toward your target role.'}
         </p>
       </div>
@@ -165,7 +165,7 @@ const CareerRoadmap = ({ careerPath, onToggleTopic, onUpdateMilestoneStatus }) =
                     </div>
                   </div>
 
-                  <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed font-sans">
+                  <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed font-body">
                     {milestone.description}
                   </p>
 

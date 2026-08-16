@@ -88,7 +88,7 @@ const CareerIntakeModal = ({ isOpen, onClose, onSubmit, initialProfile, isLoadin
         </div>
 
         {/* Form Container */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-5 max-h-[75vh] overflow-y-auto custom-scrollbar font-sans">
+        <form onSubmit={handleSubmit} className="p-6 space-y-5 max-h-[75vh] overflow-y-auto custom-scrollbar font-body">
           
           {/* Current Role & Target Role */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

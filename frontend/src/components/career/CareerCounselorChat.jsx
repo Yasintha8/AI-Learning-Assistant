@@ -93,8 +93,8 @@ const CareerCounselorChat = ({ chatHistory = [], onSendMessage, isLoading, targe
                 <div
                   className={`max-w-[85%] p-4 rounded-2xl text-xs leading-relaxed ${
                     isUser
-                      ? 'bg-indigo-600 text-white rounded-tr-xs shadow-xs font-sans'
-                      : 'bg-slate-50 dark:bg-[#1d263b] border border-slate-200/80 dark:border-slate-700/80 text-slate-800 dark:text-slate-200 rounded-tl-xs shadow-xs font-sans'
+                      ? 'bg-indigo-600 text-white rounded-tr-xs shadow-xs font-body'
+                      : 'bg-slate-50 dark:bg-[#1d263b] border border-slate-200/80 dark:border-slate-700/80 text-slate-800 dark:text-slate-200 rounded-tl-xs shadow-xs font-body'
                   }`}
                 >
                   {isUser ? (
@@ -164,7 +164,7 @@ const CareerCounselorChat = ({ chatHistory = [], onSendMessage, isLoading, targe
           }}
           placeholder={`Ask your AI Career Counselor about ${targetRole || 'your target role'}...`}
           disabled={isLoading}
-          className="flex-1 px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-indigo-600 transition-colors disabled:opacity-50 font-sans"
+          className="flex-1 px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-indigo-600 transition-colors disabled:opacity-50 font-body"
         />
         <button
           type="submit"

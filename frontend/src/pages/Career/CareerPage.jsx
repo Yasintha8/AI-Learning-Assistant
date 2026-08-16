@@ -157,11 +157,11 @@ const CareerPage = () => {
               </h1>
               
               {profile ? (
-                <p className="mt-1.5 text-sm text-text-body leading-relaxed font-sans">
+                <p className="mt-1.5 text-sm text-text-body leading-relaxed font-body">
                   Transitioning from <strong className="text-text-heading font-semibold">{profile.currentRole}</strong> to <strong className="text-primary font-semibold">{profile.targetRole}</strong> in {profile.timelineMonths} months ({profile.weeklyHours} hrs/week).
                 </p>
               ) : (
-                <p className="mt-1.5 text-sm text-text-muted font-sans">
+                <p className="mt-1.5 text-sm text-text-muted font-body">
                   Define your current background and future goals to generate a step-by-step career path roadmap with Gemini AI.
                 </p>
               )}
@@ -212,7 +212,7 @@ const CareerPage = () => {
           </div>
           <div className="max-w-md mx-auto space-y-2">
             <h2 className="text-xl font-bold text-text-heading">No Career Goal Set Yet</h2>
-            <p className="text-xs text-text-muted leading-relaxed font-sans">
+            <p className="text-xs text-text-muted leading-relaxed font-body">
               Take the quick career intake wizard to outline your current background and target role. Gemini AI will construct a personalized, multi-phase roadmap for you.
             </p>
           </div>

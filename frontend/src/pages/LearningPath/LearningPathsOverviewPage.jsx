@@ -104,7 +104,7 @@ const LearningPathsOverviewPage = () => {
             <h1 className="text-2xl sm:text-3xl font-extrabold text-text-heading tracking-tight font-display">
               Learning Paths Hub
             </h1>
-            <p className="text-sm text-text-muted leading-relaxed font-sans">
+            <p className="text-sm text-text-muted leading-relaxed font-body">
               Track concept mastery, study recommendations, and weak area focus across all your uploaded documents.
             </p>
           </div>
@@ -137,7 +137,7 @@ const LearningPathsOverviewPage = () => {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search learning paths by document title..."
-              className="w-full pl-10 pr-4 py-2.5 bg-bg-card border border-border-light rounded-xl text-xs text-text-heading placeholder-text-placeholder focus:outline-none focus:border-primary transition-colors font-sans shadow-xs"
+              className="w-full pl-10 pr-4 py-2.5 bg-bg-card border border-border-light rounded-xl text-xs text-text-heading placeholder-text-placeholder focus:outline-none focus:border-primary transition-colors font-body shadow-xs"
             />
           </div>
         </div>
@@ -157,7 +157,7 @@ const LearningPathsOverviewPage = () => {
           </div>
           <div className="max-w-md mx-auto space-y-2">
             <h2 className="text-xl font-bold text-text-heading">No Documents Uploaded Yet</h2>
-            <p className="text-xs text-text-muted leading-relaxed font-sans">
+            <p className="text-xs text-text-muted leading-relaxed font-body">
               Upload your first study document to automatically generate a personalized learning path with concept tracking, quizzes, and flashcards.
             </p>
           </div>
