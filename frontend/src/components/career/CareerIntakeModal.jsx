@@ -1,35 +1,25 @@
-import React, { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { X, Sparkles, Plus, Briefcase, Target, Clock, Calendar, BookOpen } from 'lucide-react';
 
 const CareerIntakeModal = ({ isOpen, onClose, onSubmit, initialProfile, isLoading }) => {
-  const [currentRole, setCurrentRole] = useState('');
-  const [educationLevel, setEducationLevel] = useState('Undergraduate Student');
-  const [targetRole, setTargetRole] = useState('');
-  const [timelineMonths, setTimelineMonths] = useState(6);
-  const [weeklyHours, setWeeklyHours] = useState(10);
-  const [preferredLearningStyle, setPreferredLearningStyle] = useState('hands-on');
+  const [currentRole, setCurrentRole] = useState(initialProfile?.currentRole || '');
+  const [educationLevel, setEducationLevel] = useState(initialProfile?.educationLevel || 'Undergraduate Student');
+  const [targetRole, setTargetRole] = useState(initialProfile?.targetRole || '');
+  const [timelineMonths, setTimelineMonths] = useState(initialProfile?.timelineMonths || 6);
+  const [weeklyHours, setWeeklyHours] = useState(initialProfile?.weeklyHours || 10);
+  const [preferredLearningStyle, setPreferredLearningStyle] = useState(initialProfile?.preferredLearningStyle || 'hands-on');
   
   // Skills list state
-  const [skills, setSkills] = useState([
-    { skillName: 'HTML / CSS', proficiency: 'intermediate' },
-    { skillName: 'JavaScript', proficiency: 'beginner' }
-  ]);
+  const [skills, setSkills] = useState(
+    Array.isArray(initialProfile?.currentSkills) && initialProfile.currentSkills.length > 0
+      ? initialProfile.currentSkills
+      : [
+          { skillName: 'HTML / CSS', proficiency: 'intermediate' },
+          { skillName: 'JavaScript', proficiency: 'beginner' }
+        ]
+  );
   const [newSkillName, setNewSkillName] = useState('');
   const [newSkillProficiency, setNewSkillProficiency] = useState('beginner');
-
-  useEffect(() => {
-    if (initialProfile) {
-      setCurrentRole(initialProfile.currentRole || '');
-      setEducationLevel(initialProfile.educationLevel || 'Undergraduate Student');
-      setTargetRole(initialProfile.targetRole || '');
-      setTimelineMonths(initialProfile.timelineMonths || 6);
-      setWeeklyHours(initialProfile.weeklyHours || 10);
-      setPreferredLearningStyle(initialProfile.preferredLearningStyle || 'hands-on');
-      if (Array.isArray(initialProfile.currentSkills) && initialProfile.currentSkills.length > 0) {
-        setSkills(initialProfile.currentSkills);
-      }
-    }
-  }, [initialProfile, isOpen]);
 
   if (!isOpen) return null;
 
@@ -64,7 +54,7 @@ const CareerIntakeModal = ({ isOpen, onClose, onSubmit, initialProfile, isLoadin
       <div className="relative w-full max-w-2xl bg-white dark:bg-[#151b2c] border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl overflow-hidden my-8">
         
         {/* Top Header */}
-        <div className="px-6 py-5 bg-gradient-to-r from-indigo-50/80 via-purple-50/50 to-white dark:from-[#192238] dark:to-[#151b2c] border-b border-slate-200/80 dark:border-slate-800 flex items-center justify-between">
+        <div className="px-6 py-5 bg-linear-to-r from-indigo-50/80 via-purple-50/50 to-white dark:from-[#192238] dark:to-[#151b2c] border-b border-slate-200/80 dark:border-slate-800 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="p-2.5 bg-indigo-600 text-white rounded-xl shadow-xs">
               <Sparkles className="w-5 h-5" />
@@ -93,11 +83,12 @@ const CareerIntakeModal = ({ isOpen, onClose, onSubmit, initialProfile, isLoadin
           {/* Current Role & Target Role */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+              <label htmlFor="currentRole" className="flex items-center gap-1.5 text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">
                 <Briefcase className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
                 Current Role / Background <span className="text-rose-500">*</span>
               </label>
               <input
+                id="currentRole"
                 type="text"
                 value={currentRole}
                 onChange={(e) => setCurrentRole(e.target.value)}
@@ -108,11 +99,12 @@ const CareerIntakeModal = ({ isOpen, onClose, onSubmit, initialProfile, isLoadin
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+              <label htmlFor="targetRole" className="flex items-center gap-1.5 text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">
                 <Target className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
                 Target Role / Future Goal <span className="text-rose-500">*</span>
               </label>
               <input
+                id="targetRole"
                 type="text"
                 value={targetRole}
                 onChange={(e) => setTargetRole(e.target.value)}
@@ -126,11 +118,12 @@ const CareerIntakeModal = ({ isOpen, onClose, onSubmit, initialProfile, isLoadin
           {/* Education & Learning Preference */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+              <label htmlFor="educationLevel" className="flex items-center gap-1.5 text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">
                 <BookOpen className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400" />
                 Education / Experience Level
               </label>
               <select
+                id="educationLevel"
                 value={educationLevel}
                 onChange={(e) => setEducationLevel(e.target.value)}
                 className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:border-indigo-600 transition-colors"
@@ -144,10 +137,11 @@ const CareerIntakeModal = ({ isOpen, onClose, onSubmit, initialProfile, isLoadin
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">
+              <label htmlFor="preferredLearningStyle" className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">
                 Learning Style Preference
               </label>
               <select
+                id="preferredLearningStyle"
                 value={preferredLearningStyle}
                 onChange={(e) => setPreferredLearningStyle(e.target.value)}
                 className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:border-indigo-600 transition-colors"
@@ -163,12 +157,13 @@ const CareerIntakeModal = ({ isOpen, onClose, onSubmit, initialProfile, isLoadin
           {/* Timeline & Study Time Commitment Sliders */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+              <label htmlFor="timelineMonths" className="flex items-center gap-1.5 text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">
                 <Calendar className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                 Target Timeline (Months)
               </label>
               <div className="flex items-center gap-3">
                 <input
+                  id="timelineMonths"
                   type="range"
                   min="1"
                   max="24"
@@ -183,12 +178,13 @@ const CareerIntakeModal = ({ isOpen, onClose, onSubmit, initialProfile, isLoadin
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+              <label htmlFor="weeklyHours" className="flex items-center gap-1.5 text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">
                 <Clock className="w-3.5 h-3.5 text-amber-500" />
                 Weekly Study Time (Hours)
               </label>
               <div className="flex items-center gap-3">
                 <input
+                  id="weeklyHours"
                   type="range"
                   min="2"
                   max="60"
@@ -206,9 +202,9 @@ const CareerIntakeModal = ({ isOpen, onClose, onSubmit, initialProfile, isLoadin
 
           {/* Skills Builder */}
           <div>
-            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">
+            <span className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">
               Your Known Skills & Technologies
-            </label>
+            </span>
             
             <div className="flex flex-wrap gap-2 mb-3">
               {skills.map((skill, index) => (

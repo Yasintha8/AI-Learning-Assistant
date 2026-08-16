@@ -1,4 +1,3 @@
-import React from 'react';
 import {
   CheckCircle2,
   Circle,
@@ -8,8 +7,7 @@ import {
   FolderGit2,
   AlertCircle,
   BookOpen,
-  Check,
-  ChevronRight
+  Check
 } from 'lucide-react';
 
 const CareerRoadmap = ({ careerPath, onToggleTopic, onUpdateMilestoneStatus }) => {
@@ -45,7 +43,7 @@ const CareerRoadmap = ({ careerPath, onToggleTopic, onUpdateMilestoneStatus }) =
     <div className="space-y-6">
       
       {/* Executive Summary Card */}
-      <div className="p-6 bg-gradient-to-r from-indigo-50/60 via-purple-50/30 to-white dark:from-[#192238] dark:to-[#151b2c] border border-indigo-100 dark:border-indigo-950/80 rounded-3xl shadow-xs">
+      <div className="p-6 bg-linear-to-r from-indigo-50/60 via-purple-50/30 to-white dark:from-[#192238] dark:to-[#151b2c] border border-indigo-100 dark:border-indigo-950/80 rounded-3xl shadow-xs">
         <div className="flex items-center gap-2.5 mb-2">
           <div className="p-2 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 rounded-xl">
             <Sparkles className="w-4 h-4" />
@@ -118,7 +116,7 @@ const CareerRoadmap = ({ careerPath, onToggleTopic, onUpdateMilestoneStatus }) =
                       : 'bg-slate-100 dark:bg-[#151b2c] border-slate-300 dark:border-slate-700 text-slate-500 dark:text-slate-400'
                   }`}
                 >
-                  {isCompleted ? <Check className="w-3.5 h-3.5 stroke-[3]" /> : idx + 1}
+                  {isCompleted ? <Check className="w-3.5 h-3.5" strokeWidth={3} /> : idx + 1}
                 </div>
 
                 {/* Milestone Details Card */}

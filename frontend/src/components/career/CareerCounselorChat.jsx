@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Sparkles, Send, User, Bot, RefreshCw, MessageSquare, Lightbulb } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -35,8 +35,8 @@ const CareerCounselorChat = ({ chatHistory = [], onSendMessage, isLoading, targe
   };
 
   return (
-    <div className="flex flex-col h-[650px] bg-white dark:bg-[#151b2c] border border-slate-200/80 dark:border-slate-800 rounded-3xl shadow-xs overflow-hidden">
-      
+    <div className="flex flex-col h-162.5 bg-white dark:bg-[#151b2c] border border-slate-200/80 dark:border-slate-800 rounded-3xl shadow-xs overflow-hidden">
+
       {/* Top Header Bar */}
       <div className="px-6 py-4 bg-slate-50/80 dark:bg-[#192238] border-b border-slate-200/80 dark:border-slate-800 flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -80,22 +80,20 @@ const CareerCounselorChat = ({ chatHistory = [], onSendMessage, isLoading, targe
               >
                 {/* Avatar */}
                 <div
-                  className={`w-8 h-8 rounded-xl flex items-center justify-center text-xs font-bold shrink-0 shadow-xs ${
-                    isUser
+                  className={`w-8 h-8 rounded-xl flex items-center justify-center text-xs font-bold shrink-0 shadow-xs ${isUser
                       ? 'bg-indigo-600 text-white'
-                      : 'bg-gradient-to-br from-indigo-600 to-purple-600 text-white'
-                  }`}
+                      : 'bg-linear-to-br from-indigo-600 to-purple-600 text-white'
+                    }`}
                 >
                   {isUser ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
                 </div>
 
                 {/* Message Bubble */}
                 <div
-                  className={`max-w-[85%] p-4 rounded-2xl text-xs leading-relaxed ${
-                    isUser
+                  className={`max-w-[85%] p-4 rounded-2xl text-xs leading-relaxed ${isUser
                       ? 'bg-indigo-600 text-white rounded-tr-xs shadow-xs font-body'
                       : 'bg-slate-50 dark:bg-[#1d263b] border border-slate-200/80 dark:border-slate-700/80 text-slate-800 dark:text-slate-200 rounded-tl-xs shadow-xs font-body'
-                  }`}
+                    }`}
                 >
                   {isUser ? (
                     <p className="whitespace-pre-wrap font-medium">{msg.content}</p>
@@ -106,11 +104,10 @@ const CareerCounselorChat = ({ chatHistory = [], onSendMessage, isLoading, targe
                       </ReactMarkdown>
                     </div>
                   )}
-                  
+
                   <div
-                    className={`text-[10px] mt-1.5 font-mono ${
-                      isUser ? 'text-indigo-200 text-right' : 'text-slate-400'
-                    }`}
+                    className={`text-[10px] mt-1.5 font-mono ${isUser ? 'text-indigo-200 text-right' : 'text-slate-400'
+                      }`}
                   >
                     {msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
                   </div>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import CareerIntakeModal from '../../components/career/CareerIntakeModal';
 import CareerRoadmap from '../../components/career/CareerRoadmap';
 import CareerCounselorChat from '../../components/career/CareerCounselorChat';
@@ -29,7 +29,6 @@ const CareerPage = () => {
 
   const fetchCareerData = async () => {
     try {
-      setLoading(true);
       const response = await getCareerData();
       if (response.success && response.data) {
         setProfile(response.data.profile);
@@ -47,7 +46,17 @@ const CareerPage = () => {
   };
 
   useEffect(() => {
-    fetchCareerData();
+    let active = true;
+    const init = async () => {
+      await Promise.resolve();
+      if (active) {
+        fetchCareerData();
+      }
+    };
+    init();
+    return () => {
+      active = false;
+    };
   }, []);
 
   const handleSaveProfile = async (profileData) => {
@@ -278,13 +287,15 @@ const CareerPage = () => {
       )}
 
       {/* Career Intake Modal */}
-      <CareerIntakeModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onSubmit={handleSaveProfile}
-        initialProfile={profile}
-        isLoading={isSubmitting}
-      />
+      {isModalOpen && (
+        <CareerIntakeModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          onSubmit={handleSaveProfile}
+          initialProfile={profile}
+          isLoading={isSubmitting}
+        />
+      )}
 
     </div>
   );
