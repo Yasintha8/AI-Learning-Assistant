@@ -39,13 +39,16 @@ const fileFilter = (req, file, cb) => {
     }
 };
 
+// Configure multer limits: if MAX_FILE_SIZE env var is set and > 0, use it; otherwise no fileSize limit (unlimited)
+const multerLimits = process.env.MAX_FILE_SIZE && parseInt(process.env.MAX_FILE_SIZE) > 0
+    ? { fileSize: parseInt(process.env.MAX_FILE_SIZE) }
+    : {};
+
 // Configure multer
 const upload = multer({
     storage: storage,
     fileFilter: fileFilter,
-    limits: {
-        fileSize: parseInt(process.env.MAX_FILE_SIZE) || 10485760 // 10MB default
-    }
+    limits: multerLimits
 });
 
 export default upload;

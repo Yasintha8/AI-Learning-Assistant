@@ -22,8 +22,8 @@ const errorHandler = (err, req, res, next) => {
     }
 
     // Multer file size error
-    if (err.code === ' LIMIT_FILE_SIZE') {
-        message = 'File size exceeds the maximum limit of 10MB';
+    if (err.code === 'LIMIT_FILE_SIZE' || err.code === ' LIMIT_FILE_SIZE') {
+        message = 'File size exceeds the configured maximum limit';
         statusCode = 400;
     }
 
