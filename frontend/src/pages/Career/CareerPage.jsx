@@ -15,7 +15,12 @@ import {
   Layers,
   MessageSquare,
   Edit3,
-  Award
+  Award,
+  ArrowRight,
+  TrendingUp,
+  Clock,
+  Briefcase,
+  Target
 } from 'lucide-react';
 
 const CareerPage = () => {
@@ -145,33 +150,45 @@ const CareerPage = () => {
   return (
     <div className="max-w-7xl mx-auto space-y-6 pb-12">
 
-      {/* Professional Hero Banner */}
+      {/* Hero Banner */}
       <div className="relative overflow-hidden bg-bg-card border border-border-light rounded-3xl p-6 sm:p-8 shadow-xs transition-all">
-
-        {/* Accent Glow */}
-        <div className="absolute top-0 right-0 -mt-8 -mr-8 w-64 h-64 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
+        {/* Ambient Gradient Glows */}
+        <div className="absolute top-0 right-0 -mt-12 -mr-12 w-80 h-80 bg-gradient-to-br from-primary/10 via-purple-500/10 to-transparent rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 left-1/4 -mb-12 w-60 h-60 bg-emerald-500/5 rounded-full blur-2xl pointer-events-none" />
 
         <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
 
           {/* Role Header & Subtitle */}
           <div className="space-y-3 max-w-2xl">
-            <div className="inline-flex items-center gap-2 px-3 py-1 bg-primary-light border border-primary/20 rounded-full text-primary text-xs font-semibold">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-primary-light border border-primary/20 rounded-full text-primary text-xs font-semibold shadow-2xs">
               <Compass className="w-3.5 h-3.5" />
-              <span>AI Career Navigator</span>
+              <span>AI Career Navigator & Strategic Planning</span>
             </div>
 
             <div>
-              <h1 className="text-2xl sm:text-3xl font-extrabold text-text-heading tracking-tight font-display">
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-text-heading tracking-tight font-display">
                 {profile ? profile.targetRole : 'Personalized Career Path & Guidance'}
               </h1>
 
               {profile ? (
-                <p className="mt-1.5 text-sm text-text-body leading-relaxed font-body">
-                  Transitioning from <strong className="text-text-heading font-semibold">{profile.currentRole}</strong> to <strong className="text-primary font-semibold">{profile.targetRole}</strong> in {profile.timelineMonths} months ({profile.weeklyHours} hrs/week).
-                </p>
+                <div className="mt-2.5 flex items-center gap-2 flex-wrap text-xs sm:text-sm text-text-muted font-body">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-bg-main border border-border-light rounded-xl font-medium text-text-body">
+                    <Briefcase className="w-3.5 h-3.5 text-text-muted" />
+                    <span>{profile.currentRole}</span>
+                  </span>
+                  <ArrowRight className="w-4 h-4 text-primary shrink-0" />
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-primary-light border border-primary/20 rounded-xl font-bold text-primary">
+                    <Target className="w-3.5 h-3.5 text-primary" />
+                    <span>{profile.targetRole}</span>
+                  </span>
+                  <span className="inline-flex items-center gap-1 px-3 py-1 bg-bg-main border border-border-light rounded-xl text-xs font-mono font-bold text-text-muted">
+                    <Clock className="w-3.5 h-3.5 text-amber-500" />
+                    {profile.timelineMonths} mos • {profile.weeklyHours} hrs/wk
+                  </span>
+                </div>
               ) : (
-                <p className="mt-1.5 text-sm text-text-muted font-body">
-                  Define your current background and future goals to generate a step-by-step career path roadmap.
+                <p className="mt-2 text-sm text-text-muted font-body leading-relaxed">
+                  Define your current background and target role to generate a step-by-step career path roadmap with AI-curated skill gaps and portfolio project ideas.
                 </p>
               )}
             </div>
@@ -180,16 +197,17 @@ const CareerPage = () => {
           {/* Job Readiness Metric Card & Action */}
           <div className="flex items-center gap-4 shrink-0 flex-wrap sm:flex-nowrap">
             {profile && careerPath && (
-              <div className="flex items-center gap-3 px-4 py-3 bg-bg-main border border-border-medium rounded-2xl shadow-xs">
-                <div className="p-2.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-xl border border-emerald-500/20">
+              <div className="flex items-center gap-3.5 px-5 py-3.5 bg-bg-main/80 backdrop-blur-sm border border-border-medium rounded-2xl shadow-2xs">
+                <div className="p-3 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-2xl border border-emerald-500/20 shadow-2xs">
                   <Award className="w-6 h-6" />
                 </div>
                 <div>
-                  <div className="text-[10px] uppercase font-bold text-text-muted tracking-wider">
+                  <div className="text-[10px] uppercase font-bold text-text-muted tracking-wider mb-0.5">
                     Job Readiness Score
                   </div>
-                  <div className="text-2xl font-black text-emerald-600 dark:text-emerald-400 font-mono tracking-tight">
-                    {careerPath.readinessScore || 0}%
+                  <div className="text-2xl font-black text-emerald-600 dark:text-emerald-400 font-mono tracking-tight flex items-center gap-1">
+                    <span>{careerPath.readinessScore || 0}%</span>
+                    <TrendingUp className="w-4 h-4 text-emerald-500" />
                   </div>
                 </div>
               </div>
@@ -197,10 +215,10 @@ const CareerPage = () => {
 
             <button
               onClick={() => setIsModalOpen(true)}
-              className="px-5 py-3 bg-primary hover:bg-primary-hover text-white rounded-2xl text-xs font-bold shadow-sm transition-all flex items-center gap-2 cursor-pointer"
+              className="px-5 py-3.5 bg-primary hover:bg-primary-hover text-white rounded-2xl text-xs font-bold shadow-sm hover:shadow-md transition-all flex items-center gap-2 cursor-pointer"
             >
               <Edit3 className="w-4 h-4" />
-              {profile ? 'Edit Career Goal' : 'Start Intake Wizard'}
+              <span>{profile ? 'Edit Career Goal' : 'Start Intake Wizard'}</span>
             </button>
           </div>
 
@@ -215,22 +233,22 @@ const CareerPage = () => {
         </div>
       ) : !profile ? (
         /* Empty State */
-        <div className="p-12 text-center bg-bg-card border border-border-light rounded-3xl space-y-6 shadow-xs">
-          <div className="w-16 h-16 bg-primary-light text-primary rounded-2xl border border-primary/20 flex items-center justify-center mx-auto">
-            <Sparkles className="w-8 h-8" />
+        <div className="p-12 sm:p-16 text-center bg-bg-card border border-border-light rounded-3xl space-y-6 shadow-xs">
+          <div className="w-20 h-20 bg-gradient-to-br from-primary/20 via-purple-500/20 to-emerald-500/20 text-primary rounded-3xl border border-primary/30 flex items-center justify-center mx-auto shadow-md">
+            <Sparkles className="w-10 h-10" />
           </div>
           <div className="max-w-md mx-auto space-y-2">
-            <h2 className="text-xl font-bold text-text-heading">No Career Goal Set Yet</h2>
-            <p className="text-xs text-text-muted leading-relaxed font-body">
+            <h2 className="text-xl sm:text-2xl font-bold text-text-heading font-display">No Career Goal Set Yet</h2>
+            <p className="text-xs sm:text-sm text-text-muted leading-relaxed font-body">
               Take the quick career intake wizard to outline your current background and target role. AI will construct a personalized, multi-phase roadmap for you.
             </p>
           </div>
           <button
             onClick={() => setIsModalOpen(true)}
-            className="px-6 py-3 bg-primary hover:bg-primary-hover text-white rounded-xl text-xs font-bold transition-all inline-flex items-center gap-2 cursor-pointer shadow-sm"
+            className="px-6 py-3.5 bg-primary hover:bg-primary-hover text-white rounded-xl text-xs font-bold transition-all inline-flex items-center gap-2 cursor-pointer shadow-sm hover:shadow-md"
           >
             <Sparkles className="w-4 h-4" />
-            Build My Career Roadmap
+            <span>Build My Career Roadmap</span>
           </button>
         </div>
       ) : (
@@ -238,27 +256,27 @@ const CareerPage = () => {
         <div className="space-y-6">
 
           {/* Segmented Tab Control */}
-          <div className="flex items-center gap-2 p-1.5 bg-bg-card border border-border-light rounded-2xl max-w-md shadow-xs">
+          <div className="flex items-center gap-2 p-1.5 bg-bg-card border border-border-light rounded-2xl max-w-md shadow-2xs">
             <button
               onClick={() => setActiveTab('roadmap')}
               className={`flex-1 py-2.5 px-4 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${activeTab === 'roadmap'
-                  ? 'bg-primary text-white shadow-xs'
-                  : 'text-text-muted hover:text-text-heading'
+                ? 'bg-primary text-white shadow-2xs'
+                : 'text-text-muted hover:text-text-heading'
                 }`}
             >
               <Layers className="w-4 h-4" />
-              Roadmap & Skill Gaps
+              <span>Roadmap & Skill Gaps</span>
             </button>
 
             <button
               onClick={() => setActiveTab('chat')}
               className={`flex-1 py-2.5 px-4 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${activeTab === 'chat'
-                  ? 'bg-primary text-white shadow-xs'
-                  : 'text-text-muted hover:text-text-heading'
+                ? 'bg-primary text-white shadow-2xs'
+                : 'text-text-muted hover:text-text-heading'
                 }`}
             >
               <MessageSquare className="w-4 h-4" />
-              AI Counselor Chat
+              <span>AI Counselor Chat</span>
             </button>
           </div>
 

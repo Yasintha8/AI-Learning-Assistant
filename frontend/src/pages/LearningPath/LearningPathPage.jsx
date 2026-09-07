@@ -24,6 +24,8 @@ import {
   Map as MapIcon,
   Compass,
   X,
+  TrendingUp,
+  Award
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import learningPathService from '../../services/learningPathService';
@@ -138,6 +140,7 @@ const LearningPathPage = () => {
       }, 4000);
     }
   };
+
   const [quizResultsExpanded, setQuizResultsExpanded] = useState(false);
   const [downloadingReport, setDownloadingReport] = useState(false);
   const [actionLoadingKey, setActionLoadingKey] = useState(null);
@@ -146,8 +149,6 @@ const LearningPathPage = () => {
   const moreMenuRef = useRef(null);
   const [activeSection, setActiveSection] = useState(null);
   const [outlineOpen, setOutlineOpen] = useState(false);
-  // Pulses the outline FAB until the user discovers it once, then never again (persisted so
-  // it doesn't nag on every return visit) - standard pattern for a newly-relocated affordance
   const [outlineSeen, setOutlineSeen] = useState(() => {
     try { return localStorage.getItem(OUTLINE_SEEN_KEY) === '1'; } catch { return false; }
   });
@@ -174,8 +175,6 @@ const LearningPathPage = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Jump-to-section nav shown at the top of the page - only lists sections that actually
-  // render, since Study Plan / Cognitive Skills / Weak Areas are conditional on real activity
   const navItems = useMemo(() => {
     if (!learningPath?.topics?.length) return [];
 
@@ -189,13 +188,10 @@ const LearningPathPage = () => {
     ].filter((item) => item.show);
   }, [learningPath, weakAreasEligibility]);
 
-  // Falls back to the first nav item until the observer below reports a real intersection
-  // (e.g. right after navItems changes, or before the user has scrolled at all)
   const displayedActiveSection = (activeSection && navItems.some((item) => item.id === activeSection))
     ? activeSection
     : navItems[0]?.id;
 
-  // Scroll-spy: highlights whichever section is currently under the sticky app header as the user scrolls
   useEffect(() => {
     if (navItems.length === 0) return undefined;
 
@@ -263,7 +259,6 @@ const LearningPathPage = () => {
       const response = await learningPathService.getLearningPathForDocument(user.id || user._id, documentId);
       setLearningPath(response.data);
 
-      // Auto-refresh the AI study plan on page load (cheap no-op if not eligible or not stale)
       if (response.data?.topics?.length > 0) {
         fetchStudyPlan(false);
       }
@@ -282,9 +277,6 @@ const LearningPathPage = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [documentId, user]);
 
-  // Fetched independently of the learning path itself - getStudyPlan's response isn't
-  // populated with the document, so relying on learningPath.documentId.title would go
-  // stale as soon as the auto-refresh in fetchLearningPath overwrites it.
   useEffect(() => {
     if (!documentId) return;
     documentService.getDocumentById(documentId)
@@ -298,7 +290,6 @@ const LearningPathPage = () => {
       const response = await learningPathService.generateLearningPath(documentId);
       setLearningPath(response.data);
       toast.success('Learning path generated successfully!');
-      // Populate the default study plan immediately rather than waiting for a reload
       fetchStudyPlan(false);
     } catch (error) {
       toast.error(error.message || 'Failed to generate learning path.');
@@ -338,8 +329,6 @@ const LearningPathPage = () => {
     }
   };
 
-  // `key` uniquely identifies the item for the loading spinner; `title` is what gets sent to
-  // the AI (a topic title for study-plan items, a concept name for weak-concept items).
   const handleInlineAction = async (item, key, title) => {
     setActionLoadingKey(key);
     try {
@@ -360,12 +349,12 @@ const LearningPathPage = () => {
   const renderEligibilityRow = (label, current, required) => {
     const done = current >= required;
     return (
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 p-3 rounded-xl bg-bg-main border border-border-light">
         {done
           ? <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" strokeWidth={2.5} />
           : <Circle className="w-4 h-4 text-text-muted shrink-0" strokeWidth={2} />}
-        <span className="text-sm text-text-body flex-1">{label}</span>
-        <span className={`text-sm font-semibold tabular-nums ${done ? 'text-emerald-600' : 'text-text-muted'}`}>
+        <span className="text-xs sm:text-sm text-text-body flex-1 font-medium">{label}</span>
+        <span className={`text-xs sm:text-sm font-black tabular-nums font-mono ${done ? 'text-emerald-600 dark:text-emerald-400' : 'text-text-muted'}`}>
           {current}/{required}
         </span>
       </div>
@@ -375,8 +364,9 @@ const LearningPathPage = () => {
   const renderContent = () => {
     if (loading) {
       return (
-        <div className="flex items-center justify-center min-h-[400px]">
-          <Spinner />
+        <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4 bg-bg-card border border-border-light rounded-3xl p-8 shadow-xs">
+          <Spinner size="lg" tone="emerald" />
+          <p className="text-xs font-semibold text-text-muted">Loading learning path details...</p>
         </div>
       );
     }
@@ -386,7 +376,7 @@ const LearningPathPage = () => {
         <EmptyState
           title="No Learning Path Yet"
           description="Generate a topic breakdown from this document to start tracking your mastery."
-          buttonText={generating ? 'Generating...' : 'Generate Learning Path'}
+          buttonText={generating ? 'Generating Topics...' : 'Generate Learning Path'}
           onActionClick={generating ? undefined : handleGenerate}
         />
       );
@@ -403,25 +393,34 @@ const LearningPathPage = () => {
     return (
       <div className="space-y-8">
         {/* Overall Progress */}
-        <div id="lp-progress" className="scroll-mt-24 bg-bg-card border border-border-light rounded-2xl p-6 shadow-sm">
-          <div className="flex flex-col sm:flex-row sm:items-center gap-6">
-            <div className="shrink-0">
-              <p className="text-xs font-semibold text-text-muted uppercase tracking-wide mb-1">Document Progress</p>
+        <div id="lp-progress" className="scroll-mt-24 bg-bg-card border border-border-light rounded-3xl p-6 sm:p-8 shadow-xs relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/5 rounded-full blur-3xl pointer-events-none" />
+
+          <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div className="space-y-2 shrink-0 min-w-[200px]">
+              <p className="text-xs font-bold text-text-muted uppercase tracking-wider flex items-center gap-1.5">
+                <Gauge className="w-3.5 h-3.5 text-primary" />
+                <span>Overall Mastery</span>
+              </p>
               <div className="flex items-baseline gap-2">
-                <span className={`text-4xl font-black tabular-nums ${progressBand.text}`}>{overallProgress}%</span>
-                <span className="text-sm text-text-muted">complete</span>
+                <span className={`text-4xl sm:text-5xl font-black tabular-nums font-mono ${progressBand.text}`}>{overallProgress}%</span>
+                <span className="text-xs text-text-muted font-bold uppercase tracking-wider">Overall</span>
               </div>
             </div>
 
-            <div className="flex-1 min-w-0">
-              <div className="w-full h-2.5 bg-border-light rounded-full overflow-hidden">
+            <div className="flex-1 space-y-2">
+              <div className="flex justify-between items-center text-xs font-semibold">
+                <span className="text-text-muted">Mastery Progress</span>
+                <span className="text-text-heading font-mono font-bold">{masteredCount} of {topics.length} topics mastered</span>
+              </div>
+              <div className="w-full h-3.5 bg-bg-main border border-border-light rounded-full overflow-hidden p-0.5 shadow-2xs">
                 <div
-                  className={`h-full rounded-full ${progressBand.bar} transition-all duration-300`}
+                  className={`h-full rounded-full ${progressBand.bar} transition-all duration-500`}
                   style={{ width: `${overallProgress}%` }}
                 />
               </div>
-              <p className="text-xs text-text-muted mt-2">
-                {masteredCount} of {topics.length} topic{topics.length === 1 ? '' : 's'} mastered
+              <p className="text-xs text-text-muted pt-1 font-body">
+                Scores automatically update as you complete quizzes and review flashcard sets linked to this document.
               </p>
             </div>
           </div>
@@ -429,43 +428,56 @@ const LearningPathPage = () => {
 
         {/* Recommended Next */}
         {recommendedNext && recommendedNext.length > 0 && (
-          <div id="lp-recommended" className="scroll-mt-24 bg-bg-card border border-border-light rounded-2xl overflow-hidden shadow-sm">
-            <div className="flex items-center gap-3 px-6 py-5 border-b border-border-light">
-              <div className="w-8 h-8 rounded-lg bg-primary-light flex items-center justify-center">
-                <Target className="w-4 h-4 text-primary" strokeWidth={2} />
+          <div id="lp-recommended" className="scroll-mt-24 bg-bg-card border border-border-light rounded-3xl overflow-hidden shadow-xs">
+            <div className="flex items-center gap-3 px-6 py-4 bg-primary-light/40 border-b border-border-light">
+              <div className="w-9 h-9 rounded-2xl bg-primary-light border border-primary/20 flex items-center justify-center shadow-2xs">
+                <Target className="w-4.5 h-4.5 text-primary" strokeWidth={2.5} />
               </div>
-              <h3 className="text-sm font-semibold text-text-heading">Recommended Next</h3>
+              <div>
+                <h3 className="text-base font-bold text-text-heading font-display">Recommended Next</h3>
+                <p className="text-xs text-text-muted">Topics prioritized based on your recent performance</p>
+              </div>
             </div>
             <ul className="divide-y divide-border-light">
               {recommendedNext.map((rec) => (
                 <li
                   key={rec.topicId}
-                  className="flex items-center justify-between gap-4 px-6 py-4"
+                  className="flex items-center justify-between gap-4 px-6 py-4 hover:bg-bg-main/50 transition-colors"
                 >
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium text-text-heading truncate">{rec.title}</p>
-                    <p className="text-xs text-text-muted mt-0.5">{rec.reason}</p>
+                  <div className="min-w-0 space-y-0.5">
+                    <p className="text-sm font-bold text-text-heading truncate">{rec.title}</p>
+                    <p className="text-xs text-text-muted font-body">{rec.reason}</p>
                   </div>
-                  <span className="shrink-0 text-sm font-semibold text-primary tabular-nums">
-                    {rec.masteryScore}%
-                  </span>
+                  <div className="shrink-0 flex items-center gap-3">
+                    <span className="px-3 py-1 bg-primary/10 border border-primary/20 rounded-full text-xs font-black text-primary font-mono tabular-nums">
+                      {rec.masteryScore}% score
+                    </span>
+                  </div>
                 </li>
               ))}
             </ul>
           </div>
         )}
 
+        {/* Study Plan */}
         {studyPlanItems && studyPlanItems.length > 0 && (
-          <div id="lp-study-plan" className="scroll-mt-24 bg-bg-card border border-border-light rounded-2xl overflow-hidden shadow-sm">
-            <div className="flex items-center gap-3 px-6 py-5 border-b border-border-light">
-              <div className="w-8 h-8 rounded-lg bg-primary-light flex items-center justify-center">
-                <ListChecks className="w-4 h-4 text-primary" strokeWidth={2} />
+          <div id="lp-study-plan" className="scroll-mt-24 bg-bg-card border border-border-light rounded-3xl overflow-hidden shadow-xs">
+            <div className="flex items-center justify-between px-6 py-4 bg-bg-main/60 border-b border-border-light">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center shadow-2xs">
+                  <ListChecks className="w-4.5 h-4.5 text-emerald-600 dark:text-emerald-400" strokeWidth={2.5} />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-text-heading font-display">Personalized Study Plan</h3>
+                  <p className="text-xs text-text-muted">Structured checklist ordered from weakest topics to strongest</p>
+                </div>
               </div>
-              <div>
-                <h3 className="text-sm font-semibold text-text-heading">Your Study Plan</h3>
-                <p className="text-xs text-text-muted">Personalized topic checklist — weakest topics first.</p>
-              </div>
+
+              <span className="text-xs font-mono font-extrabold text-emerald-600 dark:text-emerald-400 px-3 py-1 bg-emerald-500/10 rounded-full border border-emerald-500/20">
+                {studyPlanItems.filter(i => i.isMastered).length}/{studyPlanItems.length} Done
+              </span>
             </div>
+
             <ul className="divide-y divide-border-light">
               {studyPlanItems.map((item, index) => {
                 const isHighlighted = highlightedStudyPlanTopicId && (
@@ -487,58 +499,59 @@ const LearningPathPage = () => {
                   <li
                     key={`${item.topicId}-${index}`}
                     id={`study-plan-item-${item.topicId}`}
-                    className={`flex items-center justify-between gap-4 px-6 py-4 transition-all duration-500 ${isHighlighted
-                        ? 'bg-primary-light/95 border-l-4 border-primary ring-4 ring-primary/40 shadow-lg animate-pulse'
-                        : isMastered
-                          ? 'bg-emerald-50/90 dark:bg-emerald-950/30 border-l-4 border-emerald-500'
-                          : 'hover:bg-border-light/30'
+                    className={`flex items-center justify-between gap-4 px-6 py-4 transition-all duration-300 ${isHighlighted
+                      ? 'bg-primary-light/95 border-l-4 border-primary ring-4 ring-primary/40 shadow-lg animate-pulse'
+                      : isMastered
+                        ? 'bg-emerald-500/5 border-l-4 border-emerald-500'
+                        : 'hover:bg-bg-main/50'
                       }`}
                   >
                     <div className="flex items-start gap-3 min-w-0">
-                      <span className={`mt-0.5 shrink-0 w-6 h-6 rounded-full text-xs font-bold flex items-center justify-center ${isMastered
-                          ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300'
-                          : 'bg-border-light text-text-muted'
+                      <span className={`mt-0.5 shrink-0 w-7 h-7 rounded-xl text-xs font-black font-mono flex items-center justify-center shadow-2xs ${isMastered
+                        ? 'bg-emerald-500 text-white'
+                        : 'bg-bg-main border border-border-medium text-text-heading'
                         }`}>
                         {index + 1}
                       </span>
-                      <div className="min-w-0">
+                      <div className="min-w-0 space-y-1">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <p className="text-sm font-semibold text-text-heading">{item.title}</p>
+                          <p className="text-sm font-bold text-text-heading">{item.title}</p>
                           {isMastered ? (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-emerald-100 text-emerald-800 border border-emerald-300 dark:bg-emerald-900/50 dark:text-emerald-300 dark:border-emerald-700">
-                              <CheckCircle2 className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
-                              <span>Mastered ✓</span>
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                              <CheckCircle2 className="w-3 h-3 text-emerald-500" />
+                              <span>Mastered</span>
                             </span>
                           ) : (
                             levelStyle && (
-                              <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold ${levelStyle.bg} ${levelStyle.text}`}>
+                              <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${levelStyle.bg} ${levelStyle.text}`}>
                                 {levelStyle.label}
                               </span>
                             )
                           )}
                         </div>
-                        <p className="text-xs text-text-muted mt-0.5">{item.reason}</p>
+                        <p className="text-xs text-text-muted leading-relaxed font-body">{item.reason}</p>
                       </div>
                     </div>
 
                     {link ? (
                       <Link
                         to={link}
-                        className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border-medium text-xs font-semibold text-text-body hover:bg-border-light transition-colors duration-150"
+                        className="shrink-0 inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border border-border-medium bg-bg-card hover:border-primary/50 text-xs font-bold text-text-heading hover:text-primary transition-all duration-150 shadow-2xs cursor-pointer"
                       >
                         {ActionIcon && <ActionIcon className="w-3.5 h-3.5 text-primary" strokeWidth={2} />}
-                        {meta.label}
+                        <span>{meta.label}</span>
                       </Link>
                     ) : (
                       <button
+                        type="button"
                         onClick={() => handleInlineAction(item, item.topicId, item.title)}
                         disabled={isLoadingThis}
-                        className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border-medium text-xs font-semibold text-text-body hover:bg-border-light transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="shrink-0 inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border border-border-medium bg-bg-card hover:border-primary/50 text-xs font-bold text-text-heading hover:text-primary transition-all duration-150 shadow-2xs disabled:opacity-50 cursor-pointer"
                       >
                         {isLoadingThis
-                          ? <Spinner size="xs" tone="muted" inline />
+                          ? <Spinner size="xs" tone="emerald" inline />
                           : ActionIcon && <ActionIcon className="w-3.5 h-3.5 text-primary" strokeWidth={2} />}
-                        {meta?.label}
+                        <span>{meta?.label}</span>
                       </button>
                     )}
                   </li>
@@ -548,17 +561,16 @@ const LearningPathPage = () => {
           </div>
         )}
 
-        {/* Cognitive Skills - deterministic accuracy-by-skill-category breakdown from quiz answers,
-            no AI call involved. Shown as soon as any skill-tagged question has been answered. */}
+        {/* Cognitive Skills */}
         {learningPath.skillProfile && learningPath.skillProfile.length > 0 && (
-          <div id="lp-skills" className="scroll-mt-24 bg-bg-card border border-border-light rounded-2xl overflow-hidden shadow-sm">
-            <div className="flex items-center gap-3 px-6 py-5 border-b border-border-light">
-              <div className="w-8 h-8 rounded-lg bg-primary-light flex items-center justify-center">
-                <BrainCircuit className="w-4 h-4 text-primary" strokeWidth={2} />
+          <div id="lp-skills" className="scroll-mt-24 bg-bg-card border border-border-light rounded-3xl overflow-hidden shadow-xs">
+            <div className="flex items-center gap-3 px-6 py-4 bg-bg-main/60 border-b border-border-light">
+              <div className="w-9 h-9 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center shadow-2xs">
+                <BrainCircuit className="w-4.5 h-4.5 text-indigo-600 dark:text-indigo-400" strokeWidth={2.5} />
               </div>
               <div>
-                <h3 className="text-sm font-semibold text-text-heading">Cognitive Skills</h3>
-                <p className="text-xs text-text-muted">Quiz accuracy by type of thinking - lowest first.</p>
+                <h3 className="text-base font-bold text-text-heading font-display">Cognitive Skills Breakdown</h3>
+                <p className="text-xs text-text-muted">Accuracy split across cognitive thinking levels</p>
               </div>
             </div>
             <ul className="divide-y divide-border-light">
@@ -569,29 +581,29 @@ const LearningPathPage = () => {
                 const StatusIcon = statusStyle.icon;
 
                 return (
-                  <li key={skill.skillCategory} className="px-6 py-4">
-                    <div className="flex items-center justify-between gap-3 mb-2">
+                  <li key={skill.skillCategory} className="px-6 py-4 space-y-2">
+                    <div className="flex items-center justify-between gap-3">
                       <div className="flex items-center gap-2 min-w-0">
                         {SkillIcon && <SkillIcon className={`w-4 h-4 shrink-0 ${skillStyle.text}`} strokeWidth={2} />}
-                        <span className="text-sm font-medium text-text-heading truncate">
+                        <span className="text-sm font-bold text-text-heading truncate">
                           {skillStyle?.label || skill.skillCategory}
                         </span>
-                        <span className={`shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold ${statusStyle.bg} ${statusStyle.text}`}>
+                        <span className={`shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${statusStyle.bg} ${statusStyle.text}`}>
                           <StatusIcon className="w-3 h-3" strokeWidth={2.5} />
                           {statusStyle.label}
                         </span>
                       </div>
-                      <span className="shrink-0 text-xs font-semibold text-text-heading tabular-nums">
+                      <span className="shrink-0 text-xs font-black text-text-heading font-mono tabular-nums">
                         {skill.accuracy}%
                       </span>
                     </div>
-                    <div className="w-full bg-border-light h-1.5 rounded-full overflow-hidden">
+                    <div className="w-full bg-bg-main border border-border-light h-2.5 rounded-full overflow-hidden p-0.5">
                       <div
-                        className={`h-full rounded-full transition-all duration-300 ${statusStyle.dot}`}
+                        className={`h-full rounded-full transition-all duration-500 ${statusStyle.dot}`}
                         style={{ width: `${skill.accuracy}%` }}
                       />
                     </div>
-                    <p className="text-[11px] text-text-muted mt-1.5">
+                    <p className="text-[11px] text-text-muted font-mono">
                       {skill.correctCount} of {skill.totalAnswered} question{skill.totalAnswered === 1 ? '' : 's'} correct
                     </p>
                   </li>
@@ -601,47 +613,47 @@ const LearningPathPage = () => {
           </div>
         )}
 
-        {/* Weak Areas (concept-level, mined from wrong quiz answers) - unlocks after 3 quizzes */}
+        {/* Weak Areas */}
         {weakAreasEligibility && !weakAreasEligibility.eligible && (
-          <div id="lp-weak-areas" className="scroll-mt-24 bg-bg-card border border-border-light rounded-2xl p-6 shadow-sm">
-            <div className="flex items-center gap-3 mb-5">
-              <div className="w-8 h-8 rounded-lg bg-primary-light flex items-center justify-center">
-                <AlertTriangle className="w-4 h-4 text-primary" strokeWidth={2} />
+          <div id="lp-weak-areas" className="scroll-mt-24 bg-bg-card border border-border-light rounded-3xl p-6 sm:p-8 shadow-xs space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center shadow-2xs">
+                <AlertTriangle className="w-4.5 h-4.5 text-amber-500" strokeWidth={2.5} />
               </div>
               <div>
-                <h3 className="text-sm font-semibold text-text-heading">Weak Areas</h3>
+                <h3 className="text-base font-bold text-text-heading font-display">AI Weak Concept Miner</h3>
                 <p className="text-xs text-text-muted">
-                  Complete a few quizzes to unlock AI-detected weak concepts.
+                  Complete at least 3 quizzes to unlock personalized weak area detection.
                 </p>
               </div>
             </div>
-            <div className="space-y-3">
+            <div className="space-y-3 pt-2">
               {renderEligibilityRow('Quizzes completed', weakAreasEligibility.completedQuizCount, weakAreasEligibility.requiredQuizCount)}
             </div>
           </div>
         )}
 
         {weakAreasEligibility?.eligible && (
-          <div id="lp-weak-areas" className="scroll-mt-24 bg-bg-card border border-border-light rounded-2xl overflow-hidden shadow-sm">
-            <div className="flex items-center gap-3 px-6 py-5 border-b border-border-light">
-              <div className="w-8 h-8 rounded-lg bg-primary-light flex items-center justify-center">
-                <AlertTriangle className="w-4 h-4 text-primary" strokeWidth={2} />
+          <div id="lp-weak-areas" className="scroll-mt-24 bg-bg-card border border-border-light rounded-3xl overflow-hidden shadow-xs">
+            <div className="flex items-center gap-3 px-6 py-4 bg-amber-500/5 border-b border-border-light">
+              <div className="w-9 h-9 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center shadow-2xs">
+                <AlertTriangle className="w-4.5 h-4.5 text-amber-500" strokeWidth={2.5} />
               </div>
               <div>
-                <h3 className="text-sm font-semibold text-text-heading">Weak Areas</h3>
-                <p className="text-xs text-text-muted">Specific concepts you've missed on quizzes so far.</p>
+                <h3 className="text-base font-bold text-text-heading font-display">Weak Concepts & Remediation</h3>
+                <p className="text-xs text-text-muted">Specific concepts you've struggled with on recent quizzes</p>
               </div>
             </div>
 
             {recentQuizResults.length > 0 && (
-              <div className="border-b border-border-light">
+              <div className="border-b border-border-light bg-bg-main/40">
                 <button
                   type="button"
                   onClick={() => setQuizResultsExpanded((prev) => !prev)}
-                  className="w-full flex items-center justify-between gap-3 px-6 py-4"
+                  className="w-full flex items-center justify-between gap-3 px-6 py-3.5 cursor-pointer"
                 >
-                  <p className="text-xs font-semibold text-text-heading">
-                    Based on {recentQuizResults.length} quiz result{recentQuizResults.length === 1 ? '' : 's'}
+                  <p className="text-xs font-bold text-text-heading flex items-center gap-2">
+                    <span>Based on {recentQuizResults.length} completed quiz attempt{recentQuizResults.length === 1 ? '' : 's'}</span>
                   </p>
                   <ChevronDown
                     className={`w-4 h-4 text-text-muted shrink-0 transition-transform duration-200 ${quizResultsExpanded ? 'rotate-180' : ''}`}
@@ -655,15 +667,15 @@ const LearningPathPage = () => {
                       <li key={result.quizId}>
                         <Link
                           to={`/quizzes/${result.quizId}/results`}
-                          className="flex items-center justify-between gap-4 px-3 py-2 rounded-lg border border-border-light hover:bg-border-light transition-colors duration-150"
+                          className="flex items-center justify-between gap-4 px-4 py-2.5 rounded-xl border border-border-light bg-bg-card hover:border-primary/40 transition-colors"
                         >
-                          <div className="min-w-0">
-                            <p className="text-sm font-medium text-text-heading truncate">{result.title}</p>
-                            <p className="text-xs text-text-muted mt-0.5">
+                          <div className="min-w-0 space-y-0.5">
+                            <p className="text-xs font-bold text-text-heading truncate">{result.title}</p>
+                            <p className="text-[11px] text-text-muted font-mono">
                               {new Date(result.completedAt).toLocaleDateString()}
                             </p>
                           </div>
-                          <span className="shrink-0 text-sm font-semibold text-primary tabular-nums">
+                          <span className="shrink-0 text-xs font-black font-mono text-primary tabular-nums">
                             {result.score}%
                           </span>
                         </Link>
@@ -675,8 +687,8 @@ const LearningPathPage = () => {
             )}
 
             {(!learningPath.weakConcepts || learningPath.weakConcepts.length === 0) ? (
-              <div className="px-6 py-5 text-sm text-text-body">
-                No weak areas detected - nice work on your quizzes so far.
+              <div className="px-6 py-8 text-center text-xs text-text-muted font-semibold">
+                No weak concepts detected — excellent work on your quizzes so far!
               </div>
             ) : (
               <ul className="divide-y divide-border-light">
@@ -692,29 +704,29 @@ const LearningPathPage = () => {
                   return (
                     <li
                       key={key}
-                      className="flex items-center justify-between gap-4 px-6 py-4"
+                      className="flex items-center justify-between gap-4 px-6 py-4 hover:bg-bg-main/50 transition-colors"
                     >
                       <div className="flex items-start gap-3 min-w-0">
-                        <AlertTriangle className="mt-0.5 shrink-0 w-4 h-4 text-amber-500" strokeWidth={2} />
-                        <div className="min-w-0">
+                        <AlertTriangle className="mt-0.5 shrink-0 w-4 h-4 text-amber-500" strokeWidth={2.5} />
+                        <div className="min-w-0 space-y-1">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <p className="text-sm font-medium text-text-heading">{item.concept}</p>
+                            <p className="text-sm font-bold text-text-heading">{item.concept}</p>
                             {item.relatedTopicTitle && (
-                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-border-light text-text-muted">
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-bg-main border border-border-medium text-text-muted">
                                 {item.relatedTopicTitle}
                               </span>
                             )}
                             {skillStyle && (
-                              <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold ${skillStyle.bg} ${skillStyle.text}`}>
-                                <SkillIcon className="w-3 h-3" strokeWidth={2.5} />
+                              <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${skillStyle.bg} ${skillStyle.text}`}>
+                                {SkillIcon && <SkillIcon className="w-3 h-3" strokeWidth={2.5} />}
                                 {skillStyle.label}
                               </span>
                             )}
                           </div>
-                          <p className="text-xs text-text-muted mt-0.5">{item.description}</p>
+                          <p className="text-xs text-text-muted leading-relaxed font-body">{item.description}</p>
                           {item.missedCount > 0 && (
-                            <p className="text-[11px] text-text-muted mt-0.5">
-                              Missed in {item.missedCount} answer{item.missedCount === 1 ? '' : 's'}
+                            <p className="text-[10px] text-amber-600 dark:text-amber-400 font-mono">
+                              Missed in {item.missedCount} quiz response{item.missedCount === 1 ? '' : 's'}
                             </p>
                           )}
                         </div>
@@ -723,21 +735,22 @@ const LearningPathPage = () => {
                       {link ? (
                         <Link
                           to={link}
-                          className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border-medium text-xs font-semibold text-text-body hover:bg-border-light transition-colors duration-150"
+                          className="shrink-0 inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border border-border-medium bg-bg-card hover:border-primary/50 text-xs font-bold text-text-heading hover:text-primary transition-all duration-150 shadow-2xs cursor-pointer"
                         >
                           {ActionIcon && <ActionIcon className="w-3.5 h-3.5 text-primary" strokeWidth={2} />}
-                          {meta.label}
+                          <span>{meta.label}</span>
                         </Link>
                       ) : (
                         <button
+                          type="button"
                           onClick={() => handleInlineAction(item, key, item.concept)}
                           disabled={isLoadingThis}
-                          className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border-medium text-xs font-semibold text-text-body hover:bg-border-light transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="shrink-0 inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border border-border-medium bg-bg-card hover:border-primary/50 text-xs font-bold text-text-heading hover:text-primary transition-all duration-150 shadow-2xs disabled:opacity-50 cursor-pointer"
                         >
                           {isLoadingThis
-                            ? <Spinner size="xs" tone="muted" inline />
+                            ? <Spinner size="xs" tone="emerald" inline />
                             : ActionIcon && <ActionIcon className="w-3.5 h-3.5 text-primary" strokeWidth={2} />}
-                          {meta?.label}
+                          <span>{meta?.label}</span>
                         </button>
                       )}
                     </li>
@@ -748,18 +761,22 @@ const LearningPathPage = () => {
           </div>
         )}
 
-        {/* Topic Roadmap */}
-        <div id="lp-topics" className="scroll-mt-24 space-y-4">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-primary-light flex items-center justify-center">
-              <MapIcon className="w-4 h-4 text-primary" strokeWidth={2} />
+        {/* Topic Roadmap Grid */}
+        <div id="lp-topics" className="scroll-mt-24 space-y-5">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center shadow-2xs">
+                <MapIcon className="w-4.5 h-4.5 text-emerald-600 dark:text-emerald-400" strokeWidth={2.5} />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-text-heading font-display">Topic Concept Roadmap</h3>
+                <p className="text-xs text-text-muted">Click any topic card to view full mastery details & AI recommendations</p>
+              </div>
             </div>
-            <div>
-              <h3 className="text-sm font-semibold text-text-heading">Topic Roadmap</h3>
-              <p className="text-xs text-text-muted">Every topic extracted from this document - click a card for details.</p>
-            </div>
+            <span className="text-xs font-mono font-bold text-text-muted">{topics.length} Topics</span>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {topics.map((topic) => {
               const style = getStatusStyle(topic.status);
               const StatusIcon = style.icon;
@@ -781,20 +798,20 @@ const LearningPathPage = () => {
                   key={topic.topicId}
                   onClick={() => !isMastered && handleTopicCardClick(topic)}
                   className={`bg-bg-card border ${isMastered
-                      ? 'border-emerald-200 dark:border-emerald-900/40 cursor-default'
-                      : 'border-primary/40 ring-1 ring-primary/20 cursor-pointer shadow-sm hover:shadow-md'
-                    } rounded-2xl p-5 flex flex-col justify-between gap-4 transition-all duration-200 relative group`}
+                    ? 'border-emerald-500/30 cursor-default'
+                    : 'border-border-light hover:border-primary/50 cursor-pointer shadow-2xs hover:shadow-md'
+                    } rounded-3xl p-5 flex flex-col justify-between space-y-4 transition-all duration-300 group`}
                 >
-                  <div className="space-y-4">
+                  <div className="space-y-3">
                     <div className="flex items-start justify-between gap-3">
                       <div className="space-y-1 min-w-0 flex-1">
-                        <h4 className={`text-sm font-bold text-text-heading ${isMastered ? '' : 'group-hover:text-primary'} transition-colors leading-snug truncate`}>
+                        <h4 className={`text-sm font-bold text-text-heading ${isMastered ? '' : 'group-hover:text-primary'} transition-colors leading-snug line-clamp-2`}>
                           {topic.title}
                         </h4>
                         {planItem && (
                           <span className={`inline-flex items-center gap-1 text-[10px] font-extrabold px-2 py-0.5 rounded-full border ${isMastered
-                              ? 'text-emerald-700 bg-emerald-100 border-emerald-300 dark:bg-emerald-900/40 dark:text-emerald-300'
-                              : 'text-primary bg-primary-light border-primary/30'
+                            ? 'text-emerald-700 bg-emerald-500/10 border-emerald-500/20 dark:text-emerald-300'
+                            : 'text-primary bg-primary-light border-primary/30'
                             }`}>
                             <Target className="w-3 h-3 shrink-0" />
                             <span>Study Plan #{planIndex + 1}</span>
@@ -802,7 +819,7 @@ const LearningPathPage = () => {
                         )}
                       </div>
                       <span
-                        className={`shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${style.bg} ${style.text}`}
+                        className={`shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-extrabold ${style.bg} ${style.text}`}
                       >
                         <StatusIcon className="w-3 h-3" strokeWidth={2.5} />
                         {style.label}
@@ -810,21 +827,21 @@ const LearningPathPage = () => {
                     </div>
 
                     {levelStyle && (
-                      <span className={`w-fit inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold ${levelStyle.bg} ${levelStyle.text}`}>
-                        <LevelIcon className="w-3 h-3" strokeWidth={2.5} />
+                      <span className={`w-fit inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${levelStyle.bg} ${levelStyle.text}`}>
+                        {LevelIcon && <LevelIcon className="w-3 h-3" strokeWidth={2.5} />}
                         {levelStyle.label}
                       </span>
                     )}
 
-                    {/* Mastery bar */}
-                    <div>
-                      <div className="flex items-center justify-between mb-1.5">
-                        <span className="text-xs text-text-muted">Mastery</span>
-                        <span className="text-xs font-semibold text-text-heading tabular-nums">
+                    {/* Mastery score bar */}
+                    <div className="space-y-1.5 pt-1">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-text-muted font-semibold">Mastery</span>
+                        <span className="font-mono font-bold text-text-heading tabular-nums">
                           {topic.masteryScore}%
                         </span>
                       </div>
-                      <div className="w-full bg-border-light h-2 rounded-full overflow-hidden">
+                      <div className="w-full bg-bg-main border border-border-light h-2 rounded-full overflow-hidden p-0.5">
                         <div
                           className={`h-full rounded-full transition-all duration-300 ${style.dot}`}
                           style={{ width: `${topic.masteryScore}%` }}
@@ -834,16 +851,16 @@ const LearningPathPage = () => {
                   </div>
 
                   {/* Footer status link */}
-                  <div className="flex items-center justify-between text-xs text-text-muted pt-3 border-t border-border-light">
-                    <span className="capitalize text-[11px]">{topic.difficulty} difficulty</span>
+                  <div className="flex items-center justify-between text-xs text-text-muted pt-3 border-t border-border-light/80">
+                    <span className="capitalize text-[11px] font-mono">{topic.difficulty} difficulty</span>
                     {isMastered ? (
                       <span className="inline-flex items-center gap-1 text-[11px] font-extrabold text-emerald-600 dark:text-emerald-400">
                         <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
-                        <span>Mastered ✓</span>
+                        <span>Mastered</span>
                       </span>
                     ) : (
                       <span className="inline-flex items-center gap-1 text-xs font-bold text-primary group-hover:underline">
-                        <span>View in Study Plan</span>
+                        <span>View in Plan</span>
                         <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
                       </span>
                     )}
@@ -858,23 +875,23 @@ const LearningPathPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-bg-main">
-      <div className="max-w-6xl mx-auto px-6 py-5 space-y-6">
+    <div className="min-h-screen bg-bg-main pb-16">
+      <div className="max-w-6xl mx-auto space-y-6">
         <Link
           to={`/documents/${documentId}`}
-          className="inline-flex items-center gap-2 text-sm font-medium text-text-muted hover:text-primary transition-colors duration-200"
+          className="inline-flex items-center gap-2 text-xs font-bold text-text-muted hover:text-primary transition-colors duration-200 group"
         >
-          <ArrowLeft size={16} />
-          Back to Document
+          <ArrowLeft size={14} className="group-hover:-translate-x-0.5 transition-transform" />
+          <span>Back to Document</span>
         </Link>
 
         <PageHeader
           title={documentTitle || 'Learning Path'}
-          subtitle={documentTitle ? 'Learning Path · Track your topic mastery and see what to study next' : 'Track your topic mastery and see what to study next'}
+          subtitle={documentTitle ? 'Learning Path · Concept mastery tracking & personalized AI study guide' : 'Concept mastery tracking & personalized AI study guide'}
         >
           {learningPath && learningPath.topics?.length > 0 && (
             <div className="flex items-center gap-2.5">
-              {/* Overflow menu: lower-frequency maintenance actions */}
+              {/* Overflow menu */}
               <div className="relative" ref={moreMenuRef}>
                 <button
                   type="button"
@@ -883,34 +900,34 @@ const LearningPathPage = () => {
                   aria-label="More actions"
                   aria-haspopup="true"
                   aria-expanded={moreMenuOpen}
-                  className={`h-11 w-11 inline-flex items-center justify-center rounded-xl border border-border-medium text-text-body hover:bg-border-light transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer ${moreMenuOpen ? 'bg-border-light' : 'bg-bg-card'}`}
+                  className={`h-10 w-10 inline-flex items-center justify-center rounded-xl border border-border-medium text-text-body hover:bg-border-light transition-colors duration-150 disabled:opacity-50 cursor-pointer ${moreMenuOpen ? 'bg-border-light' : 'bg-bg-card'}`}
                 >
                   {(refreshingStudyPlan || refreshing) ? (
-                    <Spinner size="xs" tone="muted" inline />
+                    <Spinner size="xs" tone="emerald" inline />
                   ) : (
                     <MoreVertical className="w-4 h-4" strokeWidth={2} />
                   )}
                 </button>
 
                 {moreMenuOpen && (
-                  <div className="absolute right-0 mt-2 w-56 bg-bg-card border border-border-medium rounded-2xl shadow-xl shadow-slate-200/25 dark:shadow-none py-1.5 z-50 animate-fade-in origin-top-right">
+                  <div className="absolute right-0 mt-2 w-56 bg-bg-card border border-border-medium rounded-2xl shadow-xl py-1.5 z-50 animate-fade-in origin-top-right">
                     <button
                       type="button"
                       onClick={() => { setMoreMenuOpen(false); fetchStudyPlan(true); }}
                       disabled={refreshingStudyPlan}
-                      className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-left text-sm font-medium text-text-heading hover:bg-border-light/60 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                      className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-left text-xs font-semibold text-text-heading hover:bg-bg-main transition-colors disabled:opacity-50 cursor-pointer"
                     >
                       <ListChecks className={`w-4 h-4 text-primary shrink-0 ${refreshingStudyPlan ? 'animate-spin' : ''}`} strokeWidth={2} />
-                      {refreshingStudyPlan ? 'Refreshing...' : 'Refresh Study Plan'}
+                      <span>{refreshingStudyPlan ? 'Refreshing Plan...' : 'Refresh Study Plan'}</span>
                     </button>
                     <button
                       type="button"
                       onClick={() => { setMoreMenuOpen(false); handleRefreshMastery(); }}
                       disabled={refreshing}
-                      className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-left text-sm font-medium text-text-heading hover:bg-border-light/60 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                      className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-left text-xs font-semibold text-text-heading hover:bg-bg-main transition-colors disabled:opacity-50 cursor-pointer"
                     >
                       <RefreshCw className={`w-4 h-4 text-primary shrink-0 ${refreshing ? 'animate-spin' : ''}`} strokeWidth={2} />
-                      {refreshing ? 'Refreshing...' : 'Refresh Mastery'}
+                      <span>{refreshing ? 'Refreshing Mastery...' : 'Refresh Mastery'}</span>
                     </button>
                   </div>
                 )}
@@ -922,12 +939,12 @@ const LearningPathPage = () => {
                 variant="outline"
               >
                 <Download className="w-4 h-4" strokeWidth={2} />
-                {downloadingReport ? 'Preparing...' : 'Download Report'}
+                <span>{downloadingReport ? 'Preparing Report...' : 'Download Report'}</span>
               </Button>
 
               <Button onClick={handleGenerate} disabled={generating}>
                 <Sparkles className="w-4 h-4" strokeWidth={2} />
-                {generating ? 'Generating...' : 'Regenerate Topics'}
+                <span>{generating ? 'Generating...' : 'Regenerate Topics'}</span>
               </Button>
             </div>
           )}
@@ -945,10 +962,10 @@ const LearningPathPage = () => {
           onMouseLeave={() => setOutlineOpen(false)}
         >
           {outlineOpen && (
-            <div className="mb-3 w-64 bg-bg-card border border-border-medium rounded-2xl shadow-2xl shadow-slate-900/15 dark:shadow-none py-2 z-50 animate-fade-in origin-bottom-right backdrop-blur-lg">
+            <div className="mb-3 w-64 bg-bg-card/95 border border-border-medium rounded-2xl shadow-xl py-2 z-50 animate-fade-in origin-bottom-right backdrop-blur-md">
               <div className="px-4 pt-1 pb-2 flex items-center justify-between border-b border-border-light mb-1">
                 <span className="text-[10px] font-extrabold text-text-muted uppercase tracking-wider">
-                  On This Page
+                  Page Sections
                 </span>
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" title="Active Section Spying" />
               </div>
@@ -963,8 +980,8 @@ const LearningPathPage = () => {
                       type="button"
                       onClick={() => scrollToSection(item.id)}
                       className={`w-full flex items-center gap-2.5 px-4 py-2 text-left text-xs font-semibold transition-all duration-150 cursor-pointer ${isActive
-                          ? 'text-primary bg-primary-light font-bold border-l-2 border-primary'
-                          : 'text-text-heading hover:bg-border-light/60'
+                        ? 'text-primary bg-primary-light/80 font-bold border-l-2 border-primary'
+                        : 'text-text-heading hover:bg-bg-main'
                         }`}
                     >
                       <Icon className={`w-3.5 h-3.5 shrink-0 ${isActive ? 'text-primary' : 'text-text-muted'}`} strokeWidth={2} />
@@ -996,7 +1013,7 @@ const LearningPathPage = () => {
             onClick={() => setOutlineOpen((prev) => !prev)}
             aria-label="Jump to section"
             aria-expanded={outlineOpen}
-            className="flex items-center gap-2.5 px-4.5 py-3 bg-gradient-to-r from-primary via-indigo-600 to-blue-600 text-white shadow-xl shadow-primary/30 hover:shadow-2xl hover:shadow-primary/40 rounded-full text-xs font-extrabold tracking-wide transition-all duration-300 cursor-pointer group hover:scale-105 ring-2 ring-primary/20"
+            className="flex items-center gap-2.5 px-4.5 py-3 bg-gradient-to-r from-primary via-indigo-600 to-emerald-600 text-white shadow-xl shadow-primary/25 hover:shadow-2xl hover:shadow-primary/35 rounded-full text-xs font-extrabold tracking-wide transition-all duration-300 cursor-pointer group hover:scale-105 ring-2 ring-primary/20"
           >
             <Compass className="w-4.5 h-4.5 text-white group-hover:rotate-45 transition-transform duration-300" strokeWidth={2.5} />
             <span>Jump to Section</span>
@@ -1005,6 +1022,7 @@ const LearningPathPage = () => {
         </div>
       )}
 
+      {/* Modal for topic details */}
       <Modal
         isOpen={!!selectedTopic}
         onClose={() => setSelectedTopic(null)}
@@ -1020,14 +1038,14 @@ const LearningPathPage = () => {
             <div className="space-y-5">
               <div className="flex items-center gap-2 flex-wrap">
                 <span
-                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${style.bg} ${style.text}`}
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold ${style.bg} ${style.text}`}
                 >
                   <StatusIcon className="w-3 h-3" strokeWidth={2.5} />
                   {style.label}
                 </span>
                 {levelStyle && (
-                  <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${levelStyle.bg} ${levelStyle.text}`}>
-                    <LevelIcon className="w-3 h-3" strokeWidth={2.5} />
+                  <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold ${levelStyle.bg} ${levelStyle.text}`}>
+                    {LevelIcon && <LevelIcon className="w-3 h-3" strokeWidth={2.5} />}
                     {levelStyle.label}
                   </span>
                 )}
@@ -1035,12 +1053,12 @@ const LearningPathPage = () => {
 
               <div>
                 <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-xs text-text-muted">Mastery Score</span>
-                  <span className="text-sm font-semibold text-text-heading tabular-nums">
+                  <span className="text-xs font-semibold text-text-muted">Mastery Score</span>
+                  <span className="text-sm font-black font-mono text-text-heading tabular-nums">
                     {selectedTopic.masteryScore}%
                   </span>
                 </div>
-                <div className="w-full bg-border-light h-2.5 rounded-full overflow-hidden">
+                <div className="w-full bg-bg-main border border-border-light h-2.5 rounded-full overflow-hidden p-0.5">
                   <div
                     className={`h-full rounded-full transition-all duration-300 ${style.dot}`}
                     style={{ width: `${selectedTopic.masteryScore}%` }}
@@ -1048,34 +1066,26 @@ const LearningPathPage = () => {
                 </div>
               </div>
 
-              <p className="text-sm text-text-body leading-relaxed">
+              <p className="text-xs text-text-body leading-relaxed font-body">
                 {STATUS_HELP_TEXT[selectedTopic.status]}
               </p>
 
               {selectedTopic.knowledgeLevelReason && (
-                <div className="p-3 rounded-xl bg-bg-main border border-border-light">
-                  <p className="text-xs text-text-muted mb-1">AI Assessment</p>
-                  <p className="text-sm text-text-body leading-relaxed">{selectedTopic.knowledgeLevelReason}</p>
+                <div className="p-3.5 rounded-2xl bg-bg-main border border-border-light space-y-1">
+                  <p className="text-[10px] font-bold text-text-muted uppercase tracking-wider">AI Assessment</p>
+                  <p className="text-xs text-text-body leading-relaxed font-body">{selectedTopic.knowledgeLevelReason}</p>
                 </div>
               )}
 
-              <div className="grid grid-cols-2 gap-4 pt-4 border-t border-border-light text-sm">
+              <div className="grid grid-cols-2 gap-4 pt-4 border-t border-border-light text-xs">
                 <div>
-                  <p className="text-xs text-text-muted mb-1">Difficulty</p>
-                  <p className="font-medium text-text-heading capitalize">{selectedTopic.difficulty}</p>
+                  <p className="text-text-muted mb-1 font-semibold">Difficulty</p>
+                  <p className="font-bold text-text-heading capitalize">{selectedTopic.difficulty}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-text-muted mb-1">Based On</p>
-                  <p className="font-medium text-text-heading">
+                  <p className="text-text-muted mb-1 font-semibold">Based On</p>
+                  <p className="font-bold text-text-heading">
                     {SOURCE_LABELS[selectedTopic.source] || 'No activity yet'}
-                  </p>
-                </div>
-                <div className="col-span-2">
-                  <p className="text-xs text-text-muted mb-1">Last Reviewed</p>
-                  <p className="font-medium text-text-heading">
-                    {selectedTopic.lastReviewedAt
-                      ? new Date(selectedTopic.lastReviewedAt).toLocaleString()
-                      : 'Not reviewed yet'}
                   </p>
                 </div>
               </div>
@@ -1107,9 +1117,9 @@ const LearningPathPage = () => {
                           setSelectedTopic(null);
                           scrollToSection('lp-study-plan');
                         }}
-                        className="text-xs font-semibold text-primary hover:underline cursor-pointer flex items-center gap-1"
+                        className="text-xs font-bold text-primary hover:underline cursor-pointer flex items-center gap-1"
                       >
-                        View in Plan <ArrowRight className="w-3 h-3" />
+                        <span>View in Plan</span> <ArrowRight className="w-3 h-3" />
                       </button>
                     </div>
 
@@ -1120,7 +1130,7 @@ const LearningPathPage = () => {
                         <Link
                           to={link}
                           onClick={() => setSelectedTopic(null)}
-                          className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-white text-xs font-bold hover:bg-primary-hover transition-colors shadow-xs"
+                          className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-white text-xs font-bold hover:bg-primary-hover transition-colors shadow-2xs"
                         >
                           {ActionIcon && <ActionIcon className="w-4 h-4" />}
                           <span>{meta?.label || 'Study Topic'}</span>
@@ -1133,7 +1143,7 @@ const LearningPathPage = () => {
                             handleInlineAction(planItem, planItem.topicId, planItem.title);
                           }}
                           disabled={isLoadingThis}
-                          className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-white text-xs font-bold hover:bg-primary-hover transition-colors shadow-xs disabled:opacity-50"
+                          className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-white text-xs font-bold hover:bg-primary-hover transition-colors shadow-2xs disabled:opacity-50"
                         >
                           {isLoadingThis ? <Spinner size="xs" tone="white" inline /> : (ActionIcon && <ActionIcon className="w-4 h-4" />)}
                           <span>{meta?.label || 'Study Topic'}</span>

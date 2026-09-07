@@ -297,8 +297,8 @@ const DocumentListPage = () => {
                   key={t.id}
                   onClick={() => setTypeFilter(t.id)}
                   className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-colors whitespace-nowrap shrink-0 cursor-pointer ${typeFilter === t.id
-                      ? 'bg-primary text-white shadow-xs'
-                      : 'bg-bg-main border border-border-light text-text-muted hover:text-text-heading hover:bg-border-light/60'
+                    ? 'bg-primary text-white shadow-xs'
+                    : 'bg-bg-main border border-border-light text-text-muted hover:text-text-heading hover:bg-border-light/60'
                     }`}
                 >
                   {t.label}
@@ -545,7 +545,7 @@ const DocumentListPage = () => {
                         <p className="text-xs font-bold text-text-heading">
                           {uploadFile ? uploadFile.name : "Click to select a file or drag and drop"}
                         </p>
-                        <p className="text-[11px] text-text-muted mt-0.5">Supports PDF, DOCX, PPTX up to 10MB</p>
+                        <p className="text-[11px] text-text-muted mt-0.5">Supports PDF, DOCX, PPTX (No file size limit)</p>
                       </div>
                     </div>
                   </div>

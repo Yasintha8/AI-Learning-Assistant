@@ -18,61 +18,64 @@ const CareerRoadmap = ({ careerPath, onToggleTopic, onUpdateMilestoneStatus }) =
   const getImportanceBadge = (importance) => {
     switch (importance) {
       case 'critical':
-        return 'bg-rose-50 dark:bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-200 dark:border-rose-500/20';
+        return 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20';
       case 'recommended':
-        return 'bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-500/20';
+        return 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20';
       case 'optional':
-        return 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700';
+        return 'bg-bg-main text-text-muted border-border-medium';
       default:
-        return 'bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 border-indigo-200 dark:border-indigo-500/20';
+        return 'bg-primary-light text-primary border-primary/20';
     }
   };
 
   const getStatusBadge = (status) => {
     switch (status) {
       case 'completed':
-        return 'bg-emerald-100 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/30';
+        return 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20';
       case 'in-progress':
-        return 'bg-indigo-100 dark:bg-indigo-500/15 text-indigo-700 dark:text-indigo-400 border-indigo-200 dark:border-indigo-500/30';
+        return 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/20';
       default:
-        return 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700';
+        return 'bg-bg-main text-text-muted border-border-medium';
     }
   };
 
   return (
     <div className="space-y-6">
-      
+
       {/* Executive Summary Card */}
-      <div className="p-6 bg-linear-to-r from-indigo-50/60 via-purple-50/30 to-white dark:from-[#192238] dark:to-[#151b2c] border border-indigo-100 dark:border-indigo-950/80 rounded-3xl shadow-xs">
-        <div className="flex items-center gap-2.5 mb-2">
-          <div className="p-2 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 rounded-xl">
-            <Sparkles className="w-4 h-4" />
+      <div className="p-6 sm:p-8 bg-bg-card border border-border-light rounded-3xl shadow-xs relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl pointer-events-none" />
+        <div className="flex items-center gap-3 mb-3">
+          <div className="p-2.5 bg-primary-light text-primary rounded-2xl border border-primary/20 shadow-2xs">
+            <Sparkles className="w-4.5 h-4.5" />
           </div>
-          <h3 className="text-base font-bold text-slate-900 dark:text-white tracking-tight">AI Strategy & Career Overview</h3>
+          <h3 className="text-base font-bold text-text-heading tracking-tight font-display">
+            AI Strategy & Career Transition Blueprint
+          </h3>
         </div>
-        <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed font-body">
+        <p className="text-xs sm:text-sm text-text-muted leading-relaxed font-body">
           {summary || 'Your custom roadmap is engineered to build essential competencies step-by-step toward your target role.'}
         </p>
       </div>
 
       {/* Target Skill Gap Analysis Matrix */}
       {skillGaps.length > 0 && (
-        <div className="p-6 bg-white dark:bg-[#151b2c] border border-slate-200/80 dark:border-slate-800 rounded-3xl shadow-xs">
-          <div className="flex items-center gap-2 mb-3.5">
-            <AlertCircle className="w-4 h-4 text-amber-500" />
-            <h3 className="text-sm font-bold text-slate-900 dark:text-white">Target Skill Gap Analysis</h3>
+        <div className="p-6 bg-bg-card border border-border-light rounded-3xl shadow-xs space-y-4">
+          <div className="flex items-center gap-2.5">
+            <AlertCircle className="w-4.5 h-4.5 text-amber-500" />
+            <h3 className="text-sm font-bold text-text-heading font-display">Target Skill Gap Analysis</h3>
           </div>
-          
-          <div className="flex flex-wrap gap-2">
+
+          <div className="flex flex-wrap gap-2.5">
             {skillGaps.map((gap, index) => (
               <div
                 key={index}
-                className={`px-3 py-1.5 rounded-xl border text-xs font-semibold flex items-center gap-2 transition-all hover:scale-102 ${getImportanceBadge(
+                className={`px-3.5 py-1.5 rounded-xl border text-xs font-semibold flex items-center gap-2 transition-all hover:scale-102 ${getImportanceBadge(
                   gap.importance
                 )}`}
               >
                 <span>{gap.skill}</span>
-                <span className="text-[10px] uppercase font-bold tracking-wider opacity-75 font-mono">
+                <span className="text-[10px] uppercase font-bold tracking-wider opacity-80 font-mono">
                   {gap.importance}
                 </span>
               </div>
@@ -83,18 +86,18 @@ const CareerRoadmap = ({ careerPath, onToggleTopic, onUpdateMilestoneStatus }) =
 
       {/* Milestones Progression Visual Timeline */}
       <div className="space-y-6 pt-2">
-        <div className="flex items-center justify-between">
-          <h3 className="text-lg font-bold text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
-            <Layers className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
-            Career Transition Milestones ({milestones.length})
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <h3 className="text-lg font-bold text-text-heading tracking-tight flex items-center gap-2.5 font-display">
+            <Layers className="w-5 h-5 text-primary" />
+            <span>Career Transition Milestones ({milestones.length})</span>
           </h3>
-          <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
-            Check off completed topics to raise your readiness score ({readinessScore}%)
+          <span className="text-xs font-semibold text-text-muted font-body">
+            Check off completed topics to increase your readiness score ({readinessScore}%)
           </span>
         </div>
 
         {/* Vertical Timeline Stepper Container */}
-        <div className="space-y-6 relative before:absolute before:left-5 before:top-4 before:bottom-4 before:w-0.5 before:bg-slate-200 dark:before:bg-slate-800">
+        <div className="space-y-6 relative before:absolute before:left-5 before:top-4 before:bottom-4 before:w-0.5 before:bg-border-medium">
           {milestones.map((milestone, idx) => {
             const isCompleted = milestone.status === 'completed';
             const isInProgress = milestone.status === 'in-progress';
@@ -102,30 +105,28 @@ const CareerRoadmap = ({ careerPath, onToggleTopic, onUpdateMilestoneStatus }) =
             return (
               <div
                 key={milestone.milestoneId || idx}
-                className={`relative pl-12 transition-all ${
-                  isCompleted ? 'opacity-90' : ''
-                }`}
+                className={`relative pl-12 transition-all ${isCompleted ? 'opacity-95' : ''
+                  }`}
               >
                 {/* Timeline Stepper Node Badge */}
                 <div
-                  className={`absolute left-2.5 top-1 -translate-x-1/2 w-7 h-7 rounded-full border-2 flex items-center justify-center font-bold text-xs shadow-xs transition-all ${
-                    isCompleted
+                  className={`absolute left-2.5 top-1 -translate-x-1/2 w-7 h-7 rounded-full border-2 flex items-center justify-center font-bold text-xs shadow-2xs transition-all ${isCompleted
                       ? 'bg-emerald-500 border-emerald-500 text-white'
                       : isInProgress
-                      ? 'bg-indigo-600 border-indigo-500 text-white animate-pulse'
-                      : 'bg-slate-100 dark:bg-[#151b2c] border-slate-300 dark:border-slate-700 text-slate-500 dark:text-slate-400'
-                  }`}
+                        ? 'bg-primary border-primary text-white animate-pulse'
+                        : 'bg-bg-main border-border-medium text-text-muted'
+                    }`}
                 >
                   {isCompleted ? <Check className="w-3.5 h-3.5" strokeWidth={3} /> : idx + 1}
                 </div>
 
                 {/* Milestone Details Card */}
-                <div className="p-6 bg-white dark:bg-[#151b2c] border border-slate-200/80 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 rounded-3xl shadow-xs transition-all space-y-4">
-                  
+                <div className="p-6 bg-bg-card border border-border-light hover:border-border-medium rounded-3xl shadow-xs transition-all space-y-4">
+
                   {/* Milestone Card Top Bar */}
                   <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div>
-                      <div className="flex items-center gap-2.5 mb-1.5">
+                    <div className="space-y-1 flex-1 min-w-[200px]">
+                      <div className="flex items-center gap-2.5 mb-1">
                         <select
                           value={milestone.status}
                           onChange={(e) =>
@@ -136,64 +137,63 @@ const CareerRoadmap = ({ careerPath, onToggleTopic, onUpdateMilestoneStatus }) =
                               e.target.value
                             )
                           }
-                          className={`px-2.5 py-0.5 rounded-full border text-[10px] font-extrabold uppercase tracking-wider cursor-pointer focus:outline-none transition-all ${getStatusBadge(
+                          className={`px-3 py-1 rounded-full border text-[10px] font-extrabold uppercase tracking-wider cursor-pointer focus:outline-none transition-all ${getStatusBadge(
                             milestone.status
                           )}`}
                         >
-                          <option value="not-started" className="bg-white dark:bg-[#151b2c] text-slate-800 dark:text-slate-200 capitalize">
+                          <option value="not-started" className="bg-bg-card text-text-heading capitalize">
                             Not Started
                           </option>
-                          <option value="in-progress" className="bg-white dark:bg-[#151b2c] text-slate-800 dark:text-slate-200 capitalize">
+                          <option value="in-progress" className="bg-bg-card text-text-heading capitalize">
                             In Progress
                           </option>
-                          <option value="completed" className="bg-white dark:bg-[#151b2c] text-slate-800 dark:text-slate-200 capitalize">
+                          <option value="completed" className="bg-bg-card text-text-heading capitalize">
                             Completed
                           </option>
                         </select>
-                        
-                        <span className="text-xs font-medium text-slate-500 dark:text-slate-400 flex items-center gap-1">
+
+                        <span className="text-xs font-semibold text-text-muted flex items-center gap-1 font-mono">
                           <Clock className="w-3.5 h-3.5 text-amber-500" />
                           ~{milestone.estimatedWeeks} week{milestone.estimatedWeeks > 1 ? 's' : ''}
                         </span>
                       </div>
-                      
-                      <h4 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white tracking-tight">
+
+                      <h4 className="text-base sm:text-lg font-bold text-text-heading tracking-tight font-display">
                         {milestone.title}
                       </h4>
                     </div>
                   </div>
 
-                  <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed font-body">
+                  <p className="text-xs sm:text-sm text-text-muted leading-relaxed font-body">
                     {milestone.description}
                   </p>
 
                   {/* Skills & Topics Checklist */}
                   {milestone.topics && milestone.topics.length > 0 && (
-                    <div className="pt-3 border-t border-slate-100 dark:border-slate-800">
-                      <h5 className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2.5 flex items-center gap-1.5">
-                        <BookOpen className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
-                        Key Topics ({milestone.topics.filter(t => t.isCompleted).length}/{milestone.topics.length})
+                    <div className="pt-4 border-t border-border-light space-y-3">
+                      <h5 className="text-xs font-bold text-text-heading uppercase tracking-wider flex items-center gap-2">
+                        <BookOpen className="w-3.5 h-3.5 text-primary" />
+                        <span>Key Topics ({milestone.topics.filter(t => t.isCompleted).length}/{milestone.topics.length})</span>
                       </h5>
-                      
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                         {milestone.topics.map((topic, topicIdx) => (
                           <div
                             key={topicIdx}
                             onClick={() =>
                               onToggleTopic(milestone.milestoneId, topicIdx, !topic.isCompleted)
                             }
-                            className={`flex items-center gap-2.5 p-2.5 rounded-xl border text-xs cursor-pointer transition-all ${
-                              topic.isCompleted
-                                ? 'bg-emerald-50/70 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/30 text-emerald-800 dark:text-emerald-300'
-                                : 'bg-slate-50/80 dark:bg-slate-900/60 border-slate-200/80 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-700'
-                            }`}
+                            className={`flex items-center gap-2.5 p-3 rounded-2xl border text-xs cursor-pointer transition-all ${topic.isCompleted
+                                ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-medium'
+                                : 'bg-bg-main border-border-light text-text-heading hover:border-border-medium font-medium'
+                              }`}
                           >
                             {topic.isCompleted ? (
-                              <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                              <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
                             ) : (
-                              <Circle className="w-4 h-4 text-slate-400 dark:text-slate-600 shrink-0" />
+                              <Circle className="w-4 h-4 text-text-muted shrink-0" />
                             )}
-                            <span className={topic.isCompleted ? 'line-through opacity-85' : 'font-medium'}>
+                            <span className={topic.isCompleted ? 'line-through opacity-80' : ''}>
                               {topic.title}
                             </span>
                           </div>
@@ -204,22 +204,22 @@ const CareerRoadmap = ({ careerPath, onToggleTopic, onUpdateMilestoneStatus }) =
 
                   {/* Portfolio Project Ideas */}
                   {milestone.suggestedProjects && milestone.suggestedProjects.length > 0 && (
-                    <div className="pt-3 border-t border-slate-100 dark:border-slate-800">
-                      <h5 className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2.5 flex items-center gap-1.5">
-                        <FolderGit2 className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
-                        Portfolio Project Suggestions
+                    <div className="pt-4 border-t border-border-light space-y-3">
+                      <h5 className="text-xs font-bold text-text-heading uppercase tracking-wider flex items-center gap-2">
+                        <FolderGit2 className="w-3.5 h-3.5 text-purple-500" />
+                        <span>Portfolio Project Suggestions</span>
                       </h5>
-                      
-                      <div className="space-y-2">
+
+                      <div className="space-y-2.5">
                         {milestone.suggestedProjects.map((project, pIdx) => (
                           <div
                             key={pIdx}
-                            className="p-3 bg-purple-50/50 dark:bg-purple-950/20 border border-purple-100 dark:border-purple-500/20 rounded-xl"
+                            className="p-3.5 bg-purple-500/5 border border-purple-500/20 rounded-2xl space-y-1"
                           >
-                            <div className="font-bold text-xs text-purple-900 dark:text-purple-300 mb-0.5 flex items-center gap-1.5">
-                              <span>🚀</span> {project.title}
+                            <div className="font-bold text-xs text-purple-700 dark:text-purple-300 flex items-center gap-2">
+                              <span>🚀</span> <span>{project.title}</span>
                             </div>
-                            <div className="text-[11px] text-slate-600 dark:text-slate-400 leading-normal">
+                            <div className="text-xs text-text-muted leading-relaxed font-body">
                               {project.description}
                             </div>
                           </div>
