@@ -81,8 +81,8 @@ const CareerCounselorChat = ({ chatHistory = [], onSendMessage, isLoading, targe
                 {/* Avatar */}
                 <div
                   className={`w-8 h-8 rounded-xl flex items-center justify-center text-xs font-bold shrink-0 shadow-xs ${isUser
-                      ? 'bg-indigo-600 text-white'
-                      : 'bg-linear-to-br from-indigo-600 to-purple-600 text-white'
+                    ? 'bg-indigo-600 text-white'
+                    : 'bg-linear-to-br from-indigo-600 to-purple-600 text-white'
                     }`}
                 >
                   {isUser ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
@@ -91,8 +91,8 @@ const CareerCounselorChat = ({ chatHistory = [], onSendMessage, isLoading, targe
                 {/* Message Bubble */}
                 <div
                   className={`max-w-[85%] p-4 rounded-2xl text-xs leading-relaxed ${isUser
-                      ? 'bg-indigo-600 text-white rounded-tr-xs shadow-xs font-body'
-                      : 'bg-slate-50 dark:bg-[#1d263b] border border-slate-200/80 dark:border-slate-700/80 text-slate-800 dark:text-slate-200 rounded-tl-xs shadow-xs font-body'
+                    ? 'bg-indigo-600 text-white rounded-tr-xs shadow-xs font-body'
+                    : 'bg-slate-50 dark:bg-[#1d263b] border border-slate-200/80 dark:border-slate-700/80 text-slate-800 dark:text-slate-200 rounded-tl-xs shadow-xs font-body'
                     }`}
                 >
                   {isUser ? (

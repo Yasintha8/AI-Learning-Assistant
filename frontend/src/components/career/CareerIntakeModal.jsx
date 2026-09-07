@@ -8,15 +8,15 @@ const CareerIntakeModal = ({ isOpen, onClose, onSubmit, initialProfile, isLoadin
   const [timelineMonths, setTimelineMonths] = useState(initialProfile?.timelineMonths || 6);
   const [weeklyHours, setWeeklyHours] = useState(initialProfile?.weeklyHours || 10);
   const [preferredLearningStyle, setPreferredLearningStyle] = useState(initialProfile?.preferredLearningStyle || 'hands-on');
-  
+
   // Skills list state
   const [skills, setSkills] = useState(
     Array.isArray(initialProfile?.currentSkills) && initialProfile.currentSkills.length > 0
       ? initialProfile.currentSkills
       : [
-          { skillName: 'HTML / CSS', proficiency: 'intermediate' },
-          { skillName: 'JavaScript', proficiency: 'beginner' }
-        ]
+        { skillName: 'HTML / CSS', proficiency: 'intermediate' },
+        { skillName: 'JavaScript', proficiency: 'beginner' }
+      ]
   );
   const [newSkillName, setNewSkillName] = useState('');
   const [newSkillProficiency, setNewSkillProficiency] = useState('beginner');
@@ -52,7 +52,7 @@ const CareerIntakeModal = ({ isOpen, onClose, onSubmit, initialProfile, isLoadin
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 dark:bg-slate-950/70 backdrop-blur-sm overflow-y-auto">
       <div className="relative w-full max-w-2xl bg-white dark:bg-[#151b2c] border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl overflow-hidden my-8">
-        
+
         {/* Top Header */}
         <div className="px-6 py-5 bg-linear-to-r from-indigo-50/80 via-purple-50/50 to-white dark:from-[#192238] dark:to-[#151b2c] border-b border-slate-200/80 dark:border-slate-800 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -79,7 +79,7 @@ const CareerIntakeModal = ({ isOpen, onClose, onSubmit, initialProfile, isLoadin
 
         {/* Form Container */}
         <form onSubmit={handleSubmit} className="p-6 space-y-5 max-h-[75vh] overflow-y-auto custom-scrollbar font-body">
-          
+
           {/* Current Role & Target Role */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
@@ -205,7 +205,7 @@ const CareerIntakeModal = ({ isOpen, onClose, onSubmit, initialProfile, isLoadin
             <span className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">
               Your Known Skills & Technologies
             </span>
-            
+
             <div className="flex flex-wrap gap-2 mb-3">
               {skills.map((skill, index) => (
                 <div

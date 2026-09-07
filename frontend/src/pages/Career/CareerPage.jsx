@@ -147,12 +147,12 @@ const CareerPage = () => {
 
       {/* Professional Hero Banner */}
       <div className="relative overflow-hidden bg-bg-card border border-border-light rounded-3xl p-6 sm:p-8 shadow-xs transition-all">
-        
+
         {/* Accent Glow */}
         <div className="absolute top-0 right-0 -mt-8 -mr-8 w-64 h-64 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
 
         <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-          
+
           {/* Role Header & Subtitle */}
           <div className="space-y-3 max-w-2xl">
             <div className="inline-flex items-center gap-2 px-3 py-1 bg-primary-light border border-primary/20 rounded-full text-primary text-xs font-semibold">
@@ -164,7 +164,7 @@ const CareerPage = () => {
               <h1 className="text-2xl sm:text-3xl font-extrabold text-text-heading tracking-tight font-display">
                 {profile ? profile.targetRole : 'Personalized Career Path & Guidance'}
               </h1>
-              
+
               {profile ? (
                 <p className="mt-1.5 text-sm text-text-body leading-relaxed font-body">
                   Transitioning from <strong className="text-text-heading font-semibold">{profile.currentRole}</strong> to <strong className="text-primary font-semibold">{profile.targetRole}</strong> in {profile.timelineMonths} months ({profile.weeklyHours} hrs/week).
@@ -241,23 +241,21 @@ const CareerPage = () => {
           <div className="flex items-center gap-2 p-1.5 bg-bg-card border border-border-light rounded-2xl max-w-md shadow-xs">
             <button
               onClick={() => setActiveTab('roadmap')}
-              className={`flex-1 py-2.5 px-4 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
-                activeTab === 'roadmap'
+              className={`flex-1 py-2.5 px-4 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${activeTab === 'roadmap'
                   ? 'bg-primary text-white shadow-xs'
                   : 'text-text-muted hover:text-text-heading'
-              }`}
+                }`}
             >
               <Layers className="w-4 h-4" />
               Roadmap & Skill Gaps
             </button>
-            
+
             <button
               onClick={() => setActiveTab('chat')}
-              className={`flex-1 py-2.5 px-4 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
-                activeTab === 'chat'
+              className={`flex-1 py-2.5 px-4 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${activeTab === 'chat'
                   ? 'bg-primary text-white shadow-xs'
                   : 'text-text-muted hover:text-text-heading'
-              }`}
+                }`}
             >
               <MessageSquare className="w-4 h-4" />
               AI Counselor Chat
