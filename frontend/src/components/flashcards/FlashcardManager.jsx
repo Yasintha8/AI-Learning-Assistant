@@ -141,65 +141,114 @@ const FlashcardManager = ({ documentId }) => {
         setCurrentCardIndex(0);
     };
 
+    const handleShuffleSelectedSet = () => {
+        if (!selectedSet || selectedSet.cards.length <= 1) return;
+        const shuffledCards = [...selectedSet.cards].sort(() => Math.random() - 0.5);
+        setSelectedSet({ ...selectedSet, cards: shuffledCards });
+        setCurrentCardIndex(0);
+        toast.success("Deck shuffled! 🔀");
+    };
+
     const renderFlashcardViewer = () => {
         const currentCard = selectedSet.cards[currentCardIndex];
+        const reviewedCount = selectedSet.cards.filter(c => !!c.lastReviewed || c.reviewCount > 0).length;
+        const progressPct = selectedSet.cards.length > 0 ? Math.round((reviewedCount / selectedSet.cards.length) * 100) : 0;
 
         return (
-            <div className="flex flex-col gap-5">
-                {/* Back Button */}
-                <button
-                    onClick={() => setSelectedSet(null)}
-                    className="inline-flex items-center gap-2 text-sm font-semibold text-text-muted hover:text-text-heading transition-colors duration-150 w-fit cursor-pointer"
-                >
-                    <ArrowLeft
-                        className="w-4 h-4"
-                        strokeWidth={2}
-                    />
-                    Back to Sets
-                </button>
+            <div className="flex flex-col gap-6 animate-fade-in">
+                {/* Header Controls Bar */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-border-light">
+                    <button
+                        onClick={() => setSelectedSet(null)}
+                        className="inline-flex items-center gap-2 text-xs font-bold text-text-muted hover:text-primary transition-colors cursor-pointer"
+                    >
+                        <ArrowLeft className="w-4 h-4" strokeWidth={2} />
+                        Back to Flashcard Sets
+                    </button>
+
+                    <div className="flex items-center gap-3">
+                        <span className="text-xs font-bold text-primary bg-primary/10 px-2.5 py-1 rounded-full">
+                            {progressPct}% Mastered ({reviewedCount}/{selectedSet.cards.length})
+                        </span>
+
+                        <button
+                            onClick={handleShuffleSelectedSet}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-border-light bg-bg-card text-xs font-bold text-text-muted hover:text-primary transition-colors cursor-pointer"
+                        >
+                            <Sparkles className="w-3.5 h-3.5" />
+                            <span>Shuffle</span>
+                        </button>
+                    </div>
+                </div>
 
                 {/* Flashcard Display */}
-                <div className="flex flex-col items-center space-y-8">
+                <div className="flex flex-col items-center space-y-6">
                     <div className="w-full max-w-2xl">
                         <Flashcard
                             flashcard={currentCard}
                             onToggleStar={handleToggleStar}
+                            onReview={async (cardId, isCorrect) => {
+                                await handleReview(currentCardIndex);
+                                if (currentCardIndex < selectedSet.cards.length - 1) {
+                                    setCurrentCardIndex(prev => prev + 1);
+                                }
+                            }}
                         />
                     </div>
 
                     {/* Navigation Controls */}
-                    <div className="flex items-center justify-between gap-4 mt-4">
+                    <div className="flex items-center justify-between w-full max-w-2xl gap-4 px-2">
                         <button
                             onClick={handlePrevCard}
                             disabled={selectedSet.cards.length <= 1}
-                            className="inline-flex items-center gap-2 py-2  px-4 rounded-lg border border-border-medium bg-bg-card text-sm font-semibold text-text-body hover:bg-border-light hover:border-border-medium transition-colors duration-150 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                            className="inline-flex items-center gap-2 py-2.5 px-5 rounded-2xl border border-border-medium bg-bg-card text-xs font-bold text-text-heading hover:bg-border-light transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer shadow-xs"
                         >
-                            <ChevronLeft
-                                className="w-4 h-4"
-                                strokeWidth={2.5}
-                            />
+                            <ChevronLeft className="w-4 h-4" strokeWidth={2.5} />
                             Previous
                         </button>
 
-                        <div className="flex items-center rounded-lg border border-border-medium px-4 py-2 justify-center">
-                            <span className="text-sm font-semibold text-text-heading tabular-nums">
-                                {currentCardIndex + 1}{" "}
-                                <span className="text-text-muted font-normal">/</span>{" "}
-                                {selectedSet.cards.length}
-                            </span>
+                        <div className="flex items-center gap-2 bg-bg-card border border-border-light px-4 py-2 rounded-2xl shadow-xs text-xs font-extrabold text-text-heading">
+                            <span>Card {currentCardIndex + 1}</span>
+                            <span className="text-text-muted">/</span>
+                            <span>{selectedSet.cards.length}</span>
                         </div>
 
                         <button
                             onClick={handleNextCard}
                             disabled={selectedSet.cards.length <= 1}
-                            className="inline-flex items-center gap-2 py-2  px-4 rounded-lg border border-border-medium bg-bg-card text-sm font-semibold text-text-body hover:bg-border-light hover:border-border-medium transition-colors duration-150 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                            className="inline-flex items-center gap-2 py-2.5 px-5 rounded-2xl bg-primary text-white text-xs font-bold hover:bg-primary-hover transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer shadow-md shadow-primary/20"
                         >
                             Next
-                            <ChevronRight
-                                className="w-4 h-4"
-                                strokeWidth={2.5}
-                            />
+                            <ChevronRight className="w-4 h-4" strokeWidth={2.5} />
                         </button>
+                    </div>
+
+                    {/* Quick Jump Strip */}
+                    <div className="w-full max-w-2xl bg-bg-card border border-border-light rounded-2xl p-3 shadow-xs">
+                        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-thin">
+                            {selectedSet.cards.map((card, idx) => {
+                                const isActive = idx === currentCardIndex;
+                                const isReviewed = !!card.lastReviewed || card.reviewCount > 0;
+
+                                return (
+                                    <button
+                                        key={card._id || idx}
+                                        onClick={() => setCurrentCardIndex(idx)}
+                                        className={`shrink-0 w-8 h-8 rounded-xl text-xs font-bold flex items-center justify-center transition-all cursor-pointer relative ${isActive
+                                                ? 'bg-primary text-white shadow-md shadow-primary/30 scale-105'
+                                                : isReviewed
+                                                    ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20'
+                                                    : 'bg-border-light text-text-muted hover:bg-border-medium hover:text-text-heading'
+                                            }`}
+                                    >
+                                        <span>{idx + 1}</span>
+                                        {card.isStarred && (
+                                            <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-amber-400" />
+                                        )}
+                                    </button>
+                                );
+                            })}
+                        </div>
                     </div>
                 </div>
             </div>
