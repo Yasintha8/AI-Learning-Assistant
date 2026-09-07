@@ -6,7 +6,7 @@ const Footer = () => {
   return (
     <footer className="w-full h-12 bg-bg-card border-t border-border-light flex items-center justify-center px-6 shrink-0">
       <p className="text-xs text-text-muted">
-        © {year} NeuroLearn. All rights reserved.
+        © {year} LearnMate AI. All rights reserved.
       </p>
     </footer>
   );

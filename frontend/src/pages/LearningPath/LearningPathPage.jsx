@@ -487,20 +487,18 @@ const LearningPathPage = () => {
                   <li
                     key={`${item.topicId}-${index}`}
                     id={`study-plan-item-${item.topicId}`}
-                    className={`flex items-center justify-between gap-4 px-6 py-4 transition-all duration-500 ${
-                      isHighlighted
+                    className={`flex items-center justify-between gap-4 px-6 py-4 transition-all duration-500 ${isHighlighted
                         ? 'bg-primary-light/95 border-l-4 border-primary ring-4 ring-primary/40 shadow-lg animate-pulse'
                         : isMastered
                           ? 'bg-emerald-50/90 dark:bg-emerald-950/30 border-l-4 border-emerald-500'
                           : 'hover:bg-border-light/30'
-                    }`}
+                      }`}
                   >
                     <div className="flex items-start gap-3 min-w-0">
-                      <span className={`mt-0.5 shrink-0 w-6 h-6 rounded-full text-xs font-bold flex items-center justify-center ${
-                        isMastered
+                      <span className={`mt-0.5 shrink-0 w-6 h-6 rounded-full text-xs font-bold flex items-center justify-center ${isMastered
                           ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300'
                           : 'bg-border-light text-text-muted'
-                      }`}>
+                        }`}>
                         {index + 1}
                       </span>
                       <div className="min-w-0">
@@ -762,99 +760,97 @@ const LearningPathPage = () => {
             </div>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {topics.map((topic) => {
-            const style = getStatusStyle(topic.status);
-            const StatusIcon = style.icon;
-            const levelStyle = getKnowledgeLevelStyle(topic.knowledgeLevel);
-            const LevelIcon = levelStyle?.icon;
+            {topics.map((topic) => {
+              const style = getStatusStyle(topic.status);
+              const StatusIcon = style.icon;
+              const levelStyle = getKnowledgeLevelStyle(topic.knowledgeLevel);
+              const LevelIcon = levelStyle?.icon;
 
-            const isMastered = topic.status === 'mastered' || topic.knowledgeLevel === 'proficient' || topic.masteryScore >= 80;
+              const isMastered = topic.status === 'mastered' || topic.knowledgeLevel === 'proficient' || topic.masteryScore >= 80;
 
-            const planIndex = studyPlanItems
-              ? studyPlanItems.findIndex((sp) =>
+              const planIndex = studyPlanItems
+                ? studyPlanItems.findIndex((sp) =>
                   (sp.topicId && topic.topicId && String(sp.topicId) === String(topic.topicId)) ||
                   (sp.title && topic.title && sp.title.toLowerCase().trim() === topic.title.toLowerCase().trim())
                 )
-              : -1;
-            const planItem = planIndex !== -1 ? studyPlanItems[planIndex] : null;
+                : -1;
+              const planItem = planIndex !== -1 ? studyPlanItems[planIndex] : null;
 
-            return (
-              <div
-                key={topic.topicId}
-                onClick={() => !isMastered && handleTopicCardClick(topic)}
-                className={`bg-bg-card border ${
-                  isMastered
-                    ? 'border-emerald-200 dark:border-emerald-900/40 cursor-default'
-                    : 'border-primary/40 ring-1 ring-primary/20 cursor-pointer shadow-sm hover:shadow-md'
-                } rounded-2xl p-5 flex flex-col justify-between gap-4 transition-all duration-200 relative group`}
-              >
-                <div className="space-y-4">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="space-y-1 min-w-0 flex-1">
-                      <h4 className={`text-sm font-bold text-text-heading ${isMastered ? '' : 'group-hover:text-primary'} transition-colors leading-snug truncate`}>
-                        {topic.title}
-                      </h4>
-                      {planItem && (
-                        <span className={`inline-flex items-center gap-1 text-[10px] font-extrabold px-2 py-0.5 rounded-full border ${
-                          isMastered
-                            ? 'text-emerald-700 bg-emerald-100 border-emerald-300 dark:bg-emerald-900/40 dark:text-emerald-300'
-                            : 'text-primary bg-primary-light border-primary/30'
-                        }`}>
-                          <Target className="w-3 h-3 shrink-0" />
-                          <span>Study Plan #{planIndex + 1}</span>
-                        </span>
-                      )}
-                    </div>
-                    <span
-                      className={`shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${style.bg} ${style.text}`}
-                    >
-                      <StatusIcon className="w-3 h-3" strokeWidth={2.5} />
-                      {style.label}
-                    </span>
-                  </div>
-
-                  {levelStyle && (
-                    <span className={`w-fit inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold ${levelStyle.bg} ${levelStyle.text}`}>
-                      <LevelIcon className="w-3 h-3" strokeWidth={2.5} />
-                      {levelStyle.label}
-                    </span>
-                  )}
-
-                  {/* Mastery bar */}
-                  <div>
-                    <div className="flex items-center justify-between mb-1.5">
-                      <span className="text-xs text-text-muted">Mastery</span>
-                      <span className="text-xs font-semibold text-text-heading tabular-nums">
-                        {topic.masteryScore}%
+              return (
+                <div
+                  key={topic.topicId}
+                  onClick={() => !isMastered && handleTopicCardClick(topic)}
+                  className={`bg-bg-card border ${isMastered
+                      ? 'border-emerald-200 dark:border-emerald-900/40 cursor-default'
+                      : 'border-primary/40 ring-1 ring-primary/20 cursor-pointer shadow-sm hover:shadow-md'
+                    } rounded-2xl p-5 flex flex-col justify-between gap-4 transition-all duration-200 relative group`}
+                >
+                  <div className="space-y-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="space-y-1 min-w-0 flex-1">
+                        <h4 className={`text-sm font-bold text-text-heading ${isMastered ? '' : 'group-hover:text-primary'} transition-colors leading-snug truncate`}>
+                          {topic.title}
+                        </h4>
+                        {planItem && (
+                          <span className={`inline-flex items-center gap-1 text-[10px] font-extrabold px-2 py-0.5 rounded-full border ${isMastered
+                              ? 'text-emerald-700 bg-emerald-100 border-emerald-300 dark:bg-emerald-900/40 dark:text-emerald-300'
+                              : 'text-primary bg-primary-light border-primary/30'
+                            }`}>
+                            <Target className="w-3 h-3 shrink-0" />
+                            <span>Study Plan #{planIndex + 1}</span>
+                          </span>
+                        )}
+                      </div>
+                      <span
+                        className={`shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${style.bg} ${style.text}`}
+                      >
+                        <StatusIcon className="w-3 h-3" strokeWidth={2.5} />
+                        {style.label}
                       </span>
                     </div>
-                    <div className="w-full bg-border-light h-2 rounded-full overflow-hidden">
-                      <div
-                        className={`h-full rounded-full transition-all duration-300 ${style.dot}`}
-                        style={{ width: `${topic.masteryScore}%` }}
-                      />
+
+                    {levelStyle && (
+                      <span className={`w-fit inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold ${levelStyle.bg} ${levelStyle.text}`}>
+                        <LevelIcon className="w-3 h-3" strokeWidth={2.5} />
+                        {levelStyle.label}
+                      </span>
+                    )}
+
+                    {/* Mastery bar */}
+                    <div>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <span className="text-xs text-text-muted">Mastery</span>
+                        <span className="text-xs font-semibold text-text-heading tabular-nums">
+                          {topic.masteryScore}%
+                        </span>
+                      </div>
+                      <div className="w-full bg-border-light h-2 rounded-full overflow-hidden">
+                        <div
+                          className={`h-full rounded-full transition-all duration-300 ${style.dot}`}
+                          style={{ width: `${topic.masteryScore}%` }}
+                        />
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                {/* Footer status link */}
-                <div className="flex items-center justify-between text-xs text-text-muted pt-3 border-t border-border-light">
-                  <span className="capitalize text-[11px]">{topic.difficulty} difficulty</span>
-                  {isMastered ? (
-                    <span className="inline-flex items-center gap-1 text-[11px] font-extrabold text-emerald-600 dark:text-emerald-400">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
-                      <span>Mastered ✓</span>
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center gap-1 text-xs font-bold text-primary group-hover:underline">
-                      <span>View in Study Plan</span>
-                      <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
-                    </span>
-                  )}
+                  {/* Footer status link */}
+                  <div className="flex items-center justify-between text-xs text-text-muted pt-3 border-t border-border-light">
+                    <span className="capitalize text-[11px]">{topic.difficulty} difficulty</span>
+                    {isMastered ? (
+                      <span className="inline-flex items-center gap-1 text-[11px] font-extrabold text-emerald-600 dark:text-emerald-400">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                        <span>Mastered ✓</span>
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 text-xs font-bold text-primary group-hover:underline">
+                        <span>View in Study Plan</span>
+                        <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+                      </span>
+                    )}
+                  </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })}
           </div>
         </div>
       </div>
@@ -966,11 +962,10 @@ const LearningPathPage = () => {
                       key={item.id}
                       type="button"
                       onClick={() => scrollToSection(item.id)}
-                      className={`w-full flex items-center gap-2.5 px-4 py-2 text-left text-xs font-semibold transition-all duration-150 cursor-pointer ${
-                        isActive
+                      className={`w-full flex items-center gap-2.5 px-4 py-2 text-left text-xs font-semibold transition-all duration-150 cursor-pointer ${isActive
                           ? 'text-primary bg-primary-light font-bold border-l-2 border-primary'
                           : 'text-text-heading hover:bg-border-light/60'
-                      }`}
+                        }`}
                     >
                       <Icon className={`w-3.5 h-3.5 shrink-0 ${isActive ? 'text-primary' : 'text-text-muted'}`} strokeWidth={2} />
                       <span className="truncate">{item.label}</span>

@@ -28,7 +28,7 @@ const AuthLayout = ({ eyebrow, headline, subheadline, children }) => {
             <div className="p-2 bg-white/15 rounded-xl backdrop-blur-sm flex items-center justify-center">
               <BrainCircuit className="w-6 h-6" />
             </div>
-            <span className="font-display font-bold text-2xl tracking-tight">NeuroLearn</span>
+            <span className="font-display font-bold text-2xl tracking-tight">LearnMate AI</span>
           </Link>
 
           <div className="flex flex-col gap-8 animate-fade-in-up">
@@ -59,7 +59,7 @@ const AuthLayout = ({ eyebrow, headline, subheadline, children }) => {
           </div>
 
           <p className="text-white/50 text-xs">
-            &copy; {new Date().getFullYear()} NeuroLearn. All rights reserved.
+            &copy; {new Date().getFullYear()} LearnMate AI. All rights reserved.
           </p>
         </div>
       </div>

@@ -253,7 +253,7 @@ const LandingPage = () => {
               <BrainCircuit className="w-5 h-5" />
             </div>
             <span className="font-display font-bold text-text-heading tracking-tight">
-              NeuroLearn
+              LearnMate AI
             </span>
           </div>
 
@@ -470,18 +470,18 @@ const LandingPage = () => {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-border-medium/50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 flex flex-col items-center  text-center">
+      <footer className="border-t border-border-light bg-bg-card py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             {/* <div className="p-1.5 bg-primary/10 rounded-lg text-primary flex items-center justify-center">
               <BrainCircuit className="w-4 h-4" />
             </div>
             <span className="font-display font-semibold text-text-heading text-sm">
-              NeuroLearn
+              LearnMate AI
             </span> */}
           </div>
           <p className="text-xs text-text-muted">
-            &copy; {new Date().getFullYear()} NeuroLearn. All rights reserved.
+            &copy; {new Date().getFullYear()} LearnMate AI. All rights reserved.
           </p>
         </div>
       </footer>

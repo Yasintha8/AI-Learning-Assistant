@@ -47,7 +47,7 @@ const CareerCounselorChat = ({ chatHistory = [], onSendMessage, isLoading, targe
             <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
               AI Career Counselor & Mentor
               <span className="px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20 rounded-full">
-                Gemini AI
+                AI Advisor
               </span>
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400">
@@ -124,7 +124,7 @@ const CareerCounselorChat = ({ chatHistory = [], onSendMessage, isLoading, targe
             </div>
             <div className="p-3 bg-slate-50 dark:bg-[#1d263b] border border-slate-200 dark:border-slate-700 rounded-2xl rounded-tl-xs text-xs text-slate-500 dark:text-slate-400 flex items-center gap-2">
               <RefreshCw className="w-3.5 h-3.5 animate-spin text-purple-600 dark:text-purple-400" />
-              Gemini AI Advisor is generating guidance...
+              AI Advisor is generating guidance...
             </div>
           </div>
         )}

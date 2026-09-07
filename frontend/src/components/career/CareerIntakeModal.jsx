@@ -64,7 +64,7 @@ const CareerIntakeModal = ({ isOpen, onClose, onSubmit, initialProfile, isLoadin
                 {initialProfile ? 'Update Career Goals' : 'Create Career Roadmap'}
               </h2>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                Share your background and goal to let Gemini AI generate your custom transition path.
+                Share your background and goal to let AI generate your custom transition path.
               </p>
             </div>
           </div>
