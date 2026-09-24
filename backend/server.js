@@ -27,6 +27,9 @@ const __dirname = path.dirname(__filename);
 //Initialize express app
 const app = express();
 
+// Trust reverse proxy (Render, Vercel, Cloudflare)
+app.set('trust proxy', 1);
+
 //Connect to MongoDB
 connectDB();
 

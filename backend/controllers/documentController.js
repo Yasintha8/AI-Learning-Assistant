@@ -57,9 +57,8 @@ export const uploadDocument = async (req, res, next) => {
             });
         }
 
-        // Construct the URL for the uploaded file
-        const baseUrl = `http://localhost:${process.env.PORT || 8000}`;
-        const fileUrl = `${baseUrl}/uploads/documents/${req.file.filename}`;
+        // Construct the URL for the uploaded file (relative path decoupled from specific domain or localhost)
+        const fileUrl = `/uploads/documents/${req.file.filename}`;
         const ext = path.extname(req.file.originalname).toLowerCase();
         const fileType = EXTENSION_TO_FILE_TYPE[ext] || 'pdf';
 

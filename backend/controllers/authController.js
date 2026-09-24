@@ -1,5 +1,6 @@
 import jwt from "jsonwebtoken";
 import { OAuth2Client } from "google-auth-library";
+import fs from "fs";
 import User from "../models/User.js";
 
 //Generate jwt token
@@ -288,8 +289,21 @@ export const uploadAvatar = async (req, res, next) => {
             });
         }
 
-        const baseUrl = `http://localhost:${process.env.PORT || 8000}`;
-        const avatarUrl = `${baseUrl}/uploads/avatars/${req.file.filename}`;
+        // Convert uploaded file to base64 data URL for 100% persistence on ephemeral platforms (Render free tier)
+        let avatarUrl;
+        if (req.file.buffer) {
+            avatarUrl = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
+        } else if (req.file.path) {
+            const fileBuffer = await fs.promises.readFile(req.file.path);
+            avatarUrl = `data:${req.file.mimetype};base64,${fileBuffer.toString('base64')}`;
+            // Clean up the temporary file from the ephemeral disk
+            await fs.promises.unlink(req.file.path).catch(() => {});
+        } else {
+            const protocol = req.headers['x-forwarded-proto'] || req.protocol || 'http';
+            const host = req.get('host');
+            const baseUrl = process.env.BACKEND_URL || (host ? `${protocol}://${host}` : `http://localhost:${process.env.PORT || 8000}`);
+            avatarUrl = `${baseUrl}/uploads/avatars/${req.file.filename}`;
+        }
 
         const user = await User.findById(req.user._id);
         user.profileImage = avatarUrl;
