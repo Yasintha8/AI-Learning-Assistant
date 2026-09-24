@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { BASE_URL } from '../../utils/apiPaths';
+import { getAvatarUrl } from '../../utils/avatarUtils';
 import {
   LayoutDashboard,
   FileText,
@@ -37,14 +37,13 @@ const Sidebar = ({ isSidebarOpen, toggleSidebar }) => {
     return name.slice(0, 2).toUpperCase();
   };
 
-  const getAvatarUrl = (userObj) => {
-    const img = userObj?.profileImage || userObj?.avatar;
-    if (!img) return null;
-    if (img.startsWith('http://') || img.startsWith('https://')) return img;
-    return `${BASE_URL}${img.startsWith('/') ? '' : '/'}${img}`;
-  };
+  const [sidebarImgError, setSidebarImgError] = useState(false);
 
-  const avatarUrl = getAvatarUrl(user);
+  useEffect(() => {
+    setSidebarImgError(false);
+  }, [user?.profileImage, user?.avatar]);
+
+  const avatarUrl = !sidebarImgError ? getAvatarUrl(user) : null;
   const isProfileActive = location.pathname.startsWith('/profile');
 
   return (
@@ -170,6 +169,7 @@ const Sidebar = ({ isSidebarOpen, toggleSidebar }) => {
               <img
                 src={avatarUrl}
                 alt={user?.name || user?.username || 'User Avatar'}
+                onError={() => setSidebarImgError(true)}
                 className="w-8 h-8 rounded-lg object-cover border border-white/20 shadow-xs shrink-0"
               />
             ) : (

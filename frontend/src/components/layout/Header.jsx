@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useAuth } from "../../context/AuthContext";
 import { useNavigate } from 'react-router-dom';
 import { BASE_URL } from '../../utils/apiPaths';
+import { getAvatarUrl } from '../../utils/avatarUtils';
 import { Bell, Menu, Search, LogOut, Sparkles, Sun, Moon, FileText, Layers, HelpCircle, Loader2, X, BrainCircuit, User } from 'lucide-react';
 import { useTheme } from "../../context/ThemeContext";
 import searchService from '../../services/searchService';
@@ -132,14 +133,13 @@ const Header = ({ toggleSidebar }) => {
         return name.slice(0, 2).toUpperCase();
     };
 
-    const getAvatarUrl = (userObj) => {
-        const img = userObj?.profileImage || userObj?.avatar;
-        if (!img) return null;
-        if (img.startsWith('http://') || img.startsWith('https://')) return img;
-        return `${BASE_URL}${img.startsWith('/') ? '' : '/'}${img}`;
-    };
+    const [headerImgError, setHeaderImgError] = useState(false);
 
-    const avatarUrl = getAvatarUrl(user);
+    useEffect(() => {
+        setHeaderImgError(false);
+    }, [user?.profileImage, user?.avatar]);
+
+    const avatarUrl = !headerImgError ? getAvatarUrl(user) : null;
     const trimmedQuery = searchQuery.trim();
     const hasSearchResults = searchResults.documents.length > 0
         || searchResults.flashcards.length > 0
@@ -351,6 +351,7 @@ const Header = ({ toggleSidebar }) => {
                             <img
                                 src={avatarUrl}
                                 alt={user?.name || user?.username || 'User'}
+                                onError={() => setHeaderImgError(true)}
                                 className="w-9 h-9 rounded-full object-cover border-2 border-primary shadow-xs"
                             />
                         ) : (

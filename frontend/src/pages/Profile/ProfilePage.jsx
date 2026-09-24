@@ -6,6 +6,8 @@ import progressService from "../.././services/progressService";
 import { useAuth } from "../.././context/AuthContext";
 import toast from '../../utils/toast';
 import moment from "moment";
+import { getAvatarUrl } from "../../utils/avatarUtils";
+import { compressImage } from "../../utils/imageUtils";
 import {
   User, Mail, Lock, Shield, Save, KeyRound, Camera, FileText, BookOpen, BrainCircuit
 } from "lucide-react";
@@ -25,7 +27,12 @@ const ProfilePage = () => {
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [avatarUrl, setAvatarUrl] = useState(null);
+  const [imgError, setImgError] = useState(false);
   const [memberSince, setMemberSince] = useState(null);
+
+  useEffect(() => {
+    setImgError(false);
+  }, [avatarUrl]);
 
   const [stats, setStats] = useState(null);
 
@@ -67,16 +74,23 @@ const ProfilePage = () => {
     const file = e.target.files[0];
     if (!file) return;
 
+    // Fast local preview
     const localPreview = URL.createObjectURL(file);
     setAvatarUrl(localPreview);
+    setImgError(false);
     setAvatarUploading(true);
 
     try {
+      // Compress client-side to ensure lightweight payload (<50KB),
+      // instantaneous uploads, and permanent durability in MongoDB Atlas
+      const optimizedFile = await compressImage(file, 400, 400, 0.85);
+
       const formData = new FormData();
-      formData.append("avatar", file);
+      formData.append("avatar", optimizedFile);
       const res = await authService.uploadAvatar(formData);
-      setAvatarUrl(res.data.profileImage);
-      updateUser({ profileImage: res.data.profileImage });
+      const newAvatar = res.data.profileImage;
+      setAvatarUrl(newAvatar);
+      updateUser({ profileImage: newAvatar });
       toast.success("Avatar updated successfully.");
     } catch (error) {
       toast.error(error.message || "Failed to upload avatar.");
@@ -131,6 +145,8 @@ const ProfilePage = () => {
     { label: "Quizzes", value: stats.totalQuizzes ?? 0, icon: BrainCircuit, gradient: "from-emerald-400 to-teal-500" },
   ] : [];
 
+  const displayAvatar = !imgError ? getAvatarUrl(avatarUrl) : null;
+
   return (
     <div className="min-h-screen bg-bg-main">
       <div className="max-w-5xl mx-auto px-6 py-5 space-y-8">
@@ -150,10 +166,11 @@ const ProfilePage = () => {
         {/* Profile Hero Card */}
         <div className="bg-bg-card border border-border-light rounded-2xl p-6 shadow-sm flex flex-col sm:flex-row sm:items-center gap-6">
           <div className="relative shrink-0">
-            {avatarUrl ? (
+            {displayAvatar ? (
               <img
-                src={avatarUrl}
+                src={displayAvatar}
                 alt={username || "User"}
+                onError={() => setImgError(true)}
                 className="w-20 h-20 rounded-2xl object-cover border border-border-medium"
               />
             ) : (

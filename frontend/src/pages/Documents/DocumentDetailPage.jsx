@@ -61,7 +61,18 @@ const DocumentDetailPage = () => {
 
     const filePath = document.data.filePath;
 
+    if (filePath.startsWith('http://localhost') || filePath.startsWith('http://127.0.0.1')) {
+      const cleanPath = filePath.replace(/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?/, '');
+      if (BASE_URL && !BASE_URL.includes('localhost') && !BASE_URL.includes('127.0.0.1')) {
+        return `${BASE_URL}${cleanPath.startsWith('/') ? '' : '/'}${cleanPath}`;
+      }
+      return filePath;
+    }
+
     if (filePath.startsWith('http://') || filePath.startsWith('https://')) {
+      if (filePath.startsWith('http://') && typeof window !== 'undefined' && window.location.protocol === 'https:') {
+        return filePath.replace(/^http:\/\//, 'https://');
+      }
       return filePath;
     }
 
