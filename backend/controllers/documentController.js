@@ -5,7 +5,7 @@ import LearningPath from '../models/LearningPath.js';
 import { extractTextFromPDF } from '../utils/pdfParser.js';
 import { extractTextFromDOCX } from '../utils/docxParser.js';
 import { extractTextFromPPTX } from '../utils/pptxParser.js';
-import { extractTextFromYouTube } from '../utils/youtubeParser.js';
+import { extractTextFromYouTube, extractVideoId } from '../utils/youtubeParser.js';
 import { extractTextFromWebsite } from '../utils/websiteParser.js';
 import { chunkText } from '../utils/textChunker.js';
 import fs from 'fs/promises';
@@ -17,19 +17,19 @@ const EXTENSION_TO_FILE_TYPE = {
     '.docx': 'docx',
     '.pptx': 'pptx',
 };
-const YOUTUBE_URL_REGEX = /(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([\w-]{11})/;
 
 // Determine whether a URL points to a YouTube video or a generic website
 const detectLinkType = (url) => {
     let parsed;
     try {
-        parsed = new URL(url);
+        const trimmed = String(url).trim();
+        parsed = new URL(trimmed.startsWith('http') ? trimmed : `https://${trimmed}`);
     } catch {
         return null;
     }
 
     if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return null;
-    return YOUTUBE_URL_REGEX.test(url) ? 'youtube' : 'website';
+    return extractVideoId(url) ? 'youtube' : 'website';
 };
 
 // @desc Upload PDF, DOCX or PPTX document
@@ -101,28 +101,28 @@ export const addUrlDocument = async (req, res, next) => {
     try {
         const { url, title } = req.body;
 
-        if (!url || !title) {
+        if (!url || !url.trim()) {
             return res.status(400).json({
                 success: false,
-                error: 'Please provide a URL and a document title',
+                error: 'Please provide a valid URL',
                 statusCode: 400,
             });
         }
 
-        const fileType = detectLinkType(url);
+        const fileType = detectLinkType(url.trim());
         if (!fileType) {
             return res.status(400).json({
                 success: false,
-                error: 'Please provide a valid YouTube or website URL',
+                error: 'Please provide a valid YouTube or website URL (http:// or https://)',
                 statusCode: 400,
             });
         }
 
-        let text;
+        let extracted;
         try {
-            ({ text } = fileType === 'youtube'
-                ? await extractTextFromYouTube(url)
-                : await extractTextFromWebsite(url));
+            extracted = fileType === 'youtube'
+                ? await extractTextFromYouTube(url.trim())
+                : await extractTextFromWebsite(url.trim());
         } catch (extractionError) {
             return res.status(400).json({
                 success: false,
@@ -131,13 +131,20 @@ export const addUrlDocument = async (req, res, next) => {
             });
         }
 
+        const text = extracted.text;
+        const finalTitle = (title && title.trim())
+            ? title.trim()
+            : (extracted.title && extracted.title.trim())
+                ? extracted.title.trim()
+                : (fileType === 'youtube' ? 'YouTube Video' : 'Website Article');
+
         const chunks = chunkText(text, 500, 50);
 
         const document = await Document.create({
             userId: req.user._id,
-            title,
-            fileName: title,
-            filePath: url,
+            title: finalTitle,
+            fileName: finalTitle,
+            filePath: url.trim(),
             fileType,
             extractedText: text,
             chunks,

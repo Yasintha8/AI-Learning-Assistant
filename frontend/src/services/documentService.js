@@ -28,7 +28,14 @@ const addDocumentFromUrl = async ({ url, title }) => {
         const response = await axiosInstance.post(API_PATHS.DOCUMENTS.UPLOAD_URL, { url, title });
         return response.data;
     } catch (error) {
-        throw error.response?.data || { message: 'Failed to add document from link' };
+        const errMessage =
+            error.response?.data?.error ||
+            error.response?.data?.message ||
+            error.message ||
+            'Failed to add document from link';
+        const err = new Error(errMessage);
+        err.response = error.response;
+        throw err;
     }
 };
 

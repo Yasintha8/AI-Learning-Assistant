@@ -1,5 +1,7 @@
 export const BASE_URL =
-    import.meta.env.VITE_API_URL || "http://localhost:8000";
+    import.meta.env.DEV
+        ? (import.meta.env.VITE_DEV_API_URL || (import.meta.env.VITE_API_URL && !import.meta.env.VITE_API_URL.includes("onrender.com") ? import.meta.env.VITE_API_URL : "http://localhost:8000"))
+        : (import.meta.env.VITE_API_URL || "https://ai-learning-assistant-zwr9.onrender.com");
 
 export const API_PATHS = {
     AUTH: {

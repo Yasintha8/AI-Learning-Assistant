@@ -99,7 +99,7 @@ const DocumentListPage = () => {
         setLoading(true);
         fetchDocuments();
       } catch (error) {
-        toast.error(error.message || "Failed to add document from link.");
+        toast.error(error.message || error.error || "Failed to add document from link.");
       } finally {
         setUploading(false);
       }
