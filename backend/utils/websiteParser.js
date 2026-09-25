@@ -11,6 +11,7 @@ export const extractTextFromWebsite = async (url) => {
     try {
         response = await fetch(url, {
             headers: { "User-Agent": "Mozilla/5.0 (compatible; AI-Learning-Assistant/1.0)" },
+            signal: AbortSignal.timeout(6000),
         });
     } catch (error) {
         console.error("Website fetch error:", error);
