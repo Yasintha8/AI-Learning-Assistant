@@ -3,7 +3,7 @@ import { useParams, useSearchParams, Link } from 'react-router-dom';
 import documentService from '../../services/documentService';
 import Spinner from '../../components/common/Spinner';
 import toast from '../../utils/toast';
-import { ArrowLeft, ExternalLink, Map, Globe, BookOpen } from 'lucide-react';
+import { ArrowLeft, ExternalLink, Map, Globe, BookOpen, FileText } from 'lucide-react';
 import PageHeader from '../../components/common/PageHeader';
 import Tabs from '../../components/common/Tabs';
 import ChatInterface from '../../components/chat/ChatInterface';
@@ -35,7 +35,7 @@ const DocumentDetailPage = () => {
     VALID_TABS.includes(requestedTab) ? requestedTab : 'Content'
   );
   // 'live' embeds the real site in an iframe; some sites block that via
-  // X-Frame-Options, so users can switch to the always-available reader view.
+  // X-Frame-Options, so users can switch to the reader view for websites.
   const [websiteViewMode, setWebsiteViewMode] = useState('live');
 
   useEffect(() => {
@@ -61,22 +61,29 @@ const DocumentDetailPage = () => {
 
     const filePath = document.data.filePath;
 
+    // Check if filePath is an upload path (either relative /uploads/... or absolute with any host)
+    const uploadsMatch = filePath.match(/\/uploads\/documents\/.+$/);
+    if (uploadsMatch) {
+      const cleanUploadPath = uploadsMatch[0];
+      return encodeURI(decodeURI(`${BASE_URL}${cleanUploadPath}`));
+    }
+
     if (filePath.startsWith('http://localhost') || filePath.startsWith('http://127.0.0.1')) {
       const cleanPath = filePath.replace(/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?/, '');
       if (BASE_URL && !BASE_URL.includes('localhost') && !BASE_URL.includes('127.0.0.1')) {
-        return `${BASE_URL}${cleanPath.startsWith('/') ? '' : '/'}${cleanPath}`;
+        return encodeURI(decodeURI(`${BASE_URL}${cleanPath.startsWith('/') ? '' : '/'}${cleanPath}`));
       }
-      return filePath;
+      return encodeURI(decodeURI(filePath));
     }
 
     if (filePath.startsWith('http://') || filePath.startsWith('https://')) {
       if (filePath.startsWith('http://') && typeof window !== 'undefined' && window.location.protocol === 'https:') {
-        return filePath.replace(/^http:\/\//, 'https://');
+        return encodeURI(decodeURI(filePath.replace(/^http:\/\//, 'https://')));
       }
-      return filePath;
+      return encodeURI(decodeURI(filePath));
     }
 
-    return `${BASE_URL}${filePath.startsWith('/') ? '' : '/'}${filePath}`;
+    return encodeURI(decodeURI(`${BASE_URL}${filePath.startsWith('/') ? '' : '/'}${filePath}`));
   };
 
   const renderContent = () => {
@@ -88,42 +95,47 @@ const DocumentDetailPage = () => {
     }
 
     const fileUrl = getFileUrl();
-    const fileType = document.data.fileType;
-    const isPdf = fileType === 'pdf';
-    const isYoutube = fileType === 'youtube';
-    const isWebsite = fileType === 'website';
-    const isPptx = fileType === 'pptx';
+    const rawType = (document.data.fileType || '').toLowerCase().trim();
+    const fileName = (document.data.fileName || document.data.filePath || '').toLowerCase();
+    const isPdf = rawType === 'pdf' || (!rawType && fileName.endsWith('.pdf'));
+    const isYoutube = rawType === 'youtube';
+    const isWebsite = rawType === 'website';
+    const isPptx = rawType === 'pptx' || (!rawType && fileName.endsWith('.pptx'));
+    const isDocx = rawType === 'docx' || (!rawType && (fileName.endsWith('.docx') || fileName.endsWith('.doc')));
+
     // DOCX and PPTX need the internal preview route (the raw file downloads
     // instead of viewing); PDF, YouTube, and website links can all be opened
     // directly at their real source.
-    const openInNewTabHref = fileType === 'docx' || fileType === 'pptx'
+    const openInNewTabHref = isDocx || isPptx
       ? `/documents/${id}/preview`
       : fileUrl;
 
     return (
       <div className="bg-bg-card border border-border-medium rounded-lg overflow-hidden shadow-sm">
         <div className="flex items-center justify-between p-4 bg-bg-main border-b border-border-medium">
-          <span className="text-sm font-medium text-text-heading">Document Viewer</span>
-          {isWebsite && (
-            <div className="flex items-center gap-1 p-0.5 bg-bg-card rounded-lg border border-border-medium">
-              <button
-                type="button"
-                onClick={() => setWebsiteViewMode('live')}
-                className={`inline-flex items-center gap-1.5 px-3 h-7 rounded-md text-xs font-semibold transition-colors duration-150 cursor-pointer ${websiteViewMode === 'live' ? 'bg-primary text-white' : 'text-text-muted hover:text-text-body'}`}
-              >
-                <Globe size={13} strokeWidth={2} />
-                Live Site
-              </button>
-              <button
-                type="button"
-                onClick={() => setWebsiteViewMode('reader')}
-                className={`inline-flex items-center gap-1.5 px-3 h-7 rounded-md text-xs font-semibold transition-colors duration-150 cursor-pointer ${websiteViewMode === 'reader' ? 'bg-primary text-white' : 'text-text-muted hover:text-text-body'}`}
-              >
-                <BookOpen size={13} strokeWidth={2} />
-                Reader View
-              </button>
-            </div>
-          )}
+          <div className="flex items-center gap-3">
+            <span className="text-sm font-medium text-text-heading">Document Viewer</span>
+            {isWebsite && (
+              <div className="flex items-center gap-1 p-0.5 bg-bg-card rounded-lg border border-border-medium">
+                <button
+                  type="button"
+                  onClick={() => setWebsiteViewMode('live')}
+                  className={`inline-flex items-center gap-1.5 px-3 h-7 rounded-md text-xs font-semibold transition-colors duration-150 cursor-pointer ${websiteViewMode === 'live' ? 'bg-primary text-white shadow-xs' : 'text-text-muted hover:text-text-body'}`}
+                >
+                  <Globe size={13} strokeWidth={2} />
+                  <span>Live Site</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setWebsiteViewMode('reader')}
+                  className={`inline-flex items-center gap-1.5 px-3 h-7 rounded-md text-xs font-semibold transition-colors duration-150 cursor-pointer ${websiteViewMode === 'reader' ? 'bg-primary text-white shadow-xs' : 'text-text-muted hover:text-text-body'}`}
+                >
+                  <BookOpen size={13} strokeWidth={2} />
+                  <span>Reader View</span>
+                </button>
+              </div>
+            )}
+          </div>
           <a
             href={openInNewTabHref}
             target="_blank"
@@ -131,9 +143,10 @@ const DocumentDetailPage = () => {
             className="inline-flex items-center gap-1.5 text-sm text-primary hover:text-primary-hover font-medium transition-colors"
           >
             <ExternalLink size={16} />
-            Open in new tab
+            <span>Open in new tab</span>
           </a>
         </div>
+
         {isPdf ? (
           <div className="bg-border-light p-1">
             <iframe
@@ -170,7 +183,11 @@ const DocumentDetailPage = () => {
               />
               <p className="px-2 pt-2 pb-1 text-xs text-text-muted">
                 Some sites block embedding - if the page above stays blank, switch to{' '}
-                <button type="button" onClick={() => setWebsiteViewMode('reader')} className="text-primary hover:text-primary-hover font-medium cursor-pointer">
+                <button
+                  type="button"
+                  onClick={() => setWebsiteViewMode('reader')}
+                  className="text-primary hover:text-primary-hover font-medium cursor-pointer"
+                >
                   Reader View
                 </button>.
               </p>
@@ -203,7 +220,7 @@ const DocumentDetailPage = () => {
               : 'Processing document...'}
           </div>
         )}
-      </div >
+      </div>
     );
   };
 

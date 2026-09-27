@@ -8,9 +8,7 @@ import DocxViewer from '../../components/documents/DocxViewer';
 import PptxViewer from '../../components/documents/PptxViewer';
 import { BASE_URL } from '../../utils/apiPaths';
 
-// Standalone, full-page document view used as the target of "Open in new
-// tab" - lets the user actually view the original file instead of the
-// browser triggering a download (which is what happens for a raw .docx URL).
+// Standalone, full-page document view used as the target of "Open in new tab"
 const DocumentPreviewPage = () => {
   const { id } = useParams();
   const [document, setDocument] = useState(null);
@@ -37,22 +35,29 @@ const DocumentPreviewPage = () => {
 
     const filePath = document.data.filePath;
 
+    // Check if filePath is an upload path (either relative /uploads/... or absolute with any host)
+    const uploadsMatch = filePath.match(/\/uploads\/documents\/.+$/);
+    if (uploadsMatch) {
+      const cleanUploadPath = uploadsMatch[0];
+      return encodeURI(decodeURI(`${BASE_URL}${cleanUploadPath}`));
+    }
+
     if (filePath.startsWith('http://localhost') || filePath.startsWith('http://127.0.0.1')) {
       const cleanPath = filePath.replace(/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?/, '');
       if (BASE_URL && !BASE_URL.includes('localhost') && !BASE_URL.includes('127.0.0.1')) {
-        return `${BASE_URL}${cleanPath.startsWith('/') ? '' : '/'}${cleanPath}`;
+        return encodeURI(decodeURI(`${BASE_URL}${cleanPath.startsWith('/') ? '' : '/'}${cleanPath}`));
       }
-      return filePath;
+      return encodeURI(decodeURI(filePath));
     }
 
     if (filePath.startsWith('http://') || filePath.startsWith('https://')) {
       if (filePath.startsWith('http://') && typeof window !== 'undefined' && window.location.protocol === 'https:') {
-        return filePath.replace(/^http:\/\//, 'https://');
+        return encodeURI(decodeURI(filePath.replace(/^http:\/\//, 'https://')));
       }
-      return filePath;
+      return encodeURI(decodeURI(filePath));
     }
 
-    return `${BASE_URL}${filePath.startsWith('/') ? '' : '/'}${filePath}`;
+    return encodeURI(decodeURI(`${BASE_URL}${filePath.startsWith('/') ? '' : '/'}${filePath}`));
   };
 
   if (loading) {
@@ -72,6 +77,10 @@ const DocumentPreviewPage = () => {
   }
 
   const fileUrl = getFileUrl();
+  const rawType = (document.data.fileType || '').toLowerCase().trim();
+  const fileName = (document.data.fileName || document.data.filePath || '').toLowerCase();
+  const isPdf = rawType === 'pdf' || (!rawType && fileName.endsWith('.pdf'));
+  const isPptx = rawType === 'pptx' || (!rawType && fileName.endsWith('.pptx'));
 
   return (
     <div className="min-h-screen bg-bg-main flex flex-col">
@@ -81,26 +90,32 @@ const DocumentPreviewPage = () => {
         </span>
         <a
           href={fileUrl}
-          download={document.data.fileName}
+          download={document.data.fileName || `${document.data.title}.${rawType || 'pdf'}`}
           className="inline-flex items-center gap-1.5 text-sm text-primary hover:text-primary-hover font-medium transition-colors shrink-0"
         >
           <Download size={16} />
-          Download original
+          <span>Download original</span>
         </a>
       </div>
 
-      <div className="flex-1">
-        {document.data.fileType === 'pdf' ? (
+      <div className="flex-1 bg-border-light">
+        {isPdf ? (
           <iframe
             src={fileUrl}
             className="w-full h-full min-h-[calc(100vh-56px)]"
             title="PDF Viewer"
             frameBorder="0"
           />
-        ) : document.data.fileType === 'pptx' ? (
-          <PptxViewer fileUrl={fileUrl} className="w-full min-h-[calc(100vh-56px)]" />
+        ) : isPptx ? (
+          <PptxViewer
+            fileUrl={fileUrl}
+            className="w-full min-h-[calc(100vh-56px)]"
+          />
         ) : (
-          <DocxViewer fileUrl={fileUrl} className="w-full min-h-[calc(100vh-56px)]" />
+          <DocxViewer
+            fileUrl={fileUrl}
+            className="w-full min-h-[calc(100vh-56px)]"
+          />
         )}
       </div>
     </div>

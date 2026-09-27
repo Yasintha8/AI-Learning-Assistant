@@ -213,7 +213,7 @@ const DashboardPage = () => {
               </div>
 
               <h1 className="text-2xl sm:text-4xl font-extrabold text-text-heading tracking-tight">
-                Welcome back, <span className="text-primary">{user?.username || 'Learner'}</span> 👋
+                Welcome back, <span className="text-primary">{user?.username || 'Learner'}</span>
               </h1>
 
               <p className="text-text-muted text-sm sm:text-base max-w-2xl leading-relaxed">
@@ -342,10 +342,10 @@ const DashboardPage = () => {
                           <div className="w-full h-28 flex items-end justify-center rounded-lg bg-border-light/30 p-1">
                             <div
                               className={`w-full max-w-[36px] rounded-md transition-all duration-300 ${isToday
-                                  ? 'bg-gradient-to-t from-primary to-primary-hover shadow-sm shadow-primary/30'
-                                  : day.count > 0
-                                    ? 'bg-primary/40 group-hover:bg-primary/70'
-                                    : 'bg-border-medium/40'
+                                ? 'bg-gradient-to-t from-primary to-primary-hover shadow-sm shadow-primary/30'
+                                : day.count > 0
+                                  ? 'bg-primary/40 group-hover:bg-primary/70'
+                                  : 'bg-border-medium/40'
                                 }`}
                               style={{ height: `${pct}%` }}
                             />
@@ -487,8 +487,8 @@ const DashboardPage = () => {
                           key={tab}
                           onClick={() => setActivityFilter(tab)}
                           className={`px-3 py-1 rounded-lg capitalize transition-colors ${activityFilter === tab
-                              ? 'bg-bg-card text-primary shadow-xs'
-                              : 'text-text-muted hover:text-text-heading'
+                            ? 'bg-bg-card text-primary shadow-xs'
+                            : 'text-text-muted hover:text-text-heading'
                             }`}
                         >
                           {tab}
@@ -506,8 +506,8 @@ const DashboardPage = () => {
                         >
                           <div className="flex items-center gap-3.5 min-w-0">
                             <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${activity.type === 'document'
-                                ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400'
-                                : 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+                              ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400'
+                              : 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
                               }`}>
                               {activity.type === 'document' ? <FileText className="w-4.5 h-4.5" /> : <BrainCircuit className="w-4.5 h-4.5" />}
                             </div>

@@ -46,8 +46,13 @@ app.use(
 app.use(express.json({ limit: '500mb' }));
 app.use(express.urlencoded({ extended: true, limit: '500mb' }));
 
-//Static folder for uploads
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+//Static folder for uploads with CORS and CORP headers for browser preview
+app.use('/uploads', express.static(path.join(__dirname, 'uploads'), {
+    setHeaders: (res) => {
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+    }
+}));
 
 //Routes
 app.use('/api/auth', authRoutes);
