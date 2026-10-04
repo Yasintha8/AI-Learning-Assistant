@@ -3,7 +3,7 @@ import { useAuth } from "../../context/AuthContext";
 import { useNavigate } from 'react-router-dom';
 import { BASE_URL } from '../../utils/apiPaths';
 import { getAvatarUrl } from '../../utils/avatarUtils';
-import { Bell, Menu, Search, LogOut, Sparkles, Sun, Moon, FileText, Layers, HelpCircle, Loader2, X, BrainCircuit, User } from 'lucide-react';
+import { Bell, Menu, Search, LogOut, Sparkles, Sun, Moon, FileText, Layers, HelpCircle, Loader2, X, BrainCircuit, PanelLeft, PanelLeftClose } from 'lucide-react';
 import { useTheme } from "../../context/ThemeContext";
 import searchService from '../../services/searchService';
 import notificationService from '../../services/notificationService';
@@ -17,7 +17,7 @@ const NOTIFICATION_ICONS = {
     flashcards_due: { icon: Layers, className: 'text-violet-500 bg-violet-50 dark:bg-violet-500/10' },
 };
 
-const Header = ({ toggleSidebar }) => {
+const Header = ({ toggleSidebar, isCollapsed, toggleCollapse }) => {
     const { user, logout } = useAuth();
     const { theme, toggleTheme } = useTheme();
     const navigate = useNavigate();
@@ -148,13 +148,28 @@ const Header = ({ toggleSidebar }) => {
     return (
         <header className="sticky top-0 z-40 w-full h-16 bg-bg-card/80 backdrop-blur-md border-b border-border-light flex items-center justify-between px-6 select-none">
             {/* Left Section: Sidebar Toggle & Search */}
-            <div className="flex items-center gap-4 flex-1">
+            <div className="flex items-center gap-3 flex-1">
+                {/* Mobile Drawer Toggle */}
                 <button
                     onClick={toggleSidebar}
                     className="p-2 -ml-2 rounded-xl text-text-body hover:bg-border-light lg:hidden transition-colors cursor-pointer"
-                    aria-label="Toggle Sidebar"
+                    aria-label="Toggle Mobile Menu"
                 >
                     <Menu className="w-5 h-5" />
+                </button>
+
+                {/* Desktop Sidebar Collapse Toggle */}
+                <button
+                    onClick={toggleCollapse}
+                    className="hidden lg:flex items-center justify-center p-2 -ml-2 rounded-xl text-text-muted hover:text-text-title hover:bg-border-light/60 transition-colors cursor-pointer"
+                    aria-label={isCollapsed ? "Expand sidebar (Ctrl+B)" : "Collapse sidebar (Ctrl+B)"}
+                    title={isCollapsed ? "Expand sidebar (Ctrl+B)" : "Collapse sidebar (Ctrl+B)"}
+                >
+                    {isCollapsed ? (
+                        <PanelLeft className="w-5 h-5" />
+                    ) : (
+                        <PanelLeftClose className="w-5 h-5" />
+                    )}
                 </button>
 
                 {/* Search Bar */}
