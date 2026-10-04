@@ -21,7 +21,7 @@ on:
 
 jobs:
   test:
-    name: Learning Path & Backend Test Suite
+    name: Backend Automated Test Suite
     runs-on: ubuntu-latest
 
     defaults:
@@ -42,5 +42,5 @@ jobs:
       - name: Install Dependencies
         run: npm ci
 
-      - name: Run Vitest Suite (Learning Path Generator & API Tests)
+      - name: Run Vitest Suite (All Features)
         run: npm test -- --reporter=verbose
