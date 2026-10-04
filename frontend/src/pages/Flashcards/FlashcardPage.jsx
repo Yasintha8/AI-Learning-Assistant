@@ -199,8 +199,8 @@ const FlashcardPage = () => {
   const progressPct = cards.length > 0 ? Math.round((reviewedCount / cards.length) * 100) : 0;
 
   return (
-    <div className="min-h-screen bg-bg-main pb-16">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 space-y-6">
+    <>
+      <div className="max-w-6xl mx-auto space-y-6">
 
         {/* Top Breadcrumb Navigation */}
         <div className="flex items-center justify-between gap-4 text-xs font-semibold text-text-muted">
@@ -214,7 +214,7 @@ const FlashcardPage = () => {
             <span>/</span>
             <Link
               to={`/documents/${documentId}`}
-              className="hover:text-primary transition-colors truncate max-w-[200px]"
+              className="hover:text-primary transition-colors truncate max-w-50"
             >
               {documentDetails?.title || 'Document'}
             </Link>
@@ -274,8 +274,32 @@ const FlashcardPage = () => {
         </div>
 
         {loading ? (
-          <div className="flex flex-col items-center justify-center min-h-[350px] space-y-3">
-            <Spinner label="Loading flashcard deck..." />
+          <div className="space-y-6 animate-pulse" aria-busy="true" aria-label="Loading flashcard deck">
+            {/* Toolbar Skeleton */}
+            <div className="bg-bg-card border border-border-light rounded-2xl p-4 sm:p-5 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="space-y-2">
+                <div className="h-4 w-40 bg-border-medium/60 rounded" />
+                <div className="h-3 w-28 bg-border-light rounded" />
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="h-9 w-24 bg-border-light rounded-xl" />
+                <div className="h-9 w-24 bg-border-light rounded-xl" />
+              </div>
+            </div>
+
+            {/* Flashcard 3D Card Skeleton */}
+            <div className="max-w-2xl mx-auto h-72 sm:h-84 rounded-3xl bg-bg-card border border-border-light shadow-md flex flex-col items-center justify-center p-8 space-y-4">
+              <div className="h-3 w-20 bg-border-light rounded-full" />
+              <div className="h-6 w-3/4 bg-border-medium/60 rounded-md" />
+              <div className="h-4 w-1/2 bg-border-light rounded-md" />
+              <div className="pt-4 h-3 w-32 bg-border-light/60 rounded" />
+            </div>
+
+            {/* Controls Skeleton */}
+            <div className="flex items-center justify-center gap-4 pt-2">
+              <div className="h-10 w-28 bg-border-light rounded-xl" />
+              <div className="h-10 w-28 bg-border-light rounded-xl" />
+            </div>
           </div>
         ) : cards.length === 0 ? (
           /* Empty Deck State */
@@ -348,8 +372,8 @@ const FlashcardPage = () => {
                       setCurrentCardIndex(0);
                     }}
                     className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all border ${starredOnly
-                        ? 'bg-amber-400 text-white border-amber-400 shadow-sm'
-                        : 'bg-bg-card border-border-light text-text-muted hover:text-amber-500 hover:border-amber-200'
+                      ? 'bg-amber-400 text-white border-amber-400 shadow-sm'
+                      : 'bg-bg-card border-border-light text-text-muted hover:text-amber-500 hover:border-amber-200'
                       }`}
                   >
                     <Star className="w-3.5 h-3.5" fill={starredOnly ? 'currentColor' : 'none'} />
@@ -371,7 +395,7 @@ const FlashcardPage = () => {
               {/* Progress bar line */}
               <div className="w-full h-2 rounded-full bg-border-light overflow-hidden">
                 <div
-                  className="h-full rounded-full bg-gradient-to-r from-primary to-emerald-400 transition-all duration-500"
+                  className="h-full rounded-full bg-linear-to-r from-primary to-emerald-400 transition-all duration-500"
                   style={{ width: `${progressPct}%` }}
                 />
               </div>
@@ -502,10 +526,10 @@ const FlashcardPage = () => {
                               setIsDeckCompleted(false);
                             }}
                             className={`shrink-0 w-8 h-8 rounded-xl text-xs font-bold flex items-center justify-center transition-all cursor-pointer relative ${isActive
-                                ? 'bg-primary text-white shadow-md shadow-primary/30 scale-105'
-                                : isReviewed
-                                  ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20'
-                                  : 'bg-border-light text-text-muted hover:bg-border-medium hover:text-text-heading'
+                              ? 'bg-primary text-white shadow-md shadow-primary/30 scale-105'
+                              : isReviewed
+                                ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20'
+                                : 'bg-border-light text-text-muted hover:bg-border-medium hover:text-text-heading'
                               }`}
                           >
                             <span>{idx + 1}</span>
@@ -645,7 +669,7 @@ const FlashcardPage = () => {
         </div>
       </Modal>
 
-    </div>
+    </>
   );
 };
 

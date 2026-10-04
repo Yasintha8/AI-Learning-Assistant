@@ -78,8 +78,43 @@ const QuizTakePage = () => {
 
   if (loading) {
     return (
-      <div className="flex item-center justify-center min-h-[60vh]">
-        <Spinner />
+      <div className="max-w-4xl mx-auto space-y-6 animate-pulse" aria-busy="true" aria-label="Loading quiz">
+        {/* Header Skeleton */}
+        <div className="h-8 w-64 bg-border-medium/60 rounded-xl" />
+
+        {/* Progress Bar Container Skeleton */}
+        <div className="bg-bg-card border border-border-light rounded-2xl p-5 shadow-xs space-y-3">
+          <div className="flex justify-between items-center">
+            <div className="h-4 w-36 bg-border-medium/60 rounded" />
+            <div className="h-4 w-20 bg-border-light rounded" />
+          </div>
+          <div className="h-2.5 w-full bg-border-light rounded-full" />
+        </div>
+
+        {/* Question Card Skeleton */}
+        <div className="bg-bg-card border border-border-light rounded-3xl p-6 sm:p-8 shadow-xs space-y-6">
+          <div className="space-y-2">
+            <div className="h-4 w-24 bg-border-light rounded" />
+            <div className="h-6 w-3/4 bg-border-medium/60 rounded-lg" />
+          </div>
+
+          <div className="space-y-3 pt-2">
+            {[1, 2, 3, 4].map((n) => (
+              <div
+                key={n}
+                className="p-4 rounded-2xl border border-border-light flex items-center gap-3 bg-bg-main/50"
+              >
+                <div className="w-5 h-5 rounded-full border border-border-medium/60 shrink-0" />
+                <div className="h-4 w-2/3 bg-border-light rounded" />
+              </div>
+            ))}
+          </div>
+
+          <div className="flex justify-between items-center pt-4 border-t border-border-light">
+            <div className="h-10 w-28 bg-border-light rounded-xl" />
+            <div className="h-10 w-28 bg-border-light rounded-xl" />
+          </div>
+        </div>
       </div>
     );
   }

@@ -18,12 +18,12 @@ const Tabs = ({ tabs, activeTab, setActiveTab }) => {
 
                         {/* Active underline indicator */}
                         {activeTab === tab.name && (
-                            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-primary to-blue-400 rounded-full" />
+                            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-linear-to-r from-primary to-blue-400 rounded-full" />
                         )}
 
                         {/* Active background glow */}
                         {activeTab === tab.name && (
-                            <div className="absolute inset-0 bg-gradient-to-b from-primary/2 to-transparent rounded-t-lg z-10" />
+                            <div className="absolute inset-0 bg-linear-to-b from-primary/2 to-transparent rounded-t-lg z-10" />
                         )}
                     </button>
                 ))}

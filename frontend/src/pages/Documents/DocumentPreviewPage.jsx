@@ -62,8 +62,20 @@ const DocumentPreviewPage = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-bg-main">
-        <Spinner />
+      <div className="min-h-screen bg-bg-main p-6 space-y-4 animate-pulse" aria-busy="true" aria-label="Loading document preview">
+        <div className="flex items-center justify-between pb-4 border-b border-border-light">
+          <div className="h-6 w-48 bg-border-medium/60 rounded-md" />
+          <div className="h-9 w-28 bg-border-light rounded-xl" />
+        </div>
+        <div className="bg-bg-card border border-border-light rounded-2xl h-[calc(100vh-10rem)] p-8 space-y-4 shadow-xs">
+          <div className="h-8 w-2/3 bg-border-medium/60 rounded-lg" />
+          <div className="space-y-3 pt-6">
+            <div className="h-4 w-full bg-border-light rounded" />
+            <div className="h-4 w-11/12 bg-border-light rounded" />
+            <div className="h-4 w-4/5 bg-border-light rounded" />
+            <div className="h-4 w-5/6 bg-border-light rounded" />
+          </div>
+        </div>
       </div>
     );
   }

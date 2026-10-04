@@ -44,8 +44,31 @@ const QuizResultPage = () => {
 
     if (loading) {
         return (
-            <div className="flex items-center justify-center min-h-[60vh]">
-                <Spinner />
+            <div className="max-w-4xl mx-auto space-y-6 animate-pulse" aria-busy="true" aria-label="Loading quiz results">
+                {/* Result Hero Score Card Skeleton */}
+                <div className="bg-bg-card border border-border-light rounded-3xl p-8 shadow-xs flex flex-col items-center justify-center space-y-4 text-center">
+                    <div className="w-24 h-24 rounded-full bg-border-medium/60" />
+                    <div className="h-6 w-48 bg-border-medium/60 rounded-md" />
+                    <div className="h-4 w-64 bg-border-light rounded-md" />
+                    <div className="flex gap-4 pt-4">
+                        <div className="h-10 w-28 bg-border-light rounded-xl" />
+                        <div className="h-10 w-28 bg-border-light rounded-xl" />
+                    </div>
+                </div>
+
+                {/* Question Breakdown Skeleton */}
+                <div className="space-y-4">
+                    <div className="h-5 w-40 bg-border-medium/60 rounded" />
+                    {[1, 2, 3].map((n) => (
+                        <div key={n} className="bg-bg-card border border-border-light rounded-2xl p-6 shadow-xs space-y-3">
+                            <div className="flex justify-between items-center">
+                                <div className="h-4 w-3/4 bg-border-medium/60 rounded" />
+                                <div className="h-6 w-16 bg-border-light rounded-full" />
+                            </div>
+                            <div className="h-3 w-1/2 bg-border-light rounded" />
+                        </div>
+                    ))}
+                </div>
             </div>
         );
     }
@@ -254,7 +277,7 @@ const QuizResultPage = () => {
                         <span className="absolute inset-0 bg-linear-to-r from-emerald-500 to-teal-500" />
 
                         {/* Hover slide — darker shade slides in from left */}
-                        <span className="absolute inset-0 bg-linear-to-r from-emerald-600 to-teal-600 translate-x-[-100%] group-hover:translate-x-0 transition-transform duration-300 ease-out" />
+                        <span className="absolute inset-0 bg-linear-to-r from-emerald-600 to-teal-600 translate-x-full group-hover:translate-x-0 transition-transform duration-300 ease-out" />
 
                         {/* Content */}
                         <Map className="w-4 h-4 relative z-10" strokeWidth={2} />
@@ -270,7 +293,7 @@ const QuizResultPage = () => {
                     <span className="absolute inset-0 bg-linear-to-r from-primary to-blue-400" />
 
                     {/* Hover slide — darker shade slides in from left */}
-                    <span className="absolute inset-0 bg-linear-to-r from-primary-hover to-cyan-400 translate-x-[-100%] group-hover:translate-x-0 transition-transform duration-300 ease-out" />
+                    <span className="absolute inset-0 bg-linear-to-r from-primary-hover to-cyan-400 translate-x-full group-hover:translate-x-0 transition-transform duration-300 ease-out" />
 
                     {/* Content */}
                     <ArrowLeft className="w-4 h-4 relative z-10 transition-transform duration-300 group-hover:-translate-x-0.5" strokeWidth={2} />

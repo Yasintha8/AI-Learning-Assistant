@@ -172,7 +172,7 @@ const TerminalDemo = () => {
         <span className="w-3 h-3 rounded-full bg-emerald-400/80" />
         <span className="ml-3 text-xs text-white/40 font-mono">ai-learning-assistant</span>
       </div>
-      <div className="p-5 font-mono text-[13px] sm:text-sm leading-relaxed min-h-[280px]">
+      <div className="p-5 font-mono text-[13px] sm:text-sm leading-relaxed min-h-70">
         {completedLines.map((line, i) => (
           <div key={i} className={lineStyles(line.type)}>
             {linePrefix(line.type)}
@@ -182,7 +182,7 @@ const TerminalDemo = () => {
         <div className={lineStyles(TERMINAL_STEPS[activeIndex].type)}>
           {linePrefix(TERMINAL_STEPS[activeIndex].type)}
           {typingText}
-          <span className="inline-block w-[2px] h-4 -mb-0.5 bg-primary-hover ml-0.5 animate-blink" />
+          <span className="inline-block w-0.5 h-4 -mb-0.5 bg-primary-hover ml-0.5 animate-blink" />
         </div>
       </div>
     </div>

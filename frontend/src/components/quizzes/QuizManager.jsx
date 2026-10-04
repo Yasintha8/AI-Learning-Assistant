@@ -78,8 +78,22 @@ const QuizManager = ({ documentId }) => {
     const renderQuizContent = () => {
         if (loading) {
             return (
-                <div className="flex items-center justify-center py-20">
-                    <Spinner />
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 animate-pulse" aria-busy="true">
+                    {[1, 2, 3].map((n) => (
+                        <div key={n} className="bg-bg-card border border-border-light rounded-2xl p-5 space-y-4 shadow-xs">
+                            <div className="flex justify-between items-start">
+                                <div className="space-y-1.5 flex-1">
+                                    <div className="h-4 w-3/4 bg-border-medium/60 rounded" />
+                                    <div className="h-3 w-1/3 bg-border-light rounded" />
+                                </div>
+                                <div className="h-6 w-16 bg-border-light rounded-full" />
+                            </div>
+                            <div className="flex justify-between items-center pt-3 border-t border-border-light/60">
+                                <div className="h-3 w-20 bg-border-light rounded" />
+                                <div className="h-8 w-24 bg-border-light rounded-xl" />
+                            </div>
+                        </div>
+                    ))}
                 </div>
             );
         }

@@ -27,7 +27,7 @@ const Flashcard = ({ flashcard, onToggleStar, onReview }) => {
     const level = flashcard?.difficulty ?? 'medium';
 
     return (
-        <div className="relative w-full h-[340px] sm:h-[380px]" style={{ perspective: '1200px' }}>
+        <div className="relative w-full h-85 sm:h-95" style={{ perspective: '1200px' }}>
             <div
                 className="relative w-full h-full transition-transform duration-500 transform-gpu cursor-pointer"
                 style={{
@@ -71,8 +71,8 @@ const Flashcard = ({ flashcard, onToggleStar, onReview }) => {
                                 }}
                                 title={flashcard.isStarred ? 'Unstar flashcard' : 'Star flashcard'}
                                 className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-200 cursor-pointer ${flashcard.isStarred
-                                        ? 'bg-amber-400 text-white shadow-sm shadow-amber-400/30'
-                                        : 'bg-border-light text-text-muted hover:bg-amber-50 dark:hover:bg-amber-500/10 hover:text-amber-500'
+                                    ? 'bg-amber-400 text-white shadow-sm shadow-amber-400/30'
+                                    : 'bg-border-light text-text-muted hover:bg-amber-50 dark:hover:bg-amber-500/10 hover:text-amber-500'
                                     }`}
                             >
                                 <Star className="w-4.5 h-4.5" strokeWidth={2} fill={flashcard.isStarred ? 'currentColor' : 'none'} />
@@ -97,7 +97,7 @@ const Flashcard = ({ flashcard, onToggleStar, onReview }) => {
 
                 {/* Back of the card (Answer) */}
                 <div
-                    className="absolute inset-0 bg-gradient-to-br from-primary via-indigo-600 to-blue-700 text-white rounded-3xl shadow-xl flex flex-col overflow-hidden"
+                    className="absolute inset-0 bg-linear-to-br from-primary via-indigo-600 to-blue-700 text-white rounded-3xl shadow-xl flex flex-col overflow-hidden"
                     style={{
                         backfaceVisibility: 'hidden',
                         WebkitBackfaceVisibility: 'hidden',
@@ -125,8 +125,8 @@ const Flashcard = ({ flashcard, onToggleStar, onReview }) => {
                                     onToggleStar(flashcard._id);
                                 }}
                                 className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-200 cursor-pointer ${flashcard.isStarred
-                                        ? 'bg-white text-primary shadow-sm'
-                                        : 'bg-white/15 text-white/70 hover:bg-white/25 hover:text-white'
+                                    ? 'bg-white text-primary shadow-sm'
+                                    : 'bg-white/15 text-white/70 hover:bg-white/25 hover:text-white'
                                     }`}
                             >
                                 <Star className="w-4.5 h-4.5" strokeWidth={2} fill={flashcard.isStarred ? 'currentColor' : 'none'} />

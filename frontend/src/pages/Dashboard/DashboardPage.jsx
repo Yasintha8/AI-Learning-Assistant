@@ -196,11 +196,10 @@ const DashboardPage = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-bg-main pb-12">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 space-y-8">
+    <div className="max-w-7xl mx-auto space-y-8">
 
         {/* Hero Header & Quick Actions */}
-        <div className="relative overflow-hidden bg-gradient-to-r from-primary/10 via-primary/5 to-transparent border border-primary/15 rounded-3xl p-6 sm:p-8 shadow-xs">
+        <div className="relative overflow-hidden bg-linear-to-r from-primary/10 via-primary/5 to-transparent border border-primary/15 rounded-3xl p-6 sm:p-8 shadow-xs">
           <div className="absolute top-0 right-0 -mt-12 -mr-12 w-64 h-64 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
 
           <div className="relative z-10 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
@@ -247,11 +246,103 @@ const DashboardPage = () => {
         </div>
 
         {loading ? (
-          <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4">
-            <Spinner label="Loading your personal dashboard..." />
+          <div className="space-y-8 animate-pulse" aria-busy="true" aria-label="Loading dashboard">
+            {/* Stats Metric Cards Grid Skeleton */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+              {[1, 2, 3, 4].map((n) => (
+                <div key={n} className="bg-bg-card border border-border-light rounded-2xl p-5 flex flex-col justify-between shadow-xs">
+                  <div className="flex items-start justify-between">
+                    <div className="space-y-2">
+                      <div className="h-3 w-20 bg-border-light rounded" />
+                      <div className="h-8 w-16 bg-border-medium/60 rounded-lg" />
+                    </div>
+                    <div className="w-12 h-12 rounded-xl bg-border-medium/60" />
+                  </div>
+                  <div className="mt-4 pt-3 border-t border-border-light/60 flex items-center justify-between">
+                    <div className="h-3 w-28 bg-border-light rounded" />
+                    <div className="h-4 w-12 bg-border-light rounded-full" />
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Main Dashboard Layout Grid Skeleton */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              {/* Left Column (2 Cols) */}
+              <div className="lg:col-span-2 space-y-8">
+                {/* Weekly Chart Skeleton */}
+                <div className="bg-bg-card border border-border-light rounded-2xl p-6 shadow-xs space-y-6">
+                  <div className="flex justify-between items-center">
+                    <div className="space-y-1.5">
+                      <div className="h-4 w-32 bg-border-medium/60 rounded" />
+                      <div className="h-3 w-48 bg-border-light rounded" />
+                    </div>
+                    <div className="h-8 w-24 bg-border-light rounded-lg" />
+                  </div>
+                  <div className="flex items-end justify-between gap-3 h-32 pt-4 px-2">
+                    {[40, 75, 20, 90, 60, 85, 45].map((h, i) => (
+                      <div key={i} className="flex-1 flex flex-col items-center gap-2">
+                        <div className="w-full h-24 bg-border-light/40 rounded-lg flex items-end justify-center p-1">
+                          <div className="w-full max-w-8 bg-border-medium/60 rounded" style={{ height: `${h}%` }} />
+                        </div>
+                        <div className="h-2.5 w-6 bg-border-light rounded" />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Focus Areas Skeleton */}
+                <div className="bg-bg-card border border-border-light rounded-2xl p-6 shadow-xs space-y-4">
+                  <div className="h-4 w-40 bg-border-medium/60 rounded" />
+                  <div className="space-y-3">
+                    {[1, 2, 3].map((n) => (
+                      <div key={n} className="p-3.5 rounded-xl border border-border-light flex justify-between items-center">
+                        <div className="space-y-1.5 w-2/3">
+                          <div className="h-3.5 w-3/4 bg-border-medium/60 rounded" />
+                          <div className="h-2.5 w-1/2 bg-border-light rounded" />
+                        </div>
+                        <div className="h-6 w-16 bg-border-light rounded-lg" />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Right Column (1 Col) */}
+              <div className="space-y-8">
+                {/* Quick Links Skeleton */}
+                <div className="bg-bg-card border border-border-light rounded-2xl p-6 shadow-xs space-y-4">
+                  <div className="h-4 w-28 bg-border-medium/60 rounded" />
+                  <div className="grid grid-cols-2 gap-3">
+                    {[1, 2, 3, 4].map((n) => (
+                      <div key={n} className="h-20 bg-border-light/40 border border-border-light rounded-xl p-3 flex flex-col justify-between">
+                        <div className="w-6 h-6 rounded-lg bg-border-medium/60" />
+                        <div className="h-3 w-16 bg-border-medium/60 rounded" />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Recent Activity Skeleton */}
+                <div className="bg-bg-card border border-border-light rounded-2xl p-6 shadow-xs space-y-4">
+                  <div className="h-4 w-32 bg-border-medium/60 rounded" />
+                  <div className="space-y-3">
+                    {[1, 2, 3, 4].map((n) => (
+                      <div key={n} className="flex items-center gap-3 py-2 border-b border-border-light/50 last:border-0">
+                        <div className="w-8 h-8 rounded-xl bg-border-medium/60 shrink-0" />
+                        <div className="flex-1 space-y-1.5">
+                          <div className="h-3 w-3/4 bg-border-medium/60 rounded" />
+                          <div className="h-2.5 w-1/3 bg-border-light rounded" />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         ) : !hasData ? (
-          <div className="flex items-center justify-center min-h-[400px]">
+          <div className="flex items-center justify-center min-h-100">
             <div className="text-center space-y-4 max-w-md p-8 bg-bg-card rounded-2xl border border-border-light shadow-sm">
               <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 text-primary mx-auto">
                 <Target className="w-8 h-8" strokeWidth={1.5} />
@@ -287,7 +378,7 @@ const DashboardPage = () => {
                         {stat.value}
                       </div>
                     </div>
-                    <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${stat.gradient} flex items-center justify-center text-white shadow-md ${stat.shadow} group-hover:scale-105 transition-transform duration-200`}>
+                    <div className={`w-12 h-12 rounded-xl bg-linear-to-br ${stat.gradient} flex items-center justify-center text-white shadow-md ${stat.shadow} group-hover:scale-105 transition-transform duration-200`}>
                       <stat.icon className="w-6 h-6" strokeWidth={2} />
                     </div>
                   </div>
@@ -341,8 +432,8 @@ const DashboardPage = () => {
                           {/* Bar */}
                           <div className="w-full h-28 flex items-end justify-center rounded-lg bg-border-light/30 p-1">
                             <div
-                              className={`w-full max-w-[36px] rounded-md transition-all duration-300 ${isToday
-                                ? 'bg-gradient-to-t from-primary to-primary-hover shadow-sm shadow-primary/30'
+                              className={`w-full max-w-9 rounded-md transition-all duration-300 ${isToday
+                                ? 'bg-linear-to-t from-primary to-primary-hover shadow-sm shadow-primary/30'
                                 : day.count > 0
                                   ? 'bg-primary/40 group-hover:bg-primary/70'
                                   : 'bg-border-medium/40'
@@ -385,8 +476,19 @@ const DashboardPage = () => {
                   </div>
 
                   {documentsLoading ? (
-                    <div className="flex items-center justify-center py-12">
-                      <Spinner label="Loading documents..." />
+                    <div className="divide-y divide-border-light animate-pulse" aria-busy="true">
+                      {[1, 2, 3].map((n) => (
+                        <div key={n} className="flex items-center justify-between gap-4 px-6 py-4">
+                          <div className="flex items-center gap-3.5 min-w-0 flex-1">
+                            <div className="w-11 h-11 bg-border-medium/60 rounded-xl shrink-0" />
+                            <div className="space-y-2 flex-1">
+                              <div className="h-3.5 w-1/2 bg-border-medium/60 rounded" />
+                              <div className="h-2.5 w-1/4 bg-border-light rounded" />
+                            </div>
+                          </div>
+                          <div className="h-2.5 w-28 bg-border-light rounded-full hidden sm:block" />
+                        </div>
+                      ))}
                     </div>
                   ) : userDocuments.length > 0 ? (
                     <div className="divide-y divide-border-light">
@@ -586,7 +688,7 @@ const DashboardPage = () => {
                       {/* Visual mastery bar */}
                       <div className="w-full h-3 rounded-full bg-border-light overflow-hidden">
                         <div
-                          className="h-full rounded-full bg-gradient-to-r from-primary to-emerald-400 transition-all duration-500"
+                          className="h-full rounded-full bg-linear-to-r from-primary to-emerald-400 transition-all duration-500"
                           style={{ width: `${overview.overallMastery}%` }}
                         />
                       </div>
@@ -689,7 +791,6 @@ const DashboardPage = () => {
           </>
         )}
 
-      </div>
     </div>
   );
 };

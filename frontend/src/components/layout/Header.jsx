@@ -3,7 +3,7 @@ import { useAuth } from "../../context/AuthContext";
 import { useNavigate } from 'react-router-dom';
 import { BASE_URL } from '../../utils/apiPaths';
 import { getAvatarUrl } from '../../utils/avatarUtils';
-import { Bell, Menu, Search, LogOut, Sparkles, Sun, Moon, FileText, Layers, HelpCircle, Loader2, X, BrainCircuit, PanelLeft, PanelLeftClose } from 'lucide-react';
+import { Bell, Menu, Search, LogOut, Sparkles, Sun, Moon, FileText, Layers, HelpCircle, Loader2, X, BrainCircuit, PanelLeft, PanelLeftClose, Compass, LayoutDashboard } from 'lucide-react';
 import { useTheme } from "../../context/ThemeContext";
 import searchService from '../../services/searchService';
 import notificationService from '../../services/notificationService';
@@ -183,11 +183,9 @@ const Header = ({ toggleSidebar, isCollapsed, toggleCollapse }) => {
                             setSearchQuery(e.target.value);
                             setShowSearchResults(true);
                         }}
-                        onFocus={() => {
-                            if (trimmedQuery.length >= MIN_QUERY_LENGTH) setShowSearchResults(true);
-                        }}
+                        onFocus={() => setShowSearchResults(true)}
                         onKeyDown={handleSearchKeyDown}
-                        placeholder="Search documents, flashcards, or quizzes..."
+                        placeholder="Search or press ⌘K for quick actions..."
                         className="w-full bg-bg-main hover:bg-border-light/60 focus:bg-bg-card text-sm text-text-heading border border-transparent focus:border-primary-hover/20 rounded-2xl pl-10 pr-12 py-2 transition-all duration-300 focus:outline-none focus:ring-1 focus:ring-primary/20 focus:shadow-md focus:shadow-primary-shadow/5"
                     />
                     {searchQuery ? (
@@ -203,8 +201,78 @@ const Header = ({ toggleSidebar, isCollapsed, toggleCollapse }) => {
                             <X className="w-3.5 h-3.5" />
                         </button>
                     ) : (
-                        <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-0.5 px-1.5 py-0.5 bg-border-light text-[10px] font-semibold text-text-muted rounded border border-border-medium/40">
+                        <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-0.5 px-1.5 py-0.5 bg-border-light text-[10px] font-semibold text-text-muted rounded border border-border-medium/40 pointer-events-none">
                             <span>⌘</span><span>K</span>
+                        </div>
+                    )}
+
+                    {/* Quick Actions (Command Palette) when query is empty */}
+                    {showSearchResults && trimmedQuery.length < MIN_QUERY_LENGTH && (
+                        <div className="absolute left-0 right-0 mt-2 bg-bg-card border border-border-medium rounded-2xl shadow-xl shadow-slate-200/25 dark:shadow-none py-2 z-50 animate-fade-in">
+                            <div className="px-3 py-1.5 flex items-center justify-between border-b border-border-light text-[10px] font-bold text-text-muted uppercase tracking-wider">
+                                <span>Quick Navigation</span>
+                                <span className="font-mono text-[9px] text-text-muted bg-bg-main px-1.5 py-0.5 rounded border border-border-light">esc to close</span>
+                            </div>
+                            <div className="p-1 space-y-0.5">
+                                <button
+                                    type="button"
+                                    onClick={() => handleSearchResultClick('/dashboard')}
+                                    className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-left hover:bg-border-light/40 transition-colors cursor-pointer group"
+                                >
+                                    <div className="flex items-center gap-2.5">
+                                        <LayoutDashboard className="w-4 h-4 text-primary group-hover:scale-105 transition-transform" />
+                                        <span className="text-xs text-text-heading font-medium">Dashboard Overview</span>
+                                    </div>
+                                    <span className="text-[10px] text-text-muted font-mono">Overview</span>
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => handleSearchResultClick('/documents')}
+                                    className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-left hover:bg-border-light/40 transition-colors cursor-pointer group"
+                                >
+                                    <div className="flex items-center gap-2.5">
+                                        <FileText className="w-4 h-4 text-primary group-hover:scale-105 transition-transform" />
+                                        <span className="text-xs text-text-heading font-medium">My Documents</span>
+                                    </div>
+                                    <span className="text-[10px] text-text-muted font-mono">Files</span>
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => handleSearchResultClick('/flashcards')}
+                                    className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-left hover:bg-border-light/40 transition-colors cursor-pointer group"
+                                >
+                                    <div className="flex items-center gap-2.5">
+                                        <Layers className="w-4 h-4 text-emerald-500 group-hover:scale-105 transition-transform" />
+                                        <span className="text-xs text-text-heading font-medium">Review Flashcard Sets</span>
+                                    </div>
+                                    <span className="text-[10px] text-text-muted font-mono">Study</span>
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => handleSearchResultClick('/career')}
+                                    className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-left hover:bg-border-light/40 transition-colors cursor-pointer group"
+                                >
+                                    <div className="flex items-center gap-2.5">
+                                        <Compass className="w-4 h-4 text-indigo-500 group-hover:scale-105 transition-transform" />
+                                        <span className="text-xs text-text-heading font-medium">Career Path Navigator</span>
+                                    </div>
+                                    <span className="text-[10px] text-text-muted font-mono">Career</span>
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setShowSearchResults(false);
+                                        toggleTheme();
+                                    }}
+                                    className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-left hover:bg-border-light/40 transition-colors cursor-pointer group"
+                                >
+                                    <div className="flex items-center gap-2.5">
+                                        {theme === 'dark' ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-text-muted" />}
+                                        <span className="text-xs text-text-heading font-medium">Toggle {theme === 'dark' ? 'Light' : 'Dark'} Mode</span>
+                                    </div>
+                                    <span className="text-[10px] text-text-muted font-mono">Theme</span>
+                                </button>
+                            </div>
                         </div>
                     )}
 

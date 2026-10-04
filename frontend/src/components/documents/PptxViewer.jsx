@@ -109,9 +109,18 @@ const PptxViewer = ({ fileUrl, className = 'w-full h-[70vh]' }) => {
   return (
     <div ref={outerRef} className={`${className} overflow-auto bg-border-light relative`}>
       {status === 'loading' && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-bg-main/70 backdrop-blur-xs text-sm text-text-muted z-10">
-          <div className="w-8 h-8 rounded-full border-2 border-primary/20 border-t-primary animate-spin" />
-          <span>Loading presentation preview...</span>
+        <div className="absolute inset-0 p-6 sm:p-8 flex flex-col items-center justify-center bg-bg-main/90 backdrop-blur-xs z-10 animate-pulse">
+          <div className="w-full max-w-2xl aspect-16/10 bg-bg-card border border-border-light rounded-2xl p-6 sm:p-8 space-y-6 shadow-sm flex flex-col justify-between">
+            <div className="space-y-3">
+              <div className="h-6 w-1/2 bg-border-medium/60 rounded-md" />
+              <div className="h-4 w-1/3 bg-border-light rounded" />
+            </div>
+            <div className="h-28 w-full bg-border-light/60 rounded-xl" />
+            <div className="flex justify-between items-center pt-2 border-t border-border-light">
+              <div className="h-4 w-20 bg-border-light rounded" />
+              <div className="h-4 w-12 bg-border-light rounded" />
+            </div>
+          </div>
         </div>
       )}
 

@@ -146,12 +146,48 @@ const ChatInterface = () => {
 
     if (initialLoading) {
         return (
-            <div className="flex flex-col h-[70vh] border border-border-light rounded-2xl items-center justify-center shadow-xs">
-                {/* <div className="w-14 h-14 bg-linear-to-br from-violet-400 to-purple-500 rounded-xl flex items-center justify-center mb-4">
-                    <MessageSquare className="w-7 h-7 text-bg-card" strokeWidth={2} />
-                </div> */}
-                <Spinner />
-                <p className="text-sm text-text-body mt-3 font-medium animate-pulse">Loading chat history...</p>
+            <div className="flex flex-col h-[70vh] bg-bg-card border border-border-light rounded-2xl shadow-xs overflow-hidden w-full animate-pulse">
+                {/* Chat message stream skeleton */}
+                <div className="flex-1 p-6 flex flex-col gap-4 bg-bg-main overflow-y-auto">
+                    {/* Bot message skeleton */}
+                    <div className="flex items-start gap-3 max-w-[80%]">
+                        <div className="w-8 h-8 rounded-xl bg-border-medium/70 shrink-0" />
+                        <div className="space-y-2 flex-1">
+                            <div className="h-4 w-40 bg-border-medium/60 rounded-md" />
+                            <div className="h-16 w-80 bg-border-light rounded-2xl p-3 space-y-2">
+                                <div className="h-3 w-full bg-border-medium/40 rounded" />
+                                <div className="h-3 w-4/5 bg-border-medium/40 rounded" />
+                            </div>
+                        </div>
+                    </div>
+                    {/* User message skeleton */}
+                    <div className="flex items-start gap-3 max-w-[80%] self-end flex-row-reverse">
+                        <div className="w-8 h-8 rounded-xl bg-border-medium/70 shrink-0" />
+                        <div className="space-y-2 flex-1 items-end flex flex-col">
+                            <div className="h-4 w-24 bg-border-medium/60 rounded-md" />
+                            <div className="h-10 w-64 bg-border-light rounded-2xl p-3">
+                                <div className="h-3 w-5/6 bg-border-medium/40 rounded" />
+                            </div>
+                        </div>
+                    </div>
+                    {/* Bot second response skeleton */}
+                    <div className="flex items-start gap-3 max-w-[80%]">
+                        <div className="w-8 h-8 rounded-xl bg-border-medium/70 shrink-0" />
+                        <div className="space-y-2 flex-1">
+                            <div className="h-4 w-36 bg-border-medium/60 rounded-md" />
+                            <div className="h-20 w-96 bg-border-light rounded-2xl p-3 space-y-2">
+                                <div className="h-3 w-full bg-border-medium/40 rounded" />
+                                <div className="h-3 w-11/12 bg-border-medium/40 rounded" />
+                                <div className="h-3 w-2/3 bg-border-medium/40 rounded" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {/* Input area skeleton */}
+                <div className="p-4 bg-bg-card border-t border-border-light flex items-center gap-3">
+                    <div className="h-11 flex-1 bg-border-light rounded-xl" />
+                    <div className="h-11 w-11 bg-border-medium/60 rounded-xl shrink-0" />
+                </div>
             </div>
         );
     }

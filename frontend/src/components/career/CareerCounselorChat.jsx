@@ -35,7 +35,7 @@ const CareerCounselorChat = ({ chatHistory = [], onSendMessage, isLoading, targe
   };
 
   return (
-    <div className="flex flex-col h-[600px] bg-bg-card border border-border-light rounded-3xl shadow-xs overflow-hidden">
+    <div className="flex flex-col h-150 bg-bg-card border border-border-light rounded-3xl shadow-xs overflow-hidden">
 
       {/* Top Header Bar */}
       <div className="px-6 py-4 bg-bg-main/70 border-b border-border-light flex items-center justify-between">
@@ -82,7 +82,7 @@ const CareerCounselorChat = ({ chatHistory = [], onSendMessage, isLoading, targe
                 <div
                   className={`w-8 h-8 rounded-2xl flex items-center justify-center text-xs font-bold shrink-0 shadow-2xs ${isUser
                     ? 'bg-primary text-white'
-                    : 'bg-gradient-to-br from-primary via-indigo-600 to-purple-600 text-white'
+                    : 'bg-linear-to-br from-primary via-indigo-600 to-purple-600 text-white'
                     }`}
                 >
                   {isUser ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}

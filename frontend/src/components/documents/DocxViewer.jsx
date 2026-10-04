@@ -99,9 +99,21 @@ const DocxViewer = ({ fileUrl, className = 'w-full h-[70vh]' }) => {
   return (
     <div ref={outerRef} className={`${className} overflow-auto bg-border-light relative py-6`}>
       {status === 'loading' && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-bg-main/70 backdrop-blur-xs text-sm text-text-muted z-10">
-          <div className="w-8 h-8 rounded-full border-2 border-primary/20 border-t-primary animate-spin" />
-          <span>Loading document preview...</span>
+        <div className="absolute inset-0 p-6 sm:p-8 flex flex-col items-center justify-start bg-bg-main/90 backdrop-blur-xs z-10 animate-pulse overflow-hidden">
+          <div className="w-full max-w-3xl bg-bg-card border border-border-light rounded-2xl p-6 sm:p-8 space-y-6 shadow-sm">
+            <div className="h-7 w-2/3 bg-border-medium/60 rounded-md" />
+            <div className="space-y-3">
+              <div className="h-4 w-full bg-border-light rounded" />
+              <div className="h-4 w-11/12 bg-border-light rounded" />
+              <div className="h-4 w-4/5 bg-border-light rounded" />
+              <div className="h-4 w-5/6 bg-border-light rounded" />
+            </div>
+            <div className="h-32 w-full bg-border-light/50 rounded-xl" />
+            <div className="space-y-3">
+              <div className="h-4 w-full bg-border-light rounded" />
+              <div className="h-4 w-3/4 bg-border-light rounded" />
+            </div>
+          </div>
         </div>
       )}
 

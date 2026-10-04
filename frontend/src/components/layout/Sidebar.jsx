@@ -115,7 +115,7 @@ const Sidebar = ({ isSidebarOpen, toggleSidebar, isCollapsed, toggleCollapse }) 
 
         {/* Navigation Section Area */}
         <nav
-          className={`flex-1 py-5 overflow-y-auto space-y-5 custom-scrollbar transition-all duration-300 ${
+          className={`flex-1 py-5 ${isCollapsed ? 'overflow-visible' : 'overflow-y-auto'} space-y-5 custom-scrollbar transition-all duration-300 ${
             isCollapsed ? 'px-2.5' : 'px-4'
           }`}
         >
@@ -139,7 +139,6 @@ const Sidebar = ({ isSidebarOpen, toggleSidebar, isCollapsed, toggleCollapse }) 
                   key={item.path}
                   to={item.path}
                   onClick={() => { if (isSidebarOpen) toggleSidebar(); }}
-                  title={isCollapsed ? item.label : undefined}
                   className={`relative flex items-center rounded-2xl text-sm font-semibold transition-all duration-200 select-none group ${
                     isCollapsed
                       ? 'justify-center p-3'
@@ -157,6 +156,13 @@ const Sidebar = ({ isSidebarOpen, toggleSidebar, isCollapsed, toggleCollapse }) 
                     isActive ? 'text-primary-hover' : 'text-slate-400 group-hover:text-slate-200'
                   }`} />
                   {!isCollapsed && <span className="truncate">{item.label}</span>}
+
+                  {/* Floating Tooltip when Collapsed on Desktop */}
+                  {isCollapsed && (
+                    <div className="hidden lg:group-hover:flex absolute left-full ml-3 px-3 py-1.5 bg-slate-900/95 border border-white/10 text-white text-xs font-semibold rounded-xl shadow-2xl whitespace-nowrap z-50 pointer-events-none items-center gap-1.5 backdrop-blur-md animate-fade-in">
+                      <span>{item.label}</span>
+                    </div>
+                  )}
                 </Link>
               );
             })}
@@ -183,7 +189,6 @@ const Sidebar = ({ isSidebarOpen, toggleSidebar, isCollapsed, toggleCollapse }) 
                   key={item.path}
                   to={item.path}
                   onClick={() => { if (isSidebarOpen) toggleSidebar(); }}
-                  title={isCollapsed ? item.label : undefined}
                   className={`relative flex items-center rounded-2xl text-sm font-semibold transition-all duration-200 select-none group ${
                     isCollapsed
                       ? 'justify-center p-3'
@@ -201,6 +206,13 @@ const Sidebar = ({ isSidebarOpen, toggleSidebar, isCollapsed, toggleCollapse }) 
                     isActive ? 'text-primary-hover' : 'text-slate-400 group-hover:text-slate-200'
                   }`} />
                   {!isCollapsed && <span className="truncate">{item.label}</span>}
+
+                  {/* Floating Tooltip when Collapsed on Desktop */}
+                  {isCollapsed && (
+                    <div className="hidden lg:group-hover:flex absolute left-full ml-3 px-3 py-1.5 bg-slate-900/95 border border-white/10 text-white text-xs font-semibold rounded-xl shadow-2xl whitespace-nowrap z-50 pointer-events-none items-center gap-1.5 backdrop-blur-md animate-fade-in">
+                      <span>{item.label}</span>
+                    </div>
+                  )}
                 </Link>
               );
             })}
@@ -209,7 +221,7 @@ const Sidebar = ({ isSidebarOpen, toggleSidebar, isCollapsed, toggleCollapse }) 
 
         {/* Bottom Actions: Collapse Toggle + User Profile */}
         <div
-          className={`border-t border-white/5 shrink-0 transition-all duration-300 ${
+          className={`border-t border-white/5 shrink-0 transition-all duration-300 relative ${
             isCollapsed ? 'p-2 space-y-2' : 'p-3 space-y-2'
           }`}
         >
@@ -217,14 +229,19 @@ const Sidebar = ({ isSidebarOpen, toggleSidebar, isCollapsed, toggleCollapse }) 
           <button
             type="button"
             onClick={toggleCollapse}
-            className={`hidden lg:flex items-center rounded-xl text-slate-400 hover:bg-white/5 hover:text-slate-200 text-xs font-semibold transition-all duration-200 cursor-pointer ${
+            className={`hidden lg:flex items-center rounded-xl text-slate-400 hover:bg-white/5 hover:text-slate-200 text-xs font-semibold transition-all duration-200 cursor-pointer relative group ${
               isCollapsed ? 'justify-center w-full p-2.5' : 'justify-between w-full px-3 py-2'
             }`}
-            title={isCollapsed ? 'Expand sidebar (Ctrl+B)' : 'Collapse sidebar (Ctrl+B)'}
             aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           >
             {isCollapsed ? (
-              <PanelLeft className="w-4.5 h-4.5 text-slate-400 hover:text-white transition-colors" />
+              <>
+                <PanelLeft className="w-4.5 h-4.5 text-slate-400 group-hover:text-white transition-colors" />
+                <div className="hidden lg:group-hover:flex absolute left-full ml-3 px-3 py-1.5 bg-slate-900/95 border border-white/10 text-white text-xs font-semibold rounded-xl shadow-2xl whitespace-nowrap z-50 pointer-events-none items-center gap-2 backdrop-blur-md animate-fade-in">
+                  <span>Expand Sidebar</span>
+                  <kbd className="text-[10px] font-mono text-slate-400 bg-white/10 px-1 py-0.5 rounded">Ctrl+B</kbd>
+                </div>
+              </>
             ) : (
               <>
                 <div className="flex items-center gap-2">
@@ -242,8 +259,7 @@ const Sidebar = ({ isSidebarOpen, toggleSidebar, isCollapsed, toggleCollapse }) 
           <Link
             to="/profile"
             onClick={() => { if (isSidebarOpen) toggleSidebar(); }}
-            title={isCollapsed ? (user?.name || user?.username || 'View Profile') : undefined}
-            className={`flex items-center rounded-xl transition-all duration-200 group ${
+            className={`flex items-center rounded-xl transition-all duration-200 group relative ${
               isCollapsed ? 'justify-center p-1.5' : 'gap-2.5 p-2'
             } ${
               isProfileActive
@@ -251,6 +267,12 @@ const Sidebar = ({ isSidebarOpen, toggleSidebar, isCollapsed, toggleCollapse }) 
                 : 'hover:bg-white/5 text-slate-300'
             }`}
           >
+            {/* User Profile Tooltip when Collapsed on Desktop */}
+            {isCollapsed && (
+              <div className="hidden lg:group-hover:flex absolute left-full ml-3 px-3 py-1.5 bg-slate-900/95 border border-white/10 text-white text-xs font-semibold rounded-xl shadow-2xl whitespace-nowrap z-50 pointer-events-none items-center gap-1.5 backdrop-blur-md animate-fade-in">
+                <span>{user?.name || user?.username || 'My Profile'}</span>
+              </div>
+            )}
             {/* User Avatar */}
             {avatarUrl ? (
               <img
@@ -283,6 +305,15 @@ const Sidebar = ({ isSidebarOpen, toggleSidebar, isCollapsed, toggleCollapse }) 
               </>
             )}
           </Link>
+
+          {/* Version & Copyright */}
+          {!isCollapsed && (
+            <div className="pt-0.5 px-2 text-center select-none">
+              <span className="text-[10px] text-slate-500 font-mono tracking-wider">
+                © {new Date().getFullYear()} LearnMate AI
+              </span>
+            </div>
+          )}
         </div>
       </aside>
     </>

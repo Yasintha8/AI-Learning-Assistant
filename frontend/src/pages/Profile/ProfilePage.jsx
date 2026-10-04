@@ -148,8 +148,7 @@ const ProfilePage = () => {
   const displayAvatar = !imgError ? getAvatarUrl(avatarUrl) : null;
 
   return (
-    <div className="min-h-screen bg-bg-main">
-      <div className="max-w-5xl mx-auto px-6 py-5 space-y-8">
+    <div className="max-w-5xl mx-auto space-y-8">
 
         <PageHeader
           title="Profile Settings"
@@ -157,8 +156,30 @@ const ProfilePage = () => {
         />
 
         {loading ? (
-          <div className="flex items-center justify-center min-h-100">
-            <Spinner label="Loading your profile..." />
+          <div className="space-y-6 animate-pulse" aria-busy="true" aria-label="Loading profile">
+            {/* Profile Hero Skeleton */}
+            <div className="bg-bg-card border border-border-light rounded-2xl p-6 shadow-xs flex flex-col sm:flex-row sm:items-center gap-6">
+              <div className="w-20 h-20 rounded-2xl bg-border-medium/60 shrink-0" />
+              <div className="space-y-2 flex-1">
+                <div className="h-6 w-48 bg-border-medium/60 rounded-md" />
+                <div className="h-4 w-64 bg-border-light rounded-md" />
+                <div className="h-4 w-32 bg-border-light rounded-md" />
+              </div>
+            </div>
+
+            {/* Profile Forms Grid Skeleton */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {[1, 2].map((n) => (
+                <div key={n} className="bg-bg-card border border-border-light rounded-2xl p-6 shadow-xs space-y-4">
+                  <div className="h-5 w-40 bg-border-medium/60 rounded-md" />
+                  <div className="space-y-3 pt-2">
+                    <div className="h-10 w-full bg-border-light rounded-xl" />
+                    <div className="h-10 w-full bg-border-light rounded-xl" />
+                    <div className="h-10 w-28 bg-border-medium/60 rounded-xl" />
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         ) : (
           <>
@@ -400,7 +421,6 @@ const ProfilePage = () => {
         )}
 
       </div>
-    </div>
   );
 };
 

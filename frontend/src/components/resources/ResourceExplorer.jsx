@@ -61,7 +61,21 @@ const ResourceExplorer = ({ documentId, documentTitle }) => {
     };
 
     if (loading) {
-        return <Spinner />;
+        return (
+            <div className="bg-bg-card border border-border-light rounded-3xl p-8 shadow-xs space-y-6 animate-pulse" aria-busy="true" aria-label="Loading resources">
+                <div className="flex justify-between items-center pb-4 border-b border-border-light">
+                    <div className="h-6 w-48 bg-border-medium/60 rounded-md" />
+                    <div className="h-9 w-32 bg-border-light rounded-xl" />
+                </div>
+                <div className="h-96 rounded-2xl bg-bg-main border border-border-light/60 flex items-center justify-center p-8">
+                    <div className="space-y-4 text-center w-full max-w-md">
+                        <div className="w-16 h-16 rounded-full bg-border-medium/60 mx-auto" />
+                        <div className="h-4 w-3/4 bg-border-medium/60 rounded mx-auto" />
+                        <div className="h-3 w-1/2 bg-border-light rounded mx-auto" />
+                    </div>
+                </div>
+            </div>
+        );
     }
 
     if (!graph) {

@@ -63,7 +63,7 @@ const DocumentCard = ({ document, onDelete }) => {
             <div className="flex flex-col gap-3.5">
                 {/* Header Icon + Type Badge */}
                 <div className="flex items-center justify-between gap-2">
-                    <div className={`w-11 h-11 rounded-xl bg-gradient-to-br ${typeStyle.gradient} flex items-center justify-center text-white shadow-md ${typeStyle.shadow} shrink-0 transition-transform duration-300 group-hover:scale-105`}>
+                    <div className={`w-11 h-11 rounded-xl bg-linear-to-br ${typeStyle.gradient} flex items-center justify-center text-white shadow-md ${typeStyle.shadow} shrink-0 transition-transform duration-300 group-hover:scale-105`}>
                         <TypeIcon className="w-5 h-5" strokeWidth={2} />
                     </div>
 
@@ -147,7 +147,7 @@ const DocumentCard = ({ document, onDelete }) => {
             </div>
 
             {/* Bottom Gradient Accent Indicator */}
-            <div className={`absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r ${typeStyle.gradient} scale-x-0 group-hover:scale-x-100 transition-transform duration-200 origin-left`} />
+            <div className={`absolute bottom-0 left-0 right-0 h-1 bg-linear-to-r ${typeStyle.gradient} scale-x-0 group-hover:scale-x-100 transition-transform duration-200 origin-left`} />
         </div>
     );
 };

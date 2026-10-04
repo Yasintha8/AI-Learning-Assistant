@@ -42,7 +42,7 @@ const FlashcardSetCard = ({ flashcardSet, onDelete }) => {
             <div className="flex flex-col gap-3.5">
                 {/* Icon Header */}
                 <div className="flex items-center justify-between">
-                    <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white shadow-md shadow-violet-500/20 shrink-0 transition-transform duration-300 group-hover:scale-105">
+                    <div className="w-11 h-11 rounded-xl bg-linear-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white shadow-md shadow-violet-500/20 shrink-0 transition-transform duration-300 group-hover:scale-105">
                         <BookOpen className="w-5 h-5" strokeWidth={2} />
                     </div>
 
@@ -76,7 +76,7 @@ const FlashcardSetCard = ({ flashcardSet, onDelete }) => {
 
                         <div className="h-2 overflow-hidden rounded-full bg-border-light">
                             <div
-                                className="h-full rounded-full bg-gradient-to-r from-violet-500 to-primary transition-all duration-500"
+                                className="h-full rounded-full bg-linear-to-r from-violet-500 to-primary transition-all duration-500"
                                 style={{ width: `${progressPercentage}%` }}
                             />
                         </div>
@@ -97,7 +97,7 @@ const FlashcardSetCard = ({ flashcardSet, onDelete }) => {
             </div>
 
             {/* Hover Indicator */}
-            <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-violet-500 to-purple-600 scale-x-0 group-hover:scale-x-100 transition-transform duration-200 origin-left" />
+            <div className="absolute bottom-0 left-0 right-0 h-1 bg-linear-to-r from-violet-500 to-purple-600 scale-x-0 group-hover:scale-x-100 transition-transform duration-200 origin-left" />
         </div>
     );
 };

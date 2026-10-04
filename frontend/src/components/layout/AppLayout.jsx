@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import Sidebar from './Sidebar';
 import Header from './Header';
-import Footer from './Footer';
 
 const SIDEBAR_COLLAPSED_KEY = 'learnmate_sidebar_collapsed';
 
@@ -68,7 +67,6 @@ const AppLayout = ({ children }) => {
         <main className='flex-1 overflow-hidden overflow-y-auto p-6'>
           {children}
         </main>
-        <Footer />
       </div>
     </div>
   );

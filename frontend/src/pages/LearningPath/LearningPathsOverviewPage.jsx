@@ -97,11 +97,11 @@ const LearningPathsOverviewPage = () => {
   const totalWeak = combinedPaths.reduce((acc, curr) => acc + curr.weakCount, 0);
 
   return (
-    <div className="max-w-7xl mx-auto space-y-6 pb-12">
+    <div className="max-w-7xl mx-auto space-y-6">
 
       {/* Header Banner */}
       <div className="relative overflow-hidden bg-bg-card border border-border-light rounded-3xl p-6 sm:p-8 shadow-xs">
-        <div className="absolute top-0 right-0 -mt-12 -mr-12 w-80 h-80 bg-gradient-to-br from-emerald-500/10 via-primary/10 to-transparent rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute top-0 right-0 -mt-12 -mr-12 w-80 h-80 bg-linear-to-br from-emerald-500/10 via-primary/10 to-transparent rounded-full blur-3xl pointer-events-none" />
         <div className="absolute bottom-0 left-1/3 -mb-12 w-60 h-60 bg-blue-500/5 rounded-full blur-2xl pointer-events-none" />
 
         <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
@@ -121,7 +121,7 @@ const LearningPathsOverviewPage = () => {
 
           {/* Quick Aggregate Stats Bar */}
           <div className="grid grid-cols-3 gap-3 shrink-0 sm:flex sm:items-center">
-            <div className="px-4 py-3.5 bg-bg-main/80 backdrop-blur-sm border border-border-medium/80 rounded-2xl text-center shadow-2xs min-w-[100px]">
+            <div className="px-4 py-3.5 bg-bg-main/80 backdrop-blur-sm border border-border-medium/80 rounded-2xl text-center shadow-2xs min-w-25">
               <div className="flex items-center justify-center gap-1.5 text-text-muted text-[10px] font-bold uppercase tracking-wider mb-1">
                 <FileText className="w-3 h-3" />
                 <span>Documents</span>
@@ -129,7 +129,7 @@ const LearningPathsOverviewPage = () => {
               <div className="text-2xl font-black text-text-heading font-mono">{documents.length}</div>
             </div>
 
-            <div className="px-4 py-3.5 bg-emerald-500/5 backdrop-blur-sm border border-emerald-500/20 rounded-2xl text-center shadow-2xs min-w-[100px]">
+            <div className="px-4 py-3.5 bg-emerald-500/5 backdrop-blur-sm border border-emerald-500/20 rounded-2xl text-center shadow-2xs min-w-25">
               <div className="flex items-center justify-center gap-1.5 text-emerald-600/80 dark:text-emerald-400/80 text-[10px] font-bold uppercase tracking-wider mb-1">
                 <Award className="w-3 h-3" />
                 <span>Mastered</span>
@@ -137,7 +137,7 @@ const LearningPathsOverviewPage = () => {
               <div className="text-2xl font-black text-emerald-600 dark:text-emerald-400 font-mono">{totalMastered}</div>
             </div>
 
-            <div className="px-4 py-3.5 bg-amber-500/5 backdrop-blur-sm border border-amber-500/20 rounded-2xl text-center shadow-2xs min-w-[100px]">
+            <div className="px-4 py-3.5 bg-amber-500/5 backdrop-blur-sm border border-amber-500/20 rounded-2xl text-center shadow-2xs min-w-25">
               <div className="flex items-center justify-center gap-1.5 text-amber-600/80 dark:text-amber-400/80 text-[10px] font-bold uppercase tracking-wider mb-1">
                 <AlertTriangle className="w-3 h-3" />
                 <span>Weak Areas</span>
@@ -203,14 +203,42 @@ const LearningPathsOverviewPage = () => {
 
       {/* Content Area */}
       {loading ? (
-        <div className="p-16 text-center bg-bg-card border border-border-light rounded-3xl space-y-4 shadow-xs">
-          <div className="w-10 h-10 border-4 border-emerald-500/30 border-t-emerald-500 rounded-full animate-spin mx-auto" />
-          <p className="text-xs text-text-muted font-medium">Loading your document learning paths...</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-pulse">
+          {[1, 2, 3, 4].map((i) => (
+            <div
+              key={i}
+              className="p-6 bg-bg-card border border-border-light rounded-3xl shadow-2xs space-y-5"
+            >
+              <div className="space-y-4">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="h-5 w-20 bg-border-light rounded-lg" />
+                  <div className="h-4 w-24 bg-border-light rounded" />
+                </div>
+                <div className="h-6 w-3/4 bg-border-medium/60 rounded-md" />
+                <div className="space-y-2 pt-1">
+                  <div className="flex justify-between items-center">
+                    <div className="h-4 w-28 bg-border-light rounded" />
+                    <div className="h-4 w-10 bg-border-light rounded" />
+                  </div>
+                  <div className="h-3 w-full bg-border-light rounded-full" />
+                </div>
+                <div className="grid grid-cols-3 gap-2.5 pt-2">
+                  <div className="p-3 bg-border-light/50 rounded-2xl h-16" />
+                  <div className="p-3 bg-border-light/50 rounded-2xl h-16" />
+                  <div className="p-3 bg-border-light/50 rounded-2xl h-16" />
+                </div>
+              </div>
+              <div className="pt-4 border-t border-border-light/80 flex items-center justify-between">
+                <div className="h-4 w-20 bg-border-light rounded" />
+                <div className="h-8 w-28 bg-border-light rounded-xl" />
+              </div>
+            </div>
+          ))}
         </div>
       ) : documents.length === 0 ? (
         /* Empty State */
         <div className="p-12 sm:p-16 text-center bg-bg-card border border-border-light rounded-3xl space-y-6 shadow-xs">
-          <div className="w-20 h-20 bg-gradient-to-br from-emerald-500/20 to-primary/20 text-emerald-600 dark:text-emerald-400 rounded-3xl border border-emerald-500/30 flex items-center justify-center mx-auto shadow-md">
+          <div className="w-20 h-20 bg-linear-to-br from-emerald-500/20 to-primary/20 text-emerald-600 dark:text-emerald-400 rounded-3xl border border-emerald-500/30 flex items-center justify-center mx-auto shadow-md">
             <Map className="w-10 h-10" />
           </div>
           <div className="max-w-md mx-auto space-y-2">
@@ -271,7 +299,7 @@ const LearningPathsOverviewPage = () => {
                   </div>
                   <div className="w-full h-3 bg-bg-main border border-border-light rounded-full overflow-hidden p-0.5">
                     <div
-                      className="h-full bg-gradient-to-r from-emerald-500 to-teal-400 transition-all duration-500 rounded-full"
+                      className="h-full bg-linear-to-r from-emerald-500 to-teal-400 transition-all duration-500 rounded-full"
                       style={{ width: `${Math.max(overallScore, 4)}%` }}
                     />
                   </div>

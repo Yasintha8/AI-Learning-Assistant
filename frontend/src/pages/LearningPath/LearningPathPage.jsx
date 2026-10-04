@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import toast from '../../utils/toast';
 import {
@@ -17,15 +17,18 @@ import {
   AlertTriangle,
   ChevronDown,
   ChevronUp,
+  ChevronRight,
   ArrowUp,
   Download,
   MoreVertical,
   Gauge,
   Map as MapIcon,
   Compass,
+  Search,
   X,
-  TrendingUp,
-  Award
+  Copy,
+  Info,
+  SlidersHorizontal
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import learningPathService from '../../services/learningPathService';
@@ -85,6 +88,43 @@ const LearningPathPage = () => {
   const [refreshingStudyPlan, setRefreshingStudyPlan] = useState(false);
   const [selectedTopic, setSelectedTopic] = useState(null);
   const [highlightedStudyPlanTopicId, setHighlightedStudyPlanTopicId] = useState(null);
+
+  // Topic Roadmap search, filter, and sort state
+  const [topicSearchQuery, setTopicSearchQuery] = useState('');
+  const [topicStatusFilter, setTopicStatusFilter] = useState('all'); // 'all' | 'weak' | 'in-progress' | 'mastered'
+  const [topicDifficultyFilter, setTopicDifficultyFilter] = useState('all'); // 'all' | 'easy' | 'medium' | 'hard'
+  const [topicSortBy, setTopicSortBy] = useState('default'); // 'default' | 'score-asc' | 'score-desc' | 'alphabetical'
+
+  const filteredTopics = useMemo(() => {
+    if (!learningPath?.topics || learningPath.topics.length === 0) return [];
+    let list = [...learningPath.topics];
+
+    if (topicSearchQuery.trim()) {
+      const q = topicSearchQuery.toLowerCase().trim();
+      list = list.filter((t) =>
+        (t.title && t.title.toLowerCase().includes(q)) ||
+        (t.knowledgeLevelReason && t.knowledgeLevelReason.toLowerCase().includes(q))
+      );
+    }
+
+    if (topicStatusFilter !== 'all') {
+      list = list.filter((t) => t.status === topicStatusFilter);
+    }
+
+    if (topicDifficultyFilter !== 'all') {
+      list = list.filter((t) => t.difficulty?.toLowerCase() === topicDifficultyFilter);
+    }
+
+    if (topicSortBy === 'score-asc') {
+      list.sort((a, b) => (a.masteryScore || 0) - (b.masteryScore || 0));
+    } else if (topicSortBy === 'score-desc') {
+      list.sort((a, b) => (b.masteryScore || 0) - (a.masteryScore || 0));
+    } else if (topicSortBy === 'alphabetical') {
+      list.sort((a, b) => (a.title || '').localeCompare(b.title || ''));
+    }
+
+    return list;
+  }, [learningPath?.topics, topicSearchQuery, topicStatusFilter, topicDifficultyFilter, topicSortBy]);
 
   const studyPlanItems = useMemo(() => {
     if (!learningPath?.topics || learningPath.topics.length === 0) return [];
@@ -389,9 +429,56 @@ const LearningPathPage = () => {
   const renderContent = () => {
     if (loading) {
       return (
-        <div className="flex flex-col items-center justify-center min-h-100 space-y-4 bg-bg-card border border-border-light rounded-3xl p-8 shadow-xs">
-          <Spinner size="lg" tone="emerald" />
-          <p className="text-xs font-semibold text-text-muted">Loading learning path details...</p>
+        <div className="space-y-8 animate-pulse" aria-busy="true" aria-label="Loading learning path">
+          {/* Skeleton Progress Banner */}
+          <div className="bg-bg-card border border-border-light rounded-3xl p-6 sm:p-8 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div className="space-y-3 shrink-0 min-w-50">
+              <div className="h-4 w-28 bg-border-medium/60 rounded-md" />
+              <div className="h-10 w-24 bg-border-medium/60 rounded-xl" />
+            </div>
+            <div className="flex-1 space-y-3">
+              <div className="flex justify-between">
+                <div className="h-4 w-32 bg-border-medium/60 rounded-md" />
+                <div className="h-4 w-40 bg-border-medium/60 rounded-md" />
+              </div>
+              <div className="h-3.5 w-full bg-border-light rounded-full" />
+              <div className="h-3 w-3/4 bg-border-light rounded-md" />
+            </div>
+          </div>
+
+          {/* Skeleton Section Blocks */}
+          <div className="bg-bg-card border border-border-light rounded-3xl p-6 space-y-4">
+            <div className="flex justify-between items-center pb-4 border-b border-border-light">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 bg-border-medium/60 rounded-2xl" />
+                <div className="space-y-1.5">
+                  <div className="h-4 w-36 bg-border-medium/60 rounded-md" />
+                  <div className="h-3 w-48 bg-border-light rounded-md" />
+                </div>
+              </div>
+              <div className="h-6 w-20 bg-border-light rounded-full" />
+            </div>
+            <div className="space-y-3 pt-2">
+              {[1, 2, 3].map((n) => (
+                <div key={n} className="flex justify-between items-center py-2">
+                  <div className="h-4 w-1/3 bg-border-light rounded-md" />
+                  <div className="h-7 w-24 bg-border-light rounded-xl" />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Skeleton Roadmap Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            {[1, 2, 3, 4, 5, 6].map((n) => (
+              <div key={n} className="bg-bg-card border border-border-light rounded-3xl p-5 space-y-4">
+                <div className="h-5 w-3/4 bg-border-medium/60 rounded-md" />
+                <div className="h-3 w-1/2 bg-border-light rounded-md" />
+                <div className="h-2 w-full bg-border-light rounded-full" />
+                <div className="h-4 w-1/3 bg-border-light rounded-md pt-2" />
+              </div>
+            ))}
+          </div>
         </div>
       );
     }
@@ -760,9 +847,22 @@ const LearningPathPage = () => {
             </div>
 
             {sectionsExpanded.weakAreas && (
-              <div className="p-6 sm:p-8 space-y-4 animate-fade-in">
+              <div className="p-6 sm:p-8 space-y-5 animate-fade-in">
                 <div className="space-y-3">
                   {renderEligibilityRow('Quizzes completed', weakAreasEligibility.completedQuizCount, weakAreasEligibility.requiredQuizCount)}
+                </div>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20">
+                  <div className="space-y-0.5">
+                    <p className="text-xs font-bold text-text-heading">Ready to unlock personalized weak area detection?</p>
+                    <p className="text-xs text-text-muted">Take quizzes for this document to pinpoint concepts needing practice.</p>
+                  </div>
+                  <Link
+                    to={`/documents/${documentId}?tab=Quizzes`}
+                    className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold transition-colors shadow-2xs shrink-0 cursor-pointer"
+                  >
+                    <span>Take a Quiz Now</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </Link>
                 </div>
               </div>
             )}
@@ -954,7 +1054,7 @@ const LearningPathPage = () => {
 
             <div className="flex items-center gap-3 shrink-0">
               <span className="text-xs font-mono font-bold text-text-muted px-3 py-1 bg-bg-main rounded-full border border-border-light">
-                {topics.length} Topics
+                {filteredTopics.length} of {topics.length} Topics
               </span>
               <div className="w-8 h-8 rounded-xl flex items-center justify-center text-text-muted hover:text-text-heading transition-colors">
                 <ChevronDown
@@ -966,98 +1066,234 @@ const LearningPathPage = () => {
           </div>
 
           {sectionsExpanded.topics && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 animate-fade-in">
-              {topics.map((topic) => {
-                const style = getStatusStyle(topic.status);
-                const StatusIcon = style.icon;
-                const levelStyle = getKnowledgeLevelStyle(topic.knowledgeLevel);
-                const LevelIcon = levelStyle?.icon;
+            <div className="space-y-4 animate-fade-in">
+              {/* Filter and Search Bar */}
+              <div className="bg-bg-card border border-border-light rounded-3xl p-4 sm:p-5 shadow-xs space-y-4">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+                  {/* Search Input */}
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted pointer-events-none" />
+                    <input
+                      type="text"
+                      value={topicSearchQuery}
+                      onChange={(e) => setTopicSearchQuery(e.target.value)}
+                      placeholder="Search topics by title or keyword..."
+                      className="w-full pl-10 pr-9 py-2.5 bg-bg-main border border-border-medium rounded-xl text-xs text-text-heading placeholder:text-text-placeholder focus:outline-none focus-visible:ring-2 focus-visible:ring-primary transition-all"
+                    />
+                    {topicSearchQuery && (
+                      <button
+                        type="button"
+                        onClick={() => setTopicSearchQuery('')}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-heading transition-colors cursor-pointer"
+                        aria-label="Clear search"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
 
-                const isMastered = topic.status === 'mastered' || topic.knowledgeLevel === 'proficient' || topic.masteryScore >= 80;
-
-                const planIndex = studyPlanItems
-                  ? studyPlanItems.findIndex((sp) =>
-                    (sp.topicId && topic.topicId && String(sp.topicId) === String(topic.topicId)) ||
-                    (sp.title && topic.title && sp.title.toLowerCase().trim() === topic.title.toLowerCase().trim())
-                  )
-                  : -1;
-                const planItem = planIndex !== -1 ? studyPlanItems[planIndex] : null;
-
-                return (
-                  <div
-                    key={topic.topicId}
-                    onClick={() => !isMastered && handleTopicCardClick(topic)}
-                    className={`bg-bg-card border ${isMastered
-                      ? 'border-emerald-500/30 cursor-default'
-                      : 'border-border-light hover:border-primary/50 cursor-pointer shadow-2xs hover:shadow-md'
-                      } rounded-3xl p-5 flex flex-col justify-between space-y-4 transition-all duration-300 group`}
-                  >
-                    <div className="space-y-3">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="space-y-1 min-w-0 flex-1">
-                          <h4 className={`text-sm font-bold text-text-heading ${isMastered ? '' : 'group-hover:text-primary'} transition-colors leading-snug line-clamp-2`}>
-                            {topic.title}
-                          </h4>
-                          {planItem && (
-                            <span className={`inline-flex items-center gap-1 text-[10px] font-extrabold px-2 py-0.5 rounded-full border ${isMastered
-                              ? 'text-emerald-700 bg-emerald-500/10 border-emerald-500/20 dark:text-emerald-300'
-                              : 'text-primary bg-primary-light border-primary/30'
-                              }`}>
-                              <Target className="w-3 h-3 shrink-0" />
-                              <span>Study Plan #{planIndex + 1}</span>
-                            </span>
-                          )}
-                        </div>
-                        <span
-                          className={`shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-extrabold ${style.bg} ${style.text}`}
-                        >
-                          <StatusIcon className="w-3 h-3" strokeWidth={2.5} />
-                          {style.label}
-                        </span>
-                      </div>
-
-                      {levelStyle && (
-                        <span className={`w-fit inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${levelStyle.bg} ${levelStyle.text}`}>
-                          {LevelIcon && <LevelIcon className="w-3 h-3" strokeWidth={2.5} />}
-                          {levelStyle.label}
-                        </span>
-                      )}
-
-                      {/* Mastery score bar */}
-                      <div className="space-y-1.5 pt-1">
-                        <div className="flex items-center justify-between text-xs">
-                          <span className="text-text-muted font-semibold">Mastery</span>
-                          <span className="font-mono font-bold text-text-heading tabular-nums">
-                            {topic.masteryScore}%
-                          </span>
-                        </div>
-                        <div className="w-full bg-bg-main border border-border-light h-2 rounded-full overflow-hidden p-0.5">
-                          <div
-                            className={`h-full rounded-full transition-all duration-300 ${style.dot}`}
-                            style={{ width: `${topic.masteryScore}%` }}
-                          />
-                        </div>
-                      </div>
+                  {/* Dropdowns */}
+                  <div className="flex items-center gap-2.5 flex-wrap sm:flex-nowrap">
+                    {/* Difficulty */}
+                    <div className="flex items-center gap-1.5 min-w-32 flex-1 sm:flex-initial">
+                      <select
+                        value={topicDifficultyFilter}
+                        onChange={(e) => setTopicDifficultyFilter(e.target.value)}
+                        className="w-full px-3 py-2 bg-bg-main border border-border-medium rounded-xl text-xs font-semibold text-text-heading focus:outline-none focus-visible:ring-2 focus-visible:ring-primary cursor-pointer"
+                        aria-label="Filter by difficulty"
+                      >
+                        <option value="all">All Difficulties</option>
+                        <option value="easy">Easy</option>
+                        <option value="medium">Medium</option>
+                        <option value="hard">Hard</option>
+                      </select>
                     </div>
 
-                    {/* Footer status link */}
-                    <div className="flex items-center justify-between text-xs text-text-muted pt-3 border-t border-border-light/80">
-                      <span className="capitalize text-[11px] font-mono">{topic.difficulty} difficulty</span>
-                      {isMastered ? (
-                        <span className="inline-flex items-center gap-1 text-[11px] font-extrabold text-emerald-600 dark:text-emerald-400">
-                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
-                          <span>Mastered</span>
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 text-xs font-bold text-primary group-hover:underline">
-                          <span>View in Plan</span>
-                          <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
-                        </span>
-                      )}
+                    {/* Sort By */}
+                    <div className="flex items-center gap-1.5 min-w-36 flex-1 sm:flex-initial">
+                      <select
+                        value={topicSortBy}
+                        onChange={(e) => setTopicSortBy(e.target.value)}
+                        className="w-full px-3 py-2 bg-bg-main border border-border-medium rounded-xl text-xs font-semibold text-text-heading focus:outline-none focus-visible:ring-2 focus-visible:ring-primary cursor-pointer"
+                        aria-label="Sort topics"
+                      >
+                        <option value="default">Default Order</option>
+                        <option value="score-asc">Mastery: Low to High</option>
+                        <option value="score-desc">Mastery: High to Low</option>
+                        <option value="alphabetical">Alphabetical (A-Z)</option>
+                      </select>
                     </div>
                   </div>
-                );
-              })}
+                </div>
+
+                {/* Status Filter Pills */}
+                <div className="flex items-center gap-2 overflow-x-auto pb-1 custom-scrollbar text-xs font-semibold">
+                  {[
+                    { id: 'all', label: 'All Topics', count: topics.length },
+                    { id: 'weak', label: 'Weak (<50%)', count: topics.filter((t) => t.status === 'weak').length },
+                    { id: 'in-progress', label: 'In Progress (50-79%)', count: topics.filter((t) => t.status === 'in-progress').length },
+                    { id: 'mastered', label: 'Mastered (≥80%)', count: topics.filter((t) => t.status === 'mastered').length },
+                    { id: 'not-started', label: 'Not Started', count: topics.filter((t) => t.status === 'not-started').length },
+                  ].map((filter) => {
+                    const isActive = topicStatusFilter === filter.id;
+                    return (
+                      <button
+                        key={filter.id}
+                        type="button"
+                        onClick={() => setTopicStatusFilter(filter.id)}
+                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-all duration-150 shrink-0 cursor-pointer ${
+                          isActive
+                            ? 'bg-primary text-white shadow-2xs font-bold'
+                            : 'bg-bg-main hover:bg-border-light text-text-muted hover:text-text-heading border border-border-light'
+                        }`}
+                      >
+                        <span>{filter.label}</span>
+                        <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono font-bold ${
+                          isActive ? 'bg-white/20 text-white' : 'bg-bg-card text-text-muted'
+                        }`}>
+                          {filter.count}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Grid or Empty Results */}
+              {filteredTopics.length === 0 ? (
+                <div className="bg-bg-card border border-border-light rounded-3xl p-10 text-center space-y-3">
+                  <div className="w-12 h-12 rounded-2xl bg-primary-light border border-primary/20 text-primary mx-auto flex items-center justify-center">
+                    <Search className="w-6 h-6" />
+                  </div>
+                  <h4 className="text-sm font-bold text-text-heading">No matching topics found</h4>
+                  <p className="text-xs text-text-muted max-w-sm mx-auto">
+                    Try adjusting your search query, difficulty, or status filter to see topics.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setTopicSearchQuery('');
+                      setTopicStatusFilter('all');
+                      setTopicDifficultyFilter('all');
+                      setTopicSortBy('default');
+                    }}
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-white text-xs font-bold hover:bg-primary-hover transition-colors shadow-2xs cursor-pointer"
+                  >
+                    <span>Reset Filters</span>
+                  </button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                  {filteredTopics.map((topic) => {
+                    const style = getStatusStyle(topic.status);
+                    const StatusIcon = style.icon;
+                    const levelStyle = getKnowledgeLevelStyle(topic.knowledgeLevel);
+                    const LevelIcon = levelStyle?.icon;
+
+                    const isMastered = topic.status === 'mastered' || topic.knowledgeLevel === 'proficient' || topic.masteryScore >= 80;
+
+                    const planIndex = studyPlanItems
+                      ? studyPlanItems.findIndex((sp) =>
+                        (sp.topicId && topic.topicId && String(sp.topicId) === String(topic.topicId)) ||
+                        (sp.title && topic.title && sp.title.toLowerCase().trim() === topic.title.toLowerCase().trim())
+                      )
+                      : -1;
+                    const planItem = planIndex !== -1 ? studyPlanItems[planIndex] : null;
+
+                    return (
+                      <div
+                        key={topic.topicId}
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => setSelectedTopic(topic)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            setSelectedTopic(topic);
+                          }
+                        }}
+                        aria-label={`View details for topic ${topic.title}`}
+                        className={`bg-bg-card border ${isMastered
+                          ? 'border-emerald-500/30'
+                          : 'border-border-light hover:border-primary/50'
+                          } rounded-3xl p-5 flex flex-col justify-between space-y-4 transition-all duration-300 shadow-2xs hover:shadow-md cursor-pointer group focus:outline-none focus-visible:ring-2 focus-visible:ring-primary`}
+                      >
+                        <div className="space-y-3">
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="space-y-1 min-w-0 flex-1">
+                              <h4 className={`text-sm font-bold text-text-heading group-hover:text-primary transition-colors leading-snug line-clamp-2`}>
+                                {topic.title}
+                              </h4>
+                              {planItem && (
+                                <span className={`inline-flex items-center gap-1 text-[10px] font-extrabold px-2 py-0.5 rounded-full border ${isMastered
+                                  ? 'text-emerald-700 bg-emerald-500/10 border-emerald-500/20 dark:text-emerald-300'
+                                  : 'text-primary bg-primary-light border-primary/30'
+                                  }`}>
+                                  <Target className="w-3 h-3 shrink-0" />
+                                  <span>Study Plan #{planIndex + 1}</span>
+                                </span>
+                              )}
+                            </div>
+                            <span
+                              className={`shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-extrabold ${style.bg} ${style.text}`}
+                            >
+                              <StatusIcon className="w-3 h-3" strokeWidth={2.5} />
+                              {style.label}
+                            </span>
+                          </div>
+
+                          {levelStyle && (
+                            <span className={`w-fit inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${levelStyle.bg} ${levelStyle.text}`}>
+                              {LevelIcon && <LevelIcon className="w-3 h-3" strokeWidth={2.5} />}
+                              {levelStyle.label}
+                            </span>
+                          )}
+
+                          {/* Mastery score bar */}
+                          <div className="space-y-1.5 pt-1">
+                            <div className="flex items-center justify-between text-xs">
+                              <span className="text-text-muted font-semibold">Mastery</span>
+                              <span className="font-mono font-bold text-text-heading tabular-nums">
+                                {topic.masteryScore}%
+                              </span>
+                            </div>
+                            <div className="w-full bg-bg-main border border-border-light h-2 rounded-full overflow-hidden p-0.5">
+                              <div
+                                className={`h-full rounded-full transition-all duration-300 ${style.dot}`}
+                                style={{ width: `${topic.masteryScore}%` }}
+                              />
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Footer status link */}
+                        <div className="flex items-center justify-between text-xs text-text-muted pt-3 border-t border-border-light/80">
+                          <span className="capitalize text-[11px] font-mono">{topic.difficulty} difficulty</span>
+                          {isMastered ? (
+                            <span className="inline-flex items-center gap-1 text-[11px] font-extrabold text-emerald-600 dark:text-emerald-400">
+                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                              <span>Mastered</span>
+                            </span>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleTopicCardClick(topic);
+                              }}
+                              className="inline-flex items-center gap-1 text-xs font-bold text-primary hover:underline cursor-pointer"
+                              title="Highlight in Study Plan"
+                            >
+                              <span>View in Plan</span>
+                              <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -1066,15 +1302,27 @@ const LearningPathPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-bg-main pb-16">
+    <>
       <div className="max-w-6xl mx-auto space-y-6">
-        <Link
-          to={`/documents/${documentId}`}
-          className="inline-flex items-center gap-2 text-xs font-bold text-text-muted hover:text-primary transition-colors duration-200 group"
-        >
-          <ArrowLeft size={14} className="group-hover:-translate-x-0.5 transition-transform" />
-          <span>Back to Document</span>
-        </Link>
+        <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-xs font-semibold text-text-muted flex-wrap">
+          <Link to="/dashboard" className="hover:text-primary transition-colors">
+            <span>Dashboard</span>
+          </Link>
+          <ChevronRight className="w-3.5 h-3.5 text-text-muted/60 shrink-0" />
+          <Link to="/documents" className="hover:text-primary transition-colors">
+            <span>My Documents</span>
+          </Link>
+          <ChevronRight className="w-3.5 h-3.5 text-text-muted/60 shrink-0" />
+          <Link
+            to={`/documents/${documentId}`}
+            className="hover:text-primary transition-colors max-w-56 truncate"
+            title={documentTitle || 'Document'}
+          >
+            <span>{documentTitle || 'Document'}</span>
+          </Link>
+          <ChevronRight className="w-3.5 h-3.5 text-text-muted/60 shrink-0" />
+          <span className="text-text-heading font-bold" aria-current="page">Learning Path</span>
+        </nav>
 
         <PageHeader
           title={documentTitle || 'Learning Path'}
@@ -1247,6 +1495,7 @@ const LearningPathPage = () => {
         isOpen={!!selectedTopic}
         onClose={() => setSelectedTopic(null)}
         title={selectedTopic?.title}
+        size="lg"
       >
         {selectedTopic && (() => {
           const style = getStatusStyle(selectedTopic.status);
@@ -1273,7 +1522,15 @@ const LearningPathPage = () => {
 
               <div>
                 <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-xs font-semibold text-text-muted">Mastery Score</span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs font-semibold text-text-muted">Mastery Score</span>
+                    <span
+                      title="Calculated dynamically based on your quiz accuracy and flashcard practice for this concept."
+                      className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-bg-main border border-border-medium text-text-muted text-[10px] cursor-help"
+                    >
+                      <Info className="w-2.5 h-2.5" />
+                    </span>
+                  </div>
                   <span className="text-sm font-black font-mono text-text-heading tabular-nums">
                     {selectedTopic.masteryScore}%
                   </span>
@@ -1318,7 +1575,24 @@ const LearningPathPage = () => {
                 );
                 const planItem = (planIndex !== undefined && planIndex !== -1) ? studyPlanItems[planIndex] : null;
 
-                if (!planItem) return null;
+                if (!planItem) {
+                  return (
+                    <div className="p-4 rounded-2xl bg-primary-light/40 border border-primary/20 space-y-2 pt-3">
+                      <p className="text-xs text-text-heading font-medium">Want an immediate deep-dive into this topic?</p>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedTopic(null);
+                          handleInlineAction({ action: 'ask-ai-explain' }, selectedTopic.topicId, selectedTopic.title);
+                        }}
+                        className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-white text-xs font-bold hover:bg-primary-hover transition-colors shadow-2xs cursor-pointer"
+                      >
+                        <Lightbulb className="w-4 h-4" />
+                        <span>Ask AI to Explain Concept</span>
+                      </button>
+                    </div>
+                  );
+                }
                 const meta = ACTION_META[planItem.action];
                 const ActionIcon = meta?.icon;
                 const link = getActionLink(planItem.action, documentId);
@@ -1383,12 +1657,30 @@ const LearningPathPage = () => {
         isOpen={actionModal.isOpen}
         onClose={() => setActionModal({ isOpen: false, title: '', content: '' })}
         title={actionModal.title}
+        size="xl"
       >
-        <div className="max-h-[60vh] overflow-y-auto prose prose-sm max-w-none prose-slate">
-          <MarkdownRenderer content={actionModal.content} />
+        <div className="space-y-4">
+          <div className="flex justify-end pb-2 border-b border-border-light">
+            <button
+              type="button"
+              onClick={() => {
+                if (navigator?.clipboard?.writeText) {
+                  navigator.clipboard.writeText(actionModal.content);
+                  toast.success('Copied content to clipboard!');
+                }
+              }}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-border-medium bg-bg-main hover:bg-border-light text-xs font-bold text-text-heading hover:text-primary transition-colors cursor-pointer"
+            >
+              <Copy className="w-3.5 h-3.5" />
+              <span>Copy Content</span>
+            </button>
+          </div>
+          <div className="max-h-[60vh] overflow-y-auto prose prose-sm max-w-none dark:prose-invert custom-scrollbar p-1">
+            <MarkdownRenderer content={actionModal.content} />
+          </div>
         </div>
       </Modal>
-    </div>
+    </>
   );
 };
 

@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useSearchParams, Link } from 'react-router-dom';
 import documentService from '../../services/documentService';
-import Spinner from '../../components/common/Spinner';
 import toast from '../../utils/toast';
 import { ArrowLeft, ExternalLink, Map, Globe, BookOpen, FileText } from 'lucide-react';
 import PageHeader from '../../components/common/PageHeader';
@@ -88,7 +87,22 @@ const DocumentDetailPage = () => {
 
   const renderContent = () => {
     if (loading) {
-      return <Spinner />;
+      return (
+        <div className="bg-bg-card border border-border-light rounded-2xl p-6 sm:p-8 space-y-5 animate-pulse min-h-125">
+          <div className="flex items-center justify-between pb-4 border-b border-border-light">
+            <div className="h-6 w-48 bg-border-medium/60 rounded-md" />
+            <div className="h-8 w-28 bg-border-light rounded-xl" />
+          </div>
+          <div className="space-y-3 pt-2">
+            <div className="h-4 w-full bg-border-light rounded" />
+            <div className="h-4 w-11/12 bg-border-light rounded" />
+            <div className="h-4 w-4/5 bg-border-light rounded" />
+            <div className="h-4 w-full bg-border-light rounded" />
+            <div className="h-4 w-3/4 bg-border-light rounded" />
+            <div className="h-40 w-full bg-border-light/60 rounded-xl mt-4" />
+          </div>
+        </div>
+      );
     }
     if (!document || !document.data || !document.data.filePath) {
       return <div className="text-center p-8">Document not available.</div>;
@@ -255,10 +269,38 @@ const DocumentDetailPage = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-100">
-        <Spinner />
+      <div className="space-y-6 animate-pulse" aria-busy="true" aria-label="Loading document details">
+        {/* Breadcrumb Skeleton */}
+        <div className="h-4 w-36 bg-border-light rounded-md" />
+
+        {/* Page Header Skeleton */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-border-light">
+          <div className="space-y-2">
+            <div className="h-8 w-64 bg-border-medium/60 rounded-xl" />
+            <div className="h-4 w-40 bg-border-light rounded-md" />
+          </div>
+          <div className="h-10 w-36 bg-border-light rounded-xl" />
+        </div>
+
+        {/* Tabs Bar Skeleton */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-2 border-b border-border-light">
+          {[1, 2, 3, 4, 5, 6].map((n) => (
+            <div key={n} className="h-9 w-28 bg-border-light rounded-xl shrink-0" />
+          ))}
+        </div>
+
+        {/* Main Preview Container Skeleton */}
+        <div className="bg-bg-card border border-border-light rounded-3xl p-6 sm:p-8 min-h-125 shadow-xs space-y-4">
+          <div className="h-6 w-1/3 bg-border-medium/60 rounded-md" />
+          <div className="space-y-3 pt-4">
+            <div className="h-4 w-full bg-border-light rounded" />
+            <div className="h-4 w-5/6 bg-border-light rounded" />
+            <div className="h-4 w-4/6 bg-border-light rounded" />
+            <div className="h-4 w-3/4 bg-border-light rounded" />
+          </div>
+        </div>
       </div>
-    )
+    );
   }
 
   if (!document) {

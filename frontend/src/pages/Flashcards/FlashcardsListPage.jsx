@@ -120,11 +120,11 @@ const FlashcardsListPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-bg-main pb-16">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 space-y-6">
+    <>
+      <div className="max-w-7xl mx-auto space-y-6">
 
         {/* Hero Header Banner */}
-        <div className="relative overflow-hidden bg-gradient-to-r from-violet-500/10 via-primary/5 to-transparent border border-violet-500/15 rounded-3xl p-6 sm:p-8 shadow-xs">
+        <div className="relative overflow-hidden bg-linear-to-r from-violet-500/10 via-primary/5 to-transparent border border-violet-500/15 rounded-3xl p-6 sm:p-8 shadow-xs">
           <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div className="space-y-2">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-violet-500/10 text-violet-600 dark:text-violet-400 text-xs font-bold">
@@ -174,7 +174,7 @@ const FlashcardsListPage = () => {
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
 
               {/* Search Bar */}
-              <div className="relative flex-1 min-w-[240px]">
+              <div className="relative flex-1 min-w-60">
                 <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-muted w-4 h-4" />
                 <input
                   type="text"
@@ -239,8 +239,39 @@ const FlashcardsListPage = () => {
 
         {/* Content Section */}
         {loading ? (
-          <div className="flex flex-col items-center justify-center min-h-[350px] space-y-3">
-            <Spinner label="Loading flashcard sets..." />
+          <div className="space-y-6 animate-pulse" aria-busy="true" aria-label="Loading flashcard sets">
+            <div className="bg-bg-card border border-border-light rounded-2xl p-4 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="h-11 w-full sm:w-72 bg-border-light rounded-xl" />
+              <div className="h-10 w-full sm:w-28 bg-border-light rounded-xl" />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+              {[1, 2, 3, 4, 5, 6].map((n) => (
+                <div
+                  key={n}
+                  className="bg-bg-card border border-border-light rounded-2xl p-5 flex flex-col justify-between gap-4 shadow-xs"
+                >
+                  <div className="flex items-start gap-3.5">
+                    <div className="w-12 h-12 rounded-2xl bg-border-medium/60 shrink-0" />
+                    <div className="space-y-2 flex-1 pt-1">
+                      <div className="h-4 w-3/4 bg-border-medium/60 rounded-md" />
+                      <div className="h-3 w-1/3 bg-border-light rounded-md" />
+                    </div>
+                  </div>
+                  <div className="space-y-2 pt-2">
+                    <div className="flex justify-between">
+                      <div className="h-3 w-20 bg-border-light rounded-md" />
+                      <div className="h-3 w-10 bg-border-light rounded-md" />
+                    </div>
+                    <div className="h-2 w-full bg-border-light rounded-full" />
+                  </div>
+                  <div className="flex justify-between items-center pt-3 border-t border-border-light/60">
+                    <div className="h-3 w-24 bg-border-light rounded-md" />
+                    <div className="h-8 w-24 bg-border-light rounded-xl" />
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         ) : flashcardSets.length === 0 ? (
           /* Empty State */
@@ -334,7 +365,7 @@ const FlashcardsListPage = () => {
         </div>
       )}
 
-    </div>
+    </>
   );
 };
 

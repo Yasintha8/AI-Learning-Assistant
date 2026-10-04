@@ -148,12 +148,12 @@ const CareerPage = () => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto space-y-6 pb-12">
+    <div className="max-w-7xl mx-auto space-y-6">
 
       {/* Hero Banner */}
       <div className="relative overflow-hidden bg-bg-card border border-border-light rounded-3xl p-6 sm:p-8 shadow-xs transition-all">
         {/* Ambient Gradient Glows */}
-        <div className="absolute top-0 right-0 -mt-12 -mr-12 w-80 h-80 bg-gradient-to-br from-primary/10 via-purple-500/10 to-transparent rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute top-0 right-0 -mt-12 -mr-12 w-80 h-80 bg-linear-to-br from-primary/10 via-purple-500/10 to-transparent rounded-full blur-3xl pointer-events-none" />
         <div className="absolute bottom-0 left-1/4 -mb-12 w-60 h-60 bg-emerald-500/5 rounded-full blur-2xl pointer-events-none" />
 
         <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
@@ -227,14 +227,39 @@ const CareerPage = () => {
 
       {/* Loading Skeleton */}
       {loading ? (
-        <div className="p-16 text-center bg-bg-card border border-border-light rounded-3xl space-y-4 shadow-xs">
-          <div className="w-10 h-10 border-4 border-primary/30 border-t-primary rounded-full animate-spin mx-auto" />
-          <p className="text-xs text-text-muted font-medium">Loading your career navigator data...</p>
+        <div className="space-y-6 animate-pulse" aria-busy="true" aria-label="Loading career roadmap">
+          {/* Tab Selector Skeleton */}
+          <div className="flex items-center gap-2 p-1.5 bg-bg-card border border-border-light rounded-2xl max-w-md shadow-xs">
+            <div className="h-10 flex-1 bg-border-medium/60 rounded-xl" />
+            <div className="h-10 flex-1 bg-border-light rounded-xl" />
+          </div>
+
+          {/* Roadmap Milestones Skeleton */}
+          <div className="space-y-4">
+            {[1, 2, 3].map((n) => (
+              <div key={n} className="bg-bg-card border border-border-light rounded-3xl p-6 sm:p-8 shadow-xs space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-2xl bg-border-medium/60" />
+                    <div className="space-y-1.5">
+                      <div className="h-4 w-48 bg-border-medium/60 rounded" />
+                      <div className="h-3 w-32 bg-border-light rounded" />
+                    </div>
+                  </div>
+                  <div className="h-6 w-20 bg-border-light rounded-full" />
+                </div>
+                <div className="space-y-2 pt-2">
+                  <div className="h-3.5 w-full bg-border-light rounded" />
+                  <div className="h-3.5 w-5/6 bg-border-light rounded" />
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       ) : !profile ? (
         /* Empty State */
         <div className="p-12 sm:p-16 text-center bg-bg-card border border-border-light rounded-3xl space-y-6 shadow-xs">
-          <div className="w-20 h-20 bg-gradient-to-br from-primary/20 via-purple-500/20 to-emerald-500/20 text-primary rounded-3xl border border-primary/30 flex items-center justify-center mx-auto shadow-md">
+          <div className="w-20 h-20 bg-linear-to-br from-primary/20 via-purple-500/20 to-emerald-500/20 text-primary rounded-3xl border border-primary/30 flex items-center justify-center mx-auto shadow-md">
             <Sparkles className="w-10 h-10" />
           </div>
           <div className="max-w-md mx-auto space-y-2">
