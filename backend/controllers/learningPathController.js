@@ -707,3 +707,14 @@ export const getStudyPlan = async (req, res, next) => {
         next(error);
     }
 };
+
+export const __testHelpers = {
+    slugify,
+    flattenTopics,
+    deriveStatus,
+    deriveKnowledgeLevelFallback,
+    deriveFallbackAction,
+    computeSkillCategoryStats,
+    computeTopicStats,
+    collectWrongAnswers
+};
