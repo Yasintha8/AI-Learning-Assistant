@@ -115,9 +115,26 @@ const LearningPathPage = () => {
       });
   }, [learningPath]);
 
+  const [sectionsExpanded, setSectionsExpanded] = useState({
+    recommended: true,
+    studyPlan: true,
+    skills: true,
+    weakAreas: true,
+    topics: true,
+  });
+
+  const toggleSection = (sectionKey) => {
+    setSectionsExpanded((prev) => ({
+      ...prev,
+      [sectionKey]: !prev[sectionKey],
+    }));
+  };
+
   const handleTopicCardClick = (topic) => {
     const isMastered = topic.status === 'mastered' || topic.knowledgeLevel === 'proficient' || topic.masteryScore >= 80;
     if (isMastered) return;
+
+    setSectionsExpanded((prev) => ({ ...prev, studyPlan: true }));
 
     const planItem = studyPlanItems.find((sp) =>
       (sp.topicId && topic.topicId && String(sp.topicId) === String(topic.topicId)) ||
@@ -213,18 +230,26 @@ const LearningPathPage = () => {
   }, [navItems]);
 
   const scrollToSection = (id) => {
-    const el = document.getElementById(id);
-    if (el) {
-      const mainEl = document.querySelector('main');
-      if (mainEl) {
-        const mainRect = mainEl.getBoundingClientRect();
-        const elRect = el.getBoundingClientRect();
-        const targetPos = mainEl.scrollTop + (elRect.top - mainRect.top) - 20;
-        mainEl.scrollTo({ top: Math.max(0, targetPos), behavior: 'smooth' });
-      } else {
-        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    if (id === 'lp-recommended') setSectionsExpanded((prev) => ({ ...prev, recommended: true }));
+    else if (id === 'lp-study-plan' || id.startsWith('study-plan-item-')) setSectionsExpanded((prev) => ({ ...prev, studyPlan: true }));
+    else if (id === 'lp-skills') setSectionsExpanded((prev) => ({ ...prev, skills: true }));
+    else if (id === 'lp-weak-areas') setSectionsExpanded((prev) => ({ ...prev, weakAreas: true }));
+    else if (id === 'lp-topics') setSectionsExpanded((prev) => ({ ...prev, topics: true }));
+
+    setTimeout(() => {
+      const el = document.getElementById(id);
+      if (el) {
+        const mainEl = document.querySelector('main');
+        if (mainEl) {
+          const mainRect = mainEl.getBoundingClientRect();
+          const elRect = el.getBoundingClientRect();
+          const targetPos = mainEl.scrollTop + (elRect.top - mainRect.top) - 20;
+          mainEl.scrollTo({ top: Math.max(0, targetPos), behavior: 'smooth' });
+        } else {
+          el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
       }
-    }
+    }, 60);
     setOutlineOpen(false);
   };
 
@@ -428,41 +453,82 @@ const LearningPathPage = () => {
 
         {/* Recommended Next */}
         {recommendedNext && recommendedNext.length > 0 && (
-          <div id="lp-recommended" className="scroll-mt-24 bg-bg-card border border-border-light rounded-3xl overflow-hidden shadow-xs">
-            <div className="flex items-center gap-3 px-6 py-4 bg-primary-light/40 border-b border-border-light">
-              <div className="w-9 h-9 rounded-2xl bg-primary-light border border-primary/20 flex items-center justify-center shadow-2xs">
-                <Target className="w-4.5 h-4.5 text-primary" strokeWidth={2.5} />
+          <div id="lp-recommended" className="scroll-mt-24 bg-bg-card border border-border-light rounded-3xl overflow-hidden shadow-xs transition-all duration-200">
+            <div
+              role="button"
+              tabIndex={0}
+              onClick={() => toggleSection('recommended')}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  toggleSection('recommended');
+                }
+              }}
+              className={`flex items-center justify-between px-6 py-4 bg-primary-light/40 cursor-pointer select-none transition-colors hover:bg-primary-light/60 ${sectionsExpanded.recommended ? 'border-b border-border-light' : ''}`}
+              aria-expanded={sectionsExpanded.recommended}
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-2xl bg-primary-light border border-primary/20 flex items-center justify-center shadow-2xs">
+                  <Target className="w-4.5 h-4.5 text-primary" strokeWidth={2.5} />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-text-heading font-display">Recommended Next</h3>
+                  <p className="text-xs text-text-muted">Topics prioritized based on your recent performance</p>
+                </div>
               </div>
-              <div>
-                <h3 className="text-base font-bold text-text-heading font-display">Recommended Next</h3>
-                <p className="text-xs text-text-muted">Topics prioritized based on your recent performance</p>
+
+              <div className="flex items-center gap-3">
+                <span className="text-xs font-mono font-bold text-primary px-3 py-1 bg-primary/10 rounded-full border border-primary/20">
+                  {recommendedNext.length} Topics
+                </span>
+                <div className="w-8 h-8 rounded-xl flex items-center justify-center text-primary/80 transition-colors">
+                  <ChevronDown
+                    className={`w-4 h-4 transition-transform duration-200 ${sectionsExpanded.recommended ? 'rotate-180' : ''}`}
+                    strokeWidth={2.5}
+                  />
+                </div>
               </div>
             </div>
-            <ul className="divide-y divide-border-light">
-              {recommendedNext.map((rec) => (
-                <li
-                  key={rec.topicId}
-                  className="flex items-center justify-between gap-4 px-6 py-4 hover:bg-bg-main/50 transition-colors"
-                >
-                  <div className="min-w-0 space-y-0.5">
-                    <p className="text-sm font-bold text-text-heading truncate">{rec.title}</p>
-                    <p className="text-xs text-text-muted font-body">{rec.reason}</p>
-                  </div>
-                  <div className="shrink-0 flex items-center gap-3">
-                    <span className="px-3 py-1 bg-primary/10 border border-primary/20 rounded-full text-xs font-black text-primary font-mono tabular-nums">
-                      {rec.masteryScore}% score
-                    </span>
-                  </div>
-                </li>
-              ))}
-            </ul>
+
+            {sectionsExpanded.recommended && (
+              <ul className="divide-y divide-border-light animate-fade-in">
+                {recommendedNext.map((rec) => (
+                  <li
+                    key={rec.topicId}
+                    className="flex items-center justify-between gap-4 px-6 py-4 hover:bg-bg-main/50 transition-colors"
+                  >
+                    <div className="min-w-0 space-y-0.5">
+                      <p className="text-sm font-bold text-text-heading truncate">{rec.title}</p>
+                      <p className="text-xs text-text-muted font-body">{rec.reason}</p>
+                    </div>
+                    <div className="shrink-0 flex items-center gap-3">
+                      <span className="px-3 py-1 bg-primary/10 border border-primary/20 rounded-full text-xs font-black text-primary font-mono tabular-nums">
+                        {rec.masteryScore}% score
+                      </span>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         )}
 
         {/* Study Plan */}
         {studyPlanItems && studyPlanItems.length > 0 && (
-          <div id="lp-study-plan" className="scroll-mt-24 bg-bg-card border border-border-light rounded-3xl overflow-hidden shadow-xs">
-            <div className="flex items-center justify-between px-6 py-4 bg-bg-main/60 border-b border-border-light">
+          <div id="lp-study-plan" className="scroll-mt-24 bg-bg-card border border-border-light rounded-3xl overflow-hidden shadow-xs transition-all duration-200">
+            <div
+              role="button"
+              tabIndex={0}
+              onClick={() => toggleSection('studyPlan')}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  toggleSection('studyPlan');
+                }
+              }}
+              className={`flex items-center justify-between px-6 py-4 bg-bg-main/60 cursor-pointer select-none transition-colors hover:bg-bg-main/80 ${sectionsExpanded.studyPlan ? 'border-b border-border-light' : ''}`}
+              aria-expanded={sectionsExpanded.studyPlan}
+            >
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center shadow-2xs">
                   <ListChecks className="w-4.5 h-4.5 text-emerald-600 dark:text-emerald-400" strokeWidth={2.5} />
@@ -473,262 +539,72 @@ const LearningPathPage = () => {
                 </div>
               </div>
 
-              <span className="text-xs font-mono font-extrabold text-emerald-600 dark:text-emerald-400 px-3 py-1 bg-emerald-500/10 rounded-full border border-emerald-500/20">
-                {studyPlanItems.filter(i => i.isMastered).length}/{studyPlanItems.length} Done
-              </span>
-            </div>
-
-            <ul className="divide-y divide-border-light">
-              {studyPlanItems.map((item, index) => {
-                const isHighlighted = highlightedStudyPlanTopicId && (
-                  String(highlightedStudyPlanTopicId) === String(item.topicId) ||
-                  (item.title && String(highlightedStudyPlanTopicId).toLowerCase().trim() === item.title.toLowerCase().trim())
-                );
-                const topicObj = learningPath?.topics?.find((t) =>
-                  (t.topicId && item.topicId && String(t.topicId) === String(item.topicId)) ||
-                  (t.title && item.title && t.title.toLowerCase().trim() === item.title.toLowerCase().trim())
-                );
-                const isMastered = item.knowledgeLevel === 'proficient' || topicObj?.status === 'mastered' || topicObj?.knowledgeLevel === 'proficient' || (topicObj?.masteryScore >= 80);
-                const levelStyle = getKnowledgeLevelStyle(item.knowledgeLevel);
-                const meta = ACTION_META[item.action];
-                const ActionIcon = meta?.icon;
-                const isLoadingThis = actionLoadingKey === item.topicId;
-                const link = getActionLink(item.action, documentId);
-
-                return (
-                  <li
-                    key={`${item.topicId}-${index}`}
-                    id={`study-plan-item-${item.topicId}`}
-                    className={`flex items-center justify-between gap-4 px-6 py-4 transition-all duration-300 ${isHighlighted
-                      ? 'bg-primary-light/95 border-l-4 border-primary ring-4 ring-primary/40 shadow-lg animate-pulse'
-                      : isMastered
-                        ? 'bg-emerald-500/5 border-l-4 border-emerald-500'
-                        : 'hover:bg-bg-main/50'
-                      }`}
-                  >
-                    <div className="flex items-start gap-3 min-w-0">
-                      <span className={`mt-0.5 shrink-0 w-7 h-7 rounded-xl text-xs font-black font-mono flex items-center justify-center shadow-2xs ${isMastered
-                        ? 'bg-emerald-500 text-white'
-                        : 'bg-bg-main border border-border-medium text-text-heading'
-                        }`}>
-                        {index + 1}
-                      </span>
-                      <div className="min-w-0 space-y-1">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <p className="text-sm font-bold text-text-heading">{item.title}</p>
-                          {isMastered ? (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-                              <CheckCircle2 className="w-3 h-3 text-emerald-500" />
-                              <span>Mastered</span>
-                            </span>
-                          ) : (
-                            levelStyle && (
-                              <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${levelStyle.bg} ${levelStyle.text}`}>
-                                {levelStyle.label}
-                              </span>
-                            )
-                          )}
-                        </div>
-                        <p className="text-xs text-text-muted leading-relaxed font-body">{item.reason}</p>
-                      </div>
-                    </div>
-
-                    {link ? (
-                      <Link
-                        to={link}
-                        className="shrink-0 inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border border-border-medium bg-bg-card hover:border-primary/50 text-xs font-bold text-text-heading hover:text-primary transition-all duration-150 shadow-2xs cursor-pointer"
-                      >
-                        {ActionIcon && <ActionIcon className="w-3.5 h-3.5 text-primary" strokeWidth={2} />}
-                        <span>{meta.label}</span>
-                      </Link>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => handleInlineAction(item, item.topicId, item.title)}
-                        disabled={isLoadingThis}
-                        className="shrink-0 inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border border-border-medium bg-bg-card hover:border-primary/50 text-xs font-bold text-text-heading hover:text-primary transition-all duration-150 shadow-2xs disabled:opacity-50 cursor-pointer"
-                      >
-                        {isLoadingThis
-                          ? <Spinner size="xs" tone="emerald" inline />
-                          : ActionIcon && <ActionIcon className="w-3.5 h-3.5 text-primary" strokeWidth={2} />}
-                        <span>{meta?.label}</span>
-                      </button>
-                    )}
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
-        )}
-
-        {/* Cognitive Skills */}
-        {learningPath.skillProfile && learningPath.skillProfile.length > 0 && (
-          <div id="lp-skills" className="scroll-mt-24 bg-bg-card border border-border-light rounded-3xl overflow-hidden shadow-xs">
-            <div className="flex items-center gap-3 px-6 py-4 bg-bg-main/60 border-b border-border-light">
-              <div className="w-9 h-9 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center shadow-2xs">
-                <BrainCircuit className="w-4.5 h-4.5 text-indigo-600 dark:text-indigo-400" strokeWidth={2.5} />
-              </div>
-              <div>
-                <h3 className="text-base font-bold text-text-heading font-display">Cognitive Skills Breakdown</h3>
-                <p className="text-xs text-text-muted">Accuracy split across cognitive thinking levels</p>
-              </div>
-            </div>
-            <ul className="divide-y divide-border-light">
-              {learningPath.skillProfile.map((skill) => {
-                const skillStyle = getSkillCategoryStyle(skill.skillCategory);
-                const SkillIcon = skillStyle?.icon;
-                const statusStyle = getStatusStyle(skill.status);
-                const StatusIcon = statusStyle.icon;
-
-                return (
-                  <li key={skill.skillCategory} className="px-6 py-4 space-y-2">
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="flex items-center gap-2 min-w-0">
-                        {SkillIcon && <SkillIcon className={`w-4 h-4 shrink-0 ${skillStyle.text}`} strokeWidth={2} />}
-                        <span className="text-sm font-bold text-text-heading truncate">
-                          {skillStyle?.label || skill.skillCategory}
-                        </span>
-                        <span className={`shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${statusStyle.bg} ${statusStyle.text}`}>
-                          <StatusIcon className="w-3 h-3" strokeWidth={2.5} />
-                          {statusStyle.label}
-                        </span>
-                      </div>
-                      <span className="shrink-0 text-xs font-black text-text-heading font-mono tabular-nums">
-                        {skill.accuracy}%
-                      </span>
-                    </div>
-                    <div className="w-full bg-bg-main border border-border-light h-2.5 rounded-full overflow-hidden p-0.5">
-                      <div
-                        className={`h-full rounded-full transition-all duration-500 ${statusStyle.dot}`}
-                        style={{ width: `${skill.accuracy}%` }}
-                      />
-                    </div>
-                    <p className="text-[11px] text-text-muted font-mono">
-                      {skill.correctCount} of {skill.totalAnswered} question{skill.totalAnswered === 1 ? '' : 's'} correct
-                    </p>
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
-        )}
-
-        {/* Weak Areas */}
-        {weakAreasEligibility && !weakAreasEligibility.eligible && (
-          <div id="lp-weak-areas" className="scroll-mt-24 bg-bg-card border border-border-light rounded-3xl p-6 sm:p-8 shadow-xs space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center shadow-2xs">
-                <AlertTriangle className="w-4.5 h-4.5 text-amber-500" strokeWidth={2.5} />
-              </div>
-              <div>
-                <h3 className="text-base font-bold text-text-heading font-display">AI Weak Concept Miner</h3>
-                <p className="text-xs text-text-muted">
-                  Complete at least 3 quizzes to unlock personalized weak area detection.
-                </p>
-              </div>
-            </div>
-            <div className="space-y-3 pt-2">
-              {renderEligibilityRow('Quizzes completed', weakAreasEligibility.completedQuizCount, weakAreasEligibility.requiredQuizCount)}
-            </div>
-          </div>
-        )}
-
-        {weakAreasEligibility?.eligible && (
-          <div id="lp-weak-areas" className="scroll-mt-24 bg-bg-card border border-border-light rounded-3xl overflow-hidden shadow-xs">
-            <div className="flex items-center gap-3 px-6 py-4 bg-amber-500/5 border-b border-border-light">
-              <div className="w-9 h-9 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center shadow-2xs">
-                <AlertTriangle className="w-4.5 h-4.5 text-amber-500" strokeWidth={2.5} />
-              </div>
-              <div>
-                <h3 className="text-base font-bold text-text-heading font-display">Weak Concepts & Remediation</h3>
-                <p className="text-xs text-text-muted">Specific concepts you've struggled with on recent quizzes</p>
-              </div>
-            </div>
-
-            {recentQuizResults.length > 0 && (
-              <div className="border-b border-border-light bg-bg-main/40">
-                <button
-                  type="button"
-                  onClick={() => setQuizResultsExpanded((prev) => !prev)}
-                  className="w-full flex items-center justify-between gap-3 px-6 py-3.5 cursor-pointer"
-                >
-                  <p className="text-xs font-bold text-text-heading flex items-center gap-2">
-                    <span>Based on {recentQuizResults.length} completed quiz attempt{recentQuizResults.length === 1 ? '' : 's'}</span>
-                  </p>
+              <div className="flex items-center gap-3">
+                <span className="text-xs font-mono font-extrabold text-emerald-600 dark:text-emerald-400 px-3 py-1 bg-emerald-500/10 rounded-full border border-emerald-500/20">
+                  {studyPlanItems.filter(i => i.isMastered).length}/{studyPlanItems.length} Done
+                </span>
+                <div className="w-8 h-8 rounded-xl flex items-center justify-center text-text-muted hover:text-text-heading transition-colors">
                   <ChevronDown
-                    className={`w-4 h-4 text-text-muted shrink-0 transition-transform duration-200 ${quizResultsExpanded ? 'rotate-180' : ''}`}
-                    strokeWidth={2}
+                    className={`w-4 h-4 transition-transform duration-200 ${sectionsExpanded.studyPlan ? 'rotate-180' : ''}`}
+                    strokeWidth={2.5}
                   />
-                </button>
-
-                {quizResultsExpanded && (
-                  <ul className="space-y-2 px-6 pb-4">
-                    {recentQuizResults.map((result) => (
-                      <li key={result.quizId}>
-                        <Link
-                          to={`/quizzes/${result.quizId}/results`}
-                          className="flex items-center justify-between gap-4 px-4 py-2.5 rounded-xl border border-border-light bg-bg-card hover:border-primary/40 transition-colors"
-                        >
-                          <div className="min-w-0 space-y-0.5">
-                            <p className="text-xs font-bold text-text-heading truncate">{result.title}</p>
-                            <p className="text-[11px] text-text-muted font-mono">
-                              {new Date(result.completedAt).toLocaleDateString()}
-                            </p>
-                          </div>
-                          <span className="shrink-0 text-xs font-black font-mono text-primary tabular-nums">
-                            {result.score}%
-                          </span>
-                        </Link>
-                      </li>
-                    ))}
-                  </ul>
-                )}
+                </div>
               </div>
-            )}
+            </div>
 
-            {(!learningPath.weakConcepts || learningPath.weakConcepts.length === 0) ? (
-              <div className="px-6 py-8 text-center text-xs text-text-muted font-semibold">
-                No weak concepts detected — excellent work on your quizzes so far!
-              </div>
-            ) : (
-              <ul className="divide-y divide-border-light">
-                {learningPath.weakConcepts.map((item, index) => {
+            {sectionsExpanded.studyPlan && (
+              <ul className="divide-y divide-border-light animate-fade-in">
+                {studyPlanItems.map((item, index) => {
+                  const isHighlighted = highlightedStudyPlanTopicId && (
+                    String(highlightedStudyPlanTopicId) === String(item.topicId) ||
+                    (item.title && String(highlightedStudyPlanTopicId).toLowerCase().trim() === item.title.toLowerCase().trim())
+                  );
+                  const topicObj = learningPath?.topics?.find((t) =>
+                    (t.topicId && item.topicId && String(t.topicId) === String(item.topicId)) ||
+                    (t.title && item.title && t.title.toLowerCase().trim() === item.title.toLowerCase().trim())
+                  );
+                  const isMastered = item.knowledgeLevel === 'proficient' || topicObj?.status === 'mastered' || topicObj?.knowledgeLevel === 'proficient' || (topicObj?.masteryScore >= 80);
+                  const levelStyle = getKnowledgeLevelStyle(item.knowledgeLevel);
                   const meta = ACTION_META[item.action];
                   const ActionIcon = meta?.icon;
-                  const key = `weak-${index}-${item.concept}`;
-                  const isLoadingThis = actionLoadingKey === key;
+                  const isLoadingThis = actionLoadingKey === item.topicId;
                   const link = getActionLink(item.action, documentId);
-                  const skillStyle = getSkillCategoryStyle(item.skillCategory);
-                  const SkillIcon = skillStyle?.icon;
 
                   return (
                     <li
-                      key={key}
-                      className="flex items-center justify-between gap-4 px-6 py-4 hover:bg-bg-main/50 transition-colors"
+                      key={`${item.topicId}-${index}`}
+                      id={`study-plan-item-${item.topicId}`}
+                      className={`flex items-center justify-between gap-4 px-6 py-4 transition-all duration-300 ${isHighlighted
+                        ? 'bg-primary-light/95 border-l-4 border-primary ring-4 ring-primary/40 shadow-lg animate-pulse'
+                        : isMastered
+                          ? 'bg-emerald-500/5 border-l-4 border-emerald-500'
+                          : 'hover:bg-bg-main/50'
+                        }`}
                     >
                       <div className="flex items-start gap-3 min-w-0">
-                        <AlertTriangle className="mt-0.5 shrink-0 w-4 h-4 text-amber-500" strokeWidth={2.5} />
+                        <span className={`mt-0.5 shrink-0 w-7 h-7 rounded-xl text-xs font-black font-mono flex items-center justify-center shadow-2xs ${isMastered
+                          ? 'bg-emerald-500 text-white'
+                          : 'bg-bg-main border border-border-medium text-text-heading'
+                          }`}>
+                          {index + 1}
+                        </span>
                         <div className="min-w-0 space-y-1">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <p className="text-sm font-bold text-text-heading">{item.concept}</p>
-                            {item.relatedTopicTitle && (
-                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-bg-main border border-border-medium text-text-muted">
-                                {item.relatedTopicTitle}
+                            <p className="text-sm font-bold text-text-heading">{item.title}</p>
+                            {isMastered ? (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                                <CheckCircle2 className="w-3 h-3 text-emerald-500" />
+                                <span>Mastered</span>
                               </span>
-                            )}
-                            {skillStyle && (
-                              <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${skillStyle.bg} ${skillStyle.text}`}>
-                                {SkillIcon && <SkillIcon className="w-3 h-3" strokeWidth={2.5} />}
-                                {skillStyle.label}
-                              </span>
+                            ) : (
+                              levelStyle && (
+                                <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${levelStyle.bg} ${levelStyle.text}`}>
+                                  {levelStyle.label}
+                                </span>
+                              )
                             )}
                           </div>
-                          <p className="text-xs text-text-muted leading-relaxed font-body">{item.description}</p>
-                          {item.missedCount > 0 && (
-                            <p className="text-[10px] text-amber-600 dark:text-amber-400 font-mono">
-                              Missed in {item.missedCount} quiz response{item.missedCount === 1 ? '' : 's'}
-                            </p>
-                          )}
+                          <p className="text-xs text-text-muted leading-relaxed font-body">{item.reason}</p>
                         </div>
                       </div>
 
@@ -743,7 +619,7 @@ const LearningPathPage = () => {
                       ) : (
                         <button
                           type="button"
-                          onClick={() => handleInlineAction(item, key, item.concept)}
+                          onClick={() => handleInlineAction(item, item.topicId, item.title)}
                           disabled={isLoadingThis}
                           className="shrink-0 inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border border-border-medium bg-bg-card hover:border-primary/50 text-xs font-bold text-text-heading hover:text-primary transition-all duration-150 shadow-2xs disabled:opacity-50 cursor-pointer"
                         >
@@ -761,9 +637,311 @@ const LearningPathPage = () => {
           </div>
         )}
 
+        {/* Cognitive Skills */}
+        {learningPath.skillProfile && learningPath.skillProfile.length > 0 && (
+          <div id="lp-skills" className="scroll-mt-24 bg-bg-card border border-border-light rounded-3xl overflow-hidden shadow-xs transition-all duration-200">
+            <div
+              role="button"
+              tabIndex={0}
+              onClick={() => toggleSection('skills')}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  toggleSection('skills');
+                }
+              }}
+              className={`flex items-center justify-between px-6 py-4 bg-bg-main/60 cursor-pointer select-none transition-colors hover:bg-bg-main/80 ${sectionsExpanded.skills ? 'border-b border-border-light' : ''}`}
+              aria-expanded={sectionsExpanded.skills}
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center shadow-2xs">
+                  <BrainCircuit className="w-4.5 h-4.5 text-indigo-600 dark:text-indigo-400" strokeWidth={2.5} />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-text-heading font-display">Cognitive Skills Breakdown</h3>
+                  <p className="text-xs text-text-muted">Accuracy split across cognitive thinking levels</p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <span className="text-xs font-mono font-bold text-text-muted px-3 py-1 bg-bg-card rounded-full border border-border-light">
+                  {learningPath.skillProfile.length} Categories
+                </span>
+                <div className="w-8 h-8 rounded-xl flex items-center justify-center text-text-muted hover:text-text-heading transition-colors">
+                  <ChevronDown
+                    className={`w-4 h-4 transition-transform duration-200 ${sectionsExpanded.skills ? 'rotate-180' : ''}`}
+                    strokeWidth={2.5}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {sectionsExpanded.skills && (
+              <ul className="divide-y divide-border-light animate-fade-in">
+                {learningPath.skillProfile.map((skill) => {
+                  const skillStyle = getSkillCategoryStyle(skill.skillCategory);
+                  const SkillIcon = skillStyle?.icon;
+                  const statusStyle = getStatusStyle(skill.status);
+                  const StatusIcon = statusStyle.icon;
+
+                  return (
+                    <li key={skill.skillCategory} className="px-6 py-4 space-y-2">
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-2 min-w-0">
+                          {SkillIcon && <SkillIcon className={`w-4 h-4 shrink-0 ${skillStyle.text}`} strokeWidth={2} />}
+                          <span className="text-sm font-bold text-text-heading truncate">
+                            {skillStyle?.label || skill.skillCategory}
+                          </span>
+                          <span className={`shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${statusStyle.bg} ${statusStyle.text}`}>
+                            <StatusIcon className="w-3 h-3" strokeWidth={2.5} />
+                            {statusStyle.label}
+                          </span>
+                        </div>
+                        <span className="shrink-0 text-xs font-black text-text-heading font-mono tabular-nums">
+                          {skill.accuracy}%
+                        </span>
+                      </div>
+                      <div className="w-full bg-bg-main border border-border-light h-2.5 rounded-full overflow-hidden p-0.5">
+                        <div
+                          className={`h-full rounded-full transition-all duration-500 ${statusStyle.dot}`}
+                          style={{ width: `${skill.accuracy}%` }}
+                        />
+                      </div>
+                      <p className="text-[11px] text-text-muted font-mono">
+                        {skill.correctCount} of {skill.totalAnswered} question{skill.totalAnswered === 1 ? '' : 's'} correct
+                      </p>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </div>
+        )}
+
+        {/* Weak Areas */}
+        {weakAreasEligibility && !weakAreasEligibility.eligible && (
+          <div id="lp-weak-areas" className="scroll-mt-24 bg-bg-card border border-border-light rounded-3xl overflow-hidden shadow-xs transition-all duration-200">
+            <div
+              role="button"
+              tabIndex={0}
+              onClick={() => toggleSection('weakAreas')}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  toggleSection('weakAreas');
+                }
+              }}
+              className={`flex items-center justify-between px-6 py-4 bg-amber-500/5 cursor-pointer select-none transition-colors hover:bg-amber-500/10 ${sectionsExpanded.weakAreas ? 'border-b border-border-light' : ''}`}
+              aria-expanded={sectionsExpanded.weakAreas}
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center shadow-2xs">
+                  <AlertTriangle className="w-4.5 h-4.5 text-amber-500" strokeWidth={2.5} />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-text-heading font-display">AI Weak Concept Miner</h3>
+                  <p className="text-xs text-text-muted">
+                    Complete at least 3 quizzes to unlock personalized weak area detection.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <span className="text-xs font-mono font-bold text-amber-600 dark:text-amber-400 px-3 py-1 bg-amber-500/10 rounded-full border border-amber-500/20">
+                  {weakAreasEligibility.completedQuizCount}/{weakAreasEligibility.requiredQuizCount} Quizzes
+                </span>
+                <div className="w-8 h-8 rounded-xl flex items-center justify-center text-text-muted hover:text-text-heading transition-colors">
+                  <ChevronDown
+                    className={`w-4 h-4 transition-transform duration-200 ${sectionsExpanded.weakAreas ? 'rotate-180' : ''}`}
+                    strokeWidth={2.5}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {sectionsExpanded.weakAreas && (
+              <div className="p-6 sm:p-8 space-y-4 animate-fade-in">
+                <div className="space-y-3">
+                  {renderEligibilityRow('Quizzes completed', weakAreasEligibility.completedQuizCount, weakAreasEligibility.requiredQuizCount)}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {weakAreasEligibility?.eligible && (
+          <div id="lp-weak-areas" className="scroll-mt-24 bg-bg-card border border-border-light rounded-3xl overflow-hidden shadow-xs transition-all duration-200">
+            <div
+              role="button"
+              tabIndex={0}
+              onClick={() => toggleSection('weakAreas')}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  toggleSection('weakAreas');
+                }
+              }}
+              className={`flex items-center justify-between px-6 py-4 bg-amber-500/5 cursor-pointer select-none transition-colors hover:bg-amber-500/10 ${sectionsExpanded.weakAreas ? 'border-b border-border-light' : ''}`}
+              aria-expanded={sectionsExpanded.weakAreas}
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center shadow-2xs">
+                  <AlertTriangle className="w-4.5 h-4.5 text-amber-500" strokeWidth={2.5} />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-text-heading font-display">Weak Concepts & Remediation</h3>
+                  <p className="text-xs text-text-muted">Specific concepts you've struggled with on recent quizzes</p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <span className="text-xs font-mono font-bold text-amber-600 dark:text-amber-400 px-3 py-1 bg-amber-500/10 rounded-full border border-amber-500/20">
+                  {learningPath.weakConcepts?.length || 0} Detected
+                </span>
+                <div className="w-8 h-8 rounded-xl flex items-center justify-center text-text-muted hover:text-text-heading transition-colors">
+                  <ChevronDown
+                    className={`w-4 h-4 transition-transform duration-200 ${sectionsExpanded.weakAreas ? 'rotate-180' : ''}`}
+                    strokeWidth={2.5}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {sectionsExpanded.weakAreas && (
+              <div className="animate-fade-in">
+                {recentQuizResults.length > 0 && (
+                  <div className="border-b border-border-light bg-bg-main/40">
+                    <button
+                      type="button"
+                      onClick={() => setQuizResultsExpanded((prev) => !prev)}
+                      className="w-full flex items-center justify-between gap-3 px-6 py-3.5 cursor-pointer"
+                    >
+                      <p className="text-xs font-bold text-text-heading flex items-center gap-2">
+                        <span>Based on {recentQuizResults.length} completed quiz attempt{recentQuizResults.length === 1 ? '' : 's'}</span>
+                      </p>
+                      <ChevronDown
+                        className={`w-4 h-4 text-text-muted shrink-0 transition-transform duration-200 ${quizResultsExpanded ? 'rotate-180' : ''}`}
+                        strokeWidth={2}
+                      />
+                    </button>
+
+                    {quizResultsExpanded && (
+                      <ul className="space-y-2 px-6 pb-4">
+                        {recentQuizResults.map((result) => (
+                          <li key={result.quizId}>
+                            <Link
+                              to={`/quizzes/${result.quizId}/results`}
+                              className="flex items-center justify-between gap-4 px-4 py-2.5 rounded-xl border border-border-light bg-bg-card hover:border-primary/40 transition-colors"
+                            >
+                              <div className="min-w-0 space-y-0.5">
+                                <p className="text-xs font-bold text-text-heading truncate">{result.title}</p>
+                                <p className="text-[11px] text-text-muted font-mono">
+                                  {new Date(result.completedAt).toLocaleDateString()}
+                                </p>
+                              </div>
+                              <span className="shrink-0 text-xs font-black font-mono text-primary tabular-nums">
+                                {result.score}%
+                              </span>
+                            </Link>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                )}
+
+                {(!learningPath.weakConcepts || learningPath.weakConcepts.length === 0) ? (
+                  <div className="px-6 py-8 text-center text-xs text-text-muted font-semibold">
+                    No weak concepts detected — excellent work on your quizzes so far!
+                  </div>
+                ) : (
+                  <ul className="divide-y divide-border-light">
+                    {learningPath.weakConcepts.map((item, index) => {
+                      const meta = ACTION_META[item.action];
+                      const ActionIcon = meta?.icon;
+                      const key = `weak-${index}-${item.concept}`;
+                      const isLoadingThis = actionLoadingKey === key;
+                      const link = getActionLink(item.action, documentId);
+                      const skillStyle = getSkillCategoryStyle(item.skillCategory);
+                      const SkillIcon = skillStyle?.icon;
+
+                      return (
+                        <li
+                          key={key}
+                          className="flex items-center justify-between gap-4 px-6 py-4 hover:bg-bg-main/50 transition-colors"
+                        >
+                          <div className="flex items-start gap-3 min-w-0">
+                            <AlertTriangle className="mt-0.5 shrink-0 w-4 h-4 text-amber-500" strokeWidth={2.5} />
+                            <div className="min-w-0 space-y-1">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <p className="text-sm font-bold text-text-heading">{item.concept}</p>
+                                {item.relatedTopicTitle && (
+                                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-bg-main border border-border-medium text-text-muted">
+                                    {item.relatedTopicTitle}
+                                  </span>
+                                )}
+                                {skillStyle && (
+                                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${skillStyle.bg} ${skillStyle.text}`}>
+                                    {SkillIcon && <SkillIcon className="w-3 h-3" strokeWidth={2.5} />}
+                                    {skillStyle.label}
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-xs text-text-muted leading-relaxed font-body">{item.description}</p>
+                              {item.missedCount > 0 && (
+                                <p className="text-[10px] text-amber-600 dark:text-amber-400 font-mono">
+                                  Missed in {item.missedCount} quiz response{item.missedCount === 1 ? '' : 's'}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+
+                          {link ? (
+                            <Link
+                              to={link}
+                              className="shrink-0 inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border border-border-medium bg-bg-card hover:border-primary/50 text-xs font-bold text-text-heading hover:text-primary transition-all duration-150 shadow-2xs cursor-pointer"
+                            >
+                              {ActionIcon && <ActionIcon className="w-3.5 h-3.5 text-primary" strokeWidth={2} />}
+                              <span>{meta.label}</span>
+                            </Link>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => handleInlineAction(item, key, item.concept)}
+                              disabled={isLoadingThis}
+                              className="shrink-0 inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border border-border-medium bg-bg-card hover:border-primary/50 text-xs font-bold text-text-heading hover:text-primary transition-all duration-150 shadow-2xs disabled:opacity-50 cursor-pointer"
+                            >
+                              {isLoadingThis
+                                ? <Spinner size="xs" tone="emerald" inline />
+                                : ActionIcon && <ActionIcon className="w-3.5 h-3.5 text-primary" strokeWidth={2} />}
+                              <span>{meta?.label}</span>
+                            </button>
+                          )}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Topic Roadmap Grid */}
-        <div id="lp-topics" className="scroll-mt-24 space-y-5">
-          <div className="flex items-center justify-between">
+        <div id="lp-topics" className="scroll-mt-24 space-y-4">
+          <div
+            role="button"
+            tabIndex={0}
+            onClick={() => toggleSection('topics')}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                toggleSection('topics');
+              }
+            }}
+            className="flex items-center justify-between p-4 sm:p-5 rounded-3xl bg-bg-card border border-border-light shadow-xs cursor-pointer select-none hover:border-primary/40 transition-colors"
+            aria-expanded={sectionsExpanded.topics}
+          >
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center shadow-2xs">
                 <MapIcon className="w-4.5 h-4.5 text-emerald-600 dark:text-emerald-400" strokeWidth={2.5} />
@@ -773,102 +951,115 @@ const LearningPathPage = () => {
                 <p className="text-xs text-text-muted">Click any topic card to view full mastery details & AI recommendations</p>
               </div>
             </div>
-            <span className="text-xs font-mono font-bold text-text-muted">{topics.length} Topics</span>
+
+            <div className="flex items-center gap-3 shrink-0">
+              <span className="text-xs font-mono font-bold text-text-muted px-3 py-1 bg-bg-main rounded-full border border-border-light">
+                {topics.length} Topics
+              </span>
+              <div className="w-8 h-8 rounded-xl flex items-center justify-center text-text-muted hover:text-text-heading transition-colors">
+                <ChevronDown
+                  className={`w-4 h-4 transition-transform duration-200 ${sectionsExpanded.topics ? 'rotate-180' : ''}`}
+                  strokeWidth={2.5}
+                />
+              </div>
+            </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {topics.map((topic) => {
-              const style = getStatusStyle(topic.status);
-              const StatusIcon = style.icon;
-              const levelStyle = getKnowledgeLevelStyle(topic.knowledgeLevel);
-              const LevelIcon = levelStyle?.icon;
+          {sectionsExpanded.topics && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 animate-fade-in">
+              {topics.map((topic) => {
+                const style = getStatusStyle(topic.status);
+                const StatusIcon = style.icon;
+                const levelStyle = getKnowledgeLevelStyle(topic.knowledgeLevel);
+                const LevelIcon = levelStyle?.icon;
 
-              const isMastered = topic.status === 'mastered' || topic.knowledgeLevel === 'proficient' || topic.masteryScore >= 80;
+                const isMastered = topic.status === 'mastered' || topic.knowledgeLevel === 'proficient' || topic.masteryScore >= 80;
 
-              const planIndex = studyPlanItems
-                ? studyPlanItems.findIndex((sp) =>
-                  (sp.topicId && topic.topicId && String(sp.topicId) === String(topic.topicId)) ||
-                  (sp.title && topic.title && sp.title.toLowerCase().trim() === topic.title.toLowerCase().trim())
-                )
-                : -1;
-              const planItem = planIndex !== -1 ? studyPlanItems[planIndex] : null;
+                const planIndex = studyPlanItems
+                  ? studyPlanItems.findIndex((sp) =>
+                    (sp.topicId && topic.topicId && String(sp.topicId) === String(topic.topicId)) ||
+                    (sp.title && topic.title && sp.title.toLowerCase().trim() === topic.title.toLowerCase().trim())
+                  )
+                  : -1;
+                const planItem = planIndex !== -1 ? studyPlanItems[planIndex] : null;
 
-              return (
-                <div
-                  key={topic.topicId}
-                  onClick={() => !isMastered && handleTopicCardClick(topic)}
-                  className={`bg-bg-card border ${isMastered
-                    ? 'border-emerald-500/30 cursor-default'
-                    : 'border-border-light hover:border-primary/50 cursor-pointer shadow-2xs hover:shadow-md'
-                    } rounded-3xl p-5 flex flex-col justify-between space-y-4 transition-all duration-300 group`}
-                >
-                  <div className="space-y-3">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="space-y-1 min-w-0 flex-1">
-                        <h4 className={`text-sm font-bold text-text-heading ${isMastered ? '' : 'group-hover:text-primary'} transition-colors leading-snug line-clamp-2`}>
-                          {topic.title}
-                        </h4>
-                        {planItem && (
-                          <span className={`inline-flex items-center gap-1 text-[10px] font-extrabold px-2 py-0.5 rounded-full border ${isMastered
-                            ? 'text-emerald-700 bg-emerald-500/10 border-emerald-500/20 dark:text-emerald-300'
-                            : 'text-primary bg-primary-light border-primary/30'
-                            }`}>
-                            <Target className="w-3 h-3 shrink-0" />
-                            <span>Study Plan #{planIndex + 1}</span>
-                          </span>
-                        )}
-                      </div>
-                      <span
-                        className={`shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-extrabold ${style.bg} ${style.text}`}
-                      >
-                        <StatusIcon className="w-3 h-3" strokeWidth={2.5} />
-                        {style.label}
-                      </span>
-                    </div>
-
-                    {levelStyle && (
-                      <span className={`w-fit inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${levelStyle.bg} ${levelStyle.text}`}>
-                        {LevelIcon && <LevelIcon className="w-3 h-3" strokeWidth={2.5} />}
-                        {levelStyle.label}
-                      </span>
-                    )}
-
-                    {/* Mastery score bar */}
-                    <div className="space-y-1.5 pt-1">
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="text-text-muted font-semibold">Mastery</span>
-                        <span className="font-mono font-bold text-text-heading tabular-nums">
-                          {topic.masteryScore}%
+                return (
+                  <div
+                    key={topic.topicId}
+                    onClick={() => !isMastered && handleTopicCardClick(topic)}
+                    className={`bg-bg-card border ${isMastered
+                      ? 'border-emerald-500/30 cursor-default'
+                      : 'border-border-light hover:border-primary/50 cursor-pointer shadow-2xs hover:shadow-md'
+                      } rounded-3xl p-5 flex flex-col justify-between space-y-4 transition-all duration-300 group`}
+                  >
+                    <div className="space-y-3">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="space-y-1 min-w-0 flex-1">
+                          <h4 className={`text-sm font-bold text-text-heading ${isMastered ? '' : 'group-hover:text-primary'} transition-colors leading-snug line-clamp-2`}>
+                            {topic.title}
+                          </h4>
+                          {planItem && (
+                            <span className={`inline-flex items-center gap-1 text-[10px] font-extrabold px-2 py-0.5 rounded-full border ${isMastered
+                              ? 'text-emerald-700 bg-emerald-500/10 border-emerald-500/20 dark:text-emerald-300'
+                              : 'text-primary bg-primary-light border-primary/30'
+                              }`}>
+                              <Target className="w-3 h-3 shrink-0" />
+                              <span>Study Plan #{planIndex + 1}</span>
+                            </span>
+                          )}
+                        </div>
+                        <span
+                          className={`shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-extrabold ${style.bg} ${style.text}`}
+                        >
+                          <StatusIcon className="w-3 h-3" strokeWidth={2.5} />
+                          {style.label}
                         </span>
                       </div>
-                      <div className="w-full bg-bg-main border border-border-light h-2 rounded-full overflow-hidden p-0.5">
-                        <div
-                          className={`h-full rounded-full transition-all duration-300 ${style.dot}`}
-                          style={{ width: `${topic.masteryScore}%` }}
-                        />
+
+                      {levelStyle && (
+                        <span className={`w-fit inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${levelStyle.bg} ${levelStyle.text}`}>
+                          {LevelIcon && <LevelIcon className="w-3 h-3" strokeWidth={2.5} />}
+                          {levelStyle.label}
+                        </span>
+                      )}
+
+                      {/* Mastery score bar */}
+                      <div className="space-y-1.5 pt-1">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-text-muted font-semibold">Mastery</span>
+                          <span className="font-mono font-bold text-text-heading tabular-nums">
+                            {topic.masteryScore}%
+                          </span>
+                        </div>
+                        <div className="w-full bg-bg-main border border-border-light h-2 rounded-full overflow-hidden p-0.5">
+                          <div
+                            className={`h-full rounded-full transition-all duration-300 ${style.dot}`}
+                            style={{ width: `${topic.masteryScore}%` }}
+                          />
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  {/* Footer status link */}
-                  <div className="flex items-center justify-between text-xs text-text-muted pt-3 border-t border-border-light/80">
-                    <span className="capitalize text-[11px] font-mono">{topic.difficulty} difficulty</span>
-                    {isMastered ? (
-                      <span className="inline-flex items-center gap-1 text-[11px] font-extrabold text-emerald-600 dark:text-emerald-400">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
-                        <span>Mastered</span>
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1 text-xs font-bold text-primary group-hover:underline">
-                        <span>View in Plan</span>
-                        <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
-                      </span>
-                    )}
+                    {/* Footer status link */}
+                    <div className="flex items-center justify-between text-xs text-text-muted pt-3 border-t border-border-light/80">
+                      <span className="capitalize text-[11px] font-mono">{topic.difficulty} difficulty</span>
+                      {isMastered ? (
+                        <span className="inline-flex items-center gap-1 text-[11px] font-extrabold text-emerald-600 dark:text-emerald-400">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                          <span>Mastered</span>
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 text-xs font-bold text-primary group-hover:underline">
+                          <span>View in Plan</span>
+                          <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+                        </span>
+                      )}
+                    </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
     );
@@ -928,6 +1119,35 @@ const LearningPathPage = () => {
                     >
                       <RefreshCw className={`w-4 h-4 text-primary shrink-0 ${refreshing ? 'animate-spin' : ''}`} strokeWidth={2} />
                       <span>{refreshing ? 'Refreshing Mastery...' : 'Refresh Mastery'}</span>
+                    </button>
+                    <div className="my-1 border-t border-border-light" />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMoreMenuOpen(false);
+                        const allExpanded = Object.values(sectionsExpanded).every(Boolean);
+                        const newState = !allExpanded;
+                        setSectionsExpanded({
+                          recommended: newState,
+                          studyPlan: newState,
+                          skills: newState,
+                          weakAreas: newState,
+                          topics: newState,
+                        });
+                      }}
+                      className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-left text-xs font-semibold text-text-heading hover:bg-bg-main transition-colors cursor-pointer"
+                    >
+                      {Object.values(sectionsExpanded).every(Boolean) ? (
+                        <>
+                          <ChevronUp className="w-4 h-4 text-primary shrink-0" strokeWidth={2} />
+                          <span>Collapse All Sections</span>
+                        </>
+                      ) : (
+                        <>
+                          <ChevronDown className="w-4 h-4 text-primary shrink-0" strokeWidth={2} />
+                          <span>Expand All Sections</span>
+                        </>
+                      )}
                     </button>
                   </div>
                 )}
@@ -1115,6 +1335,7 @@ const LearningPathPage = () => {
                         type="button"
                         onClick={() => {
                           setSelectedTopic(null);
+                          setSectionsExpanded((prev) => ({ ...prev, studyPlan: true }));
                           scrollToSection('lp-study-plan');
                         }}
                         className="text-xs font-bold text-primary hover:underline cursor-pointer flex items-center gap-1"
