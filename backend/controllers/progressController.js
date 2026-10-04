@@ -6,7 +6,13 @@ import LearningPath from '../models/LearningPath.js';
 const ACTIVITY_WINDOW_DAYS = 7;
 const FOCUS_AREA_LIMIT = 5;
 
-const dayKey = (date) => new Date(date).toISOString().slice(0, 10);
+const dayKey = (date) => {
+    const d = new Date(date);
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+};
 
 // @desc    Get user learning statistics
 // @route   GET /api/progress/dashboard
