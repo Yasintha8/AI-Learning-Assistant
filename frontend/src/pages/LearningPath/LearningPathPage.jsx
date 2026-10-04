@@ -389,7 +389,7 @@ const LearningPathPage = () => {
   const renderContent = () => {
     if (loading) {
       return (
-        <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4 bg-bg-card border border-border-light rounded-3xl p-8 shadow-xs">
+        <div className="flex flex-col items-center justify-center min-h-100 space-y-4 bg-bg-card border border-border-light rounded-3xl p-8 shadow-xs">
           <Spinner size="lg" tone="emerald" />
           <p className="text-xs font-semibold text-text-muted">Loading learning path details...</p>
         </div>
@@ -407,7 +407,7 @@ const LearningPathPage = () => {
       );
     }
 
-    const { topics, recommendedNext, studyPlan } = learningPath;
+    const { topics, recommendedNext } = learningPath;
 
     const overallProgress = topics.length > 0
       ? Math.round(topics.reduce((sum, topic) => sum + topic.masteryScore, 0) / topics.length)
@@ -422,7 +422,7 @@ const LearningPathPage = () => {
           <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/5 rounded-full blur-3xl pointer-events-none" />
 
           <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-            <div className="space-y-2 shrink-0 min-w-[200px]">
+            <div className="space-y-2 shrink-0 min-w-50">
               <p className="text-xs font-bold text-text-muted uppercase tracking-wider flex items-center gap-1.5">
                 <Gauge className="w-3.5 h-3.5 text-primary" />
                 <span>Overall Mastery</span>
@@ -1233,7 +1233,7 @@ const LearningPathPage = () => {
             onClick={() => setOutlineOpen((prev) => !prev)}
             aria-label="Jump to section"
             aria-expanded={outlineOpen}
-            className="flex items-center gap-2.5 px-4.5 py-3 bg-gradient-to-r from-primary via-indigo-600 to-emerald-600 text-white shadow-xl shadow-primary/25 hover:shadow-2xl hover:shadow-primary/35 rounded-full text-xs font-extrabold tracking-wide transition-all duration-300 cursor-pointer group hover:scale-105 ring-2 ring-primary/20"
+            className="flex items-center gap-2.5 px-4.5 py-3 bg-linear-to-r from-primary via-indigo-600 to-emerald-600 text-white shadow-xl shadow-primary/25 hover:shadow-2xl hover:shadow-primary/35 rounded-full text-xs font-extrabold tracking-wide transition-all duration-300 cursor-pointer group hover:scale-105 ring-2 ring-primary/20"
           >
             <Compass className="w-4.5 h-4.5 text-white group-hover:rotate-45 transition-transform duration-300" strokeWidth={2.5} />
             <span>Jump to Section</span>
@@ -1312,11 +1312,11 @@ const LearningPathPage = () => {
 
               {/* Study Plan Alignment Section in Modal */}
               {(() => {
-                const planIndex = studyPlan?.findIndex((sp) =>
-                  (sp.topicId && String(sp.topicId) === String(selectedTopic.topicId)) ||
-                  (sp.title && selectedTopic.title && sp.title.toLowerCase() === selectedTopic.title.toLowerCase())
+                const planIndex = studyPlanItems?.findIndex((sp) =>
+                  (sp.topicId && selectedTopic.topicId && String(sp.topicId) === String(selectedTopic.topicId)) ||
+                  (sp.title && selectedTopic.title && sp.title.toLowerCase().trim() === selectedTopic.title.toLowerCase().trim())
                 );
-                const planItem = (planIndex !== undefined && planIndex !== -1) ? studyPlan[planIndex] : null;
+                const planItem = (planIndex !== undefined && planIndex !== -1) ? studyPlanItems[planIndex] : null;
 
                 if (!planItem) return null;
                 const meta = ACTION_META[planItem.action];
