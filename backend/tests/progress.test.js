@@ -33,6 +33,14 @@ vi.mock('../models/LearningPath.js', () => ({
     }
 }));
 
+vi.mock('../models/ChatHistory.js', () => ({
+    default: {
+        find: vi.fn().mockReturnValue({
+            select: vi.fn().mockResolvedValue([])
+        })
+    }
+}));
+
 describe('Progress & Analytics Feature - Controller Unit Tests (progressController.js)', () => {
     let req, res, next;
 
@@ -263,6 +271,63 @@ describe('Progress & Analytics Feature - Controller Unit Tests (progressControll
         // Today and Yesterday had activity -> streak is 2 days
         expect(responseData.overview.studyStreak).toBe(2);
         expect(responseData.weeklyActivity).toHaveLength(7);
+    });
+
+    it('should count quiz generation and learning path checking toward daily activity', async () => {
+        const today = new Date();
+
+        Document.countDocuments.mockResolvedValue(1);
+        Flashcard.countDocuments.mockResolvedValue(0);
+        Flashcard.find.mockResolvedValue([]);
+        Quiz.countDocuments.mockResolvedValue(2);
+
+        Document.find.mockImplementation(() => ({
+            sort: vi.fn().mockReturnValue({
+                limit: vi.fn().mockReturnValue({
+                    select: vi.fn().mockResolvedValue([])
+                })
+            }),
+            select: vi.fn().mockResolvedValue([])
+        }));
+
+        Quiz.find.mockImplementation((query) => {
+            if (query && query.completedAt && query.completedAt.$gte) {
+                return { select: vi.fn().mockResolvedValue([]) }; // No completed quizzes
+            }
+            if (query && query.createdAt && query.createdAt.$gte) {
+                return { select: vi.fn().mockResolvedValue([{ createdAt: today }]) }; // 1 generated quiz today!
+            }
+            if (query && query.completedAt) return Promise.resolve([]);
+            return {
+                sort: vi.fn().mockReturnValue({
+                    limit: vi.fn().mockReturnValue({
+                        populate: vi.fn().mockReturnValue({
+                            select: vi.fn().mockResolvedValue([])
+                        })
+                    })
+                })
+            };
+        });
+
+        // 1 learning path checked today!
+        LearningPath.find.mockReturnValue({
+            populate: vi.fn().mockResolvedValue([
+                {
+                    topics: [{ topicId: 'intro', masteryScore: 80 }],
+                    lastAccessed: today,
+                    createdAt: today
+                }
+            ])
+        });
+
+        await getDashboard(req, res, next);
+
+        const responseData = res.json.mock.calls[0][0].data;
+        const todayEntry = responseData.weeklyActivity[responseData.weeklyActivity.length - 1];
+
+        // Should count both quiz generation and learning path actions
+        expect(todayEntry.count).toBeGreaterThanOrEqual(2);
+        expect(responseData.overview.studyStreak).toBeGreaterThanOrEqual(1);
     });
 
     it('should compute overall mastery and prioritize top 5 focus areas from learning paths', async () => {

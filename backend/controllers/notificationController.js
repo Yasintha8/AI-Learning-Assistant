@@ -1,6 +1,7 @@
 import Document from '../models/Document.js';
 import Quiz from '../models/Quiz.js';
 import Flashcard from '../models/Flashcard.js';
+import LearningPath from '../models/LearningPath.js';
 
 const CARDS_DUE_STALE_DAYS = 3;
 const MAX_QUIZ_ITEMS = 5;
@@ -42,15 +43,17 @@ export const getNotifications = async (req, res, next) => {
             return reviewedAt >= from && (!to || reviewedAt < to);
         });
 
-        const [documentToday, quizToday, documentYesterday, quizYesterday] = await Promise.all([
+        const [documentToday, quizToday, learningPathToday, documentYesterday, quizYesterday, learningPathYesterday] = await Promise.all([
             Document.exists({ userId, lastAccessed: { $gte: startOfToday } }),
-            Quiz.exists({ userId, completedAt: { $gte: startOfToday } }),
+            Quiz.exists({ userId, $or: [{ completedAt: { $gte: startOfToday } }, { createdAt: { $gte: startOfToday } }] }),
+            LearningPath.exists({ userId, $or: [{ lastAccessed: { $gte: startOfToday } }, { createdAt: { $gte: startOfToday } }, { updatedAt: { $gte: startOfToday } }] }),
             Document.exists({ userId, lastAccessed: { $gte: startOfYesterday, $lt: startOfToday } }),
-            Quiz.exists({ userId, completedAt: { $gte: startOfYesterday, $lt: startOfToday } }),
+            Quiz.exists({ userId, $or: [{ completedAt: { $gte: startOfYesterday, $lt: startOfToday } }, { createdAt: { $gte: startOfYesterday, $lt: startOfToday } }] }),
+            LearningPath.exists({ userId, $or: [{ lastAccessed: { $gte: startOfYesterday, $lt: startOfToday } }, { createdAt: { $gte: startOfYesterday, $lt: startOfToday } }, { updatedAt: { $gte: startOfYesterday, $lt: startOfToday } }] }),
         ]);
 
-        const activeToday = !!documentToday || !!quizToday || hasCardActivity(startOfToday);
-        const activeYesterday = !!documentYesterday || !!quizYesterday || hasCardActivity(startOfYesterday, startOfToday);
+        const activeToday = !!documentToday || !!quizToday || !!learningPathToday || hasCardActivity(startOfToday);
+        const activeYesterday = !!documentYesterday || !!quizYesterday || !!learningPathYesterday || hasCardActivity(startOfYesterday, startOfToday);
 
         const notifications = [];
 

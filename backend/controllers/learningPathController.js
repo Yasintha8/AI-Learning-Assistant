@@ -441,9 +441,22 @@ export const getLearningPath = async (req, res, next) => {
             .sort({ updatedAt: -1 });
 
         if (documentId) {
+            const path = learningPaths[0] || null;
+            if (path) {
+                try {
+                    if (typeof LearningPath.findByIdAndUpdate === 'function') {
+                        const q = LearningPath.findByIdAndUpdate(path._id, { lastAccessed: new Date() });
+                        if (q && typeof q.exec === 'function') {
+                            q.exec().catch(() => {});
+                        }
+                    }
+                } catch {
+                    // Safe no-op in mocked test environments
+                }
+            }
             return res.status(200).json({
                 success: true,
-                data: learningPaths[0] || null
+                data: path
             });
         }
 

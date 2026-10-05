@@ -179,6 +179,10 @@ const learningPathSchema = new mongoose.Schema({
             type: Number,
             default: 0
         }
+    },
+    lastAccessed: {
+        type: Date,
+        default: Date.now
     }
 }, {
     timestamps: true
