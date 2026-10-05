@@ -3,7 +3,7 @@ import { useAuth } from "../../context/AuthContext";
 import { useNavigate } from 'react-router-dom';
 import { BASE_URL } from '../../utils/apiPaths';
 import { getAvatarUrl } from '../../utils/avatarUtils';
-import { Bell, Menu, Search, LogOut, Sparkles, Sun, Moon, FileText, Layers, HelpCircle, Loader2, X, BrainCircuit, PanelLeft, PanelLeftClose, Compass, LayoutDashboard } from 'lucide-react';
+import { Bell, Menu, Search, LogOut, Sparkles, Sun, Moon, FileText, Layers, HelpCircle, Loader2, X, BrainCircuit, PanelLeft, PanelLeftClose, Compass, LayoutDashboard, Keyboard } from 'lucide-react';
 import { useTheme } from "../../context/ThemeContext";
 import searchService from '../../services/searchService';
 import notificationService from '../../services/notificationService';
@@ -17,7 +17,7 @@ const NOTIFICATION_ICONS = {
     flashcards_due: { icon: Layers, className: 'text-violet-500 bg-violet-50 dark:bg-violet-500/10' },
 };
 
-const Header = ({ toggleSidebar, isCollapsed, toggleCollapse }) => {
+const Header = ({ toggleSidebar, isCollapsed, toggleCollapse, onOpenShortcuts }) => {
     const { user, logout } = useAuth();
     const { theme, toggleTheme } = useTheme();
     const navigate = useNavigate();
@@ -351,8 +351,19 @@ const Header = ({ toggleSidebar, isCollapsed, toggleCollapse }) => {
                 </div>
             </div>
 
-            {/* Right Section: Theme Toggle, Notifications & Circular Profile Avatar */}
+            {/* Right Section: Shortcuts, Theme Toggle, Notifications & Circular Profile Avatar */}
             <div className="flex items-center gap-3">
+                {/* Keyboard Shortcuts Trigger Button */}
+                <button
+                    type="button"
+                    onClick={onOpenShortcuts}
+                    className="p-2.5 rounded-xl text-text-muted hover:text-text-heading hover:bg-border-light transition-all duration-200 cursor-pointer hidden sm:flex items-center justify-center"
+                    aria-label="Keyboard Shortcuts Guide (Press ?)"
+                    title="Keyboard shortcuts guide (Press ?)"
+                >
+                    <Keyboard className="w-5 h-5" />
+                </button>
+
                 {/* Theme Toggle Button */}
                 <button
                     onClick={toggleTheme}

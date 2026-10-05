@@ -9,6 +9,13 @@ import {
   BookOpen,
   Check
 } from 'lucide-react';
+import Select from '../common/Select';
+
+const STATUS_OPTIONS = [
+  { value: 'not-started', label: 'Not Started' },
+  { value: 'in-progress', label: 'In Progress' },
+  { value: 'completed', label: 'Completed' },
+];
 
 const CareerRoadmap = ({ careerPath, onToggleTopic, onUpdateMilestoneStatus }) => {
   if (!careerPath) return null;
@@ -127,7 +134,7 @@ const CareerRoadmap = ({ careerPath, onToggleTopic, onUpdateMilestoneStatus }) =
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div className="space-y-1 flex-1 min-w-50">
                       <div className="flex items-center gap-2.5 mb-1">
-                        <select
+                        <Select
                           value={milestone.status}
                           onChange={(e) =>
                             onUpdateMilestoneStatus(
@@ -137,20 +144,14 @@ const CareerRoadmap = ({ careerPath, onToggleTopic, onUpdateMilestoneStatus }) =
                               e.target.value
                             )
                           }
-                          className={`px-3 py-1 rounded-full border text-[10px] font-extrabold uppercase tracking-wider cursor-pointer focus:outline-none transition-all ${getStatusBadge(
+                          options={STATUS_OPTIONS}
+                          size="sm"
+                          variant="badge"
+                          buttonClassName={`px-2.5 h-6 rounded-full border text-[10px] font-extrabold uppercase tracking-wider ${getStatusBadge(
                             milestone.status
                           )}`}
-                        >
-                          <option value="not-started" className="bg-bg-card text-text-heading capitalize">
-                            Not Started
-                          </option>
-                          <option value="in-progress" className="bg-bg-card text-text-heading capitalize">
-                            In Progress
-                          </option>
-                          <option value="completed" className="bg-bg-card text-text-heading capitalize">
-                            Completed
-                          </option>
-                        </select>
+                          ariaLabel="Update milestone status"
+                        />
 
                         <span className="text-xs font-semibold text-text-muted flex items-center gap-1 font-mono">
                           <Clock className="w-3.5 h-3.5 text-amber-500" />

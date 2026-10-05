@@ -14,7 +14,8 @@ import {
   RotateCcw,
   Award,
   Keyboard,
-  Brain
+  Brain,
+  X
 } from "lucide-react";
 import toast from '../../utils/toast';
 
@@ -24,6 +25,7 @@ import aiService from "../../services/aiService";
 import Spinner from "../../components/common/Spinner";
 import Modal from "../../components/common/Modal";
 import Flashcard from "../../components/flashcards/Flashcard";
+import GlobalShortcutsModal from "../../components/common/GlobalShortcutsModal";
 
 const FlashcardPage = () => {
   const { id: documentId } = useParams();
@@ -43,6 +45,17 @@ const FlashcardPage = () => {
   const [viewMode, setViewMode] = useState('study'); // 'study' | 'grid'
   const [starredOnly, setStarredOnly] = useState(false);
   const [isDeckCompleted, setIsDeckCompleted] = useState(false);
+  const [isCardFlipped, setIsCardFlipped] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+
+  // Automatically reset card flip state to question side and cancel speech whenever the card changes
+  useEffect(() => {
+    setIsCardFlipped(false);
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+      setIsSpeaking(false);
+    }
+  }, [currentCardIndex]);
 
   const fetchDocumentAndFlashcards = async () => {
     setLoading(true);
@@ -99,16 +112,23 @@ const FlashcardPage = () => {
 
   const handleReviewCard = async (cardId, isCorrect) => {
     try {
-      const response = await flashcardService.reviewFlashcard(cardId, currentCardIndex);
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        setIsSpeaking(false);
+      }
+      setIsCardFlipped(false);
+
+      await flashcardService.reviewFlashcard(cardId, currentCardIndex);
       toast.success(
         isCorrect ? "Great job! Card reviewed ✅" : "Card marked for practice 📖",
         { icon: isCorrect ? '🎯' : '💡' }
       );
 
-      // Advance to next card if available, else show deck complete
+      // Advance to next card if available, else loop back to start with celebration banner
       if (currentCardIndex < displayCards.length - 1) {
         setCurrentCardIndex(prev => prev + 1);
       } else {
+        setCurrentCardIndex(0);
         setIsDeckCompleted(true);
       }
     } catch (error) {
@@ -117,20 +137,36 @@ const FlashcardPage = () => {
   };
 
   const handleNextCard = () => {
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+      setIsSpeaking(false);
+    }
+    setIsCardFlipped(false);
     if (displayCards.length === 0) return;
     if (currentCardIndex < displayCards.length - 1) {
       setCurrentCardIndex(prev => prev + 1);
     } else {
-      setIsDeckCompleted(true);
+      // Loop smoothly back to beginning
+      setCurrentCardIndex(0);
     }
   };
 
   const handlePrevCard = () => {
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+      setIsSpeaking(false);
+    }
+    setIsCardFlipped(false);
     if (displayCards.length === 0) return;
     setCurrentCardIndex(prev => (prev - 1 + displayCards.length) % displayCards.length);
   };
 
   const handleShuffleDeck = () => {
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+      setIsSpeaking(false);
+    }
+    setIsCardFlipped(false);
     if (cards.length <= 1) return;
     const shuffled = [...cards].sort(() => Math.random() - 0.5);
     setCards(shuffled);
@@ -167,14 +203,50 @@ const FlashcardPage = () => {
     }
   };
 
+  const handleToggleSpeak = useCallback((e, text) => {
+    e?.stopPropagation();
+    if (!('speechSynthesis' in window)) {
+      toast.error('Text-to-speech is not supported in this browser.');
+      return;
+    }
+
+    if (isSpeaking) {
+      window.speechSynthesis.cancel();
+      setIsSpeaking(false);
+      return;
+    }
+
+    window.speechSynthesis.cancel();
+    const activeCard = displayCards[currentCardIndex];
+    if (!activeCard) return;
+
+    const rawText = text || (isCardFlipped ? activeCard.answer : activeCard.question) || '';
+    const cleanText = rawText.replace(/[*_#`]/g, '');
+
+    const utterance = new SpeechSynthesisUtterance(cleanText);
+    utterance.rate = 0.95;
+    utterance.pitch = 1.0;
+    utterance.onstart = () => setIsSpeaking(true);
+    utterance.onend = () => setIsSpeaking(false);
+    utterance.onerror = () => setIsSpeaking(false);
+    window.speechSynthesis.speak(utterance);
+  }, [displayCards, currentCardIndex, isCardFlipped, isSpeaking]);
+
   // Keyboard Shortcuts Listener
   const handleKeyDown = useCallback(
     (e) => {
       // Ignore if modal is open or user is typing in input
       if (isDeleteModalOpen || isKeyboardModalOpen) return;
-      if (['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName)) return;
+      if (['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName)) return;
 
-      if (e.key === 'ArrowRight') {
+      if (e.key === ' ' || e.code === 'Space') {
+        e.preventDefault();
+        if ('speechSynthesis' in window) {
+          window.speechSynthesis.cancel();
+          setIsSpeaking(false);
+        }
+        setIsCardFlipped(prev => !prev);
+      } else if (e.key === 'ArrowRight') {
         e.preventDefault();
         handleNextCard();
       } else if (e.key === 'ArrowLeft') {
@@ -184,9 +256,18 @@ const FlashcardPage = () => {
         e.preventDefault();
         const activeCard = displayCards[currentCardIndex];
         if (activeCard) handleToggleStar(activeCard._id);
+      } else if (e.key.toLowerCase() === 'a') {
+        e.preventDefault();
+        handleToggleSpeak();
+      } else if (e.key.toLowerCase() === 'r') {
+        e.preventDefault();
+        handleShuffleDeck();
+      } else if (e.key === '?' || (e.shiftKey && e.key === '/')) {
+        e.preventDefault();
+        setIsKeyboardModalOpen(true);
       }
     },
-    [currentCardIndex, displayCards, isDeleteModalOpen, isKeyboardModalOpen]
+    [currentCardIndex, displayCards, isDeleteModalOpen, isKeyboardModalOpen, handleToggleSpeak]
   );
 
   useEffect(() => {
@@ -349,19 +430,19 @@ const FlashcardPage = () => {
                   <div className="flex items-center p-1 bg-border-light rounded-xl text-xs font-semibold">
                     <button
                       onClick={() => setViewMode('study')}
-                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-colors ${viewMode === 'study' ? 'bg-bg-card text-primary shadow-xs' : 'text-text-muted hover:text-text-heading'
+                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${viewMode === 'study' ? 'bg-bg-card text-primary shadow-xs font-bold' : 'text-text-muted hover:text-text-heading'
                         }`}
                     >
                       <Layers className="w-3.5 h-3.5" />
-                      <span>Study Stack</span>
+                      <span>One by One</span>
                     </button>
                     <button
                       onClick={() => setViewMode('grid')}
-                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-colors ${viewMode === 'grid' ? 'bg-bg-card text-primary shadow-xs' : 'text-text-muted hover:text-text-heading'
+                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${viewMode === 'grid' ? 'bg-bg-card text-primary shadow-xs font-bold' : 'text-text-muted hover:text-text-heading'
                         }`}
                     >
                       <Grid className="w-3.5 h-3.5" />
-                      <span>Grid View</span>
+                      <span>All Cards ({displayCards.length})</span>
                     </button>
                   </div>
 
@@ -403,80 +484,57 @@ const FlashcardPage = () => {
 
             {/* Main Flashcard Content View */}
             {viewMode === 'study' ? (
-              isDeckCompleted ? (
-                /* Deck Completion Summary Screen */
-                <div className="bg-bg-card border border-border-light rounded-3xl p-8 sm:p-12 text-center max-w-xl mx-auto space-y-6 shadow-md animate-fade-in">
-                  <div className="w-20 h-20 rounded-full bg-emerald-500/10 text-emerald-500 flex items-center justify-center mx-auto shadow-sm">
-                    <Award className="w-10 h-10" />
-                  </div>
-
-                  <div className="space-y-2">
-                    <h2 className="text-2xl font-extrabold text-text-heading">Deck Completed! 🎉</h2>
-                    <p className="text-text-muted text-sm">
-                      You have gone through all cards in this flashcard deck. Active recall boosts memory retention!
-                    </p>
-                  </div>
-
-                  {/* Stats breakdown */}
-                  <div className="grid grid-cols-3 gap-3 p-4 bg-border-light/40 rounded-2xl border border-border-light text-center">
-                    <div>
-                      <span className="text-2xl font-bold text-text-heading">{displayCards.length}</span>
-                      <p className="text-[11px] font-semibold text-text-muted">Total Cards</p>
+              <div className="space-y-6">
+                {/* Non-blocking Celebration Banner when deck cycle is finished */}
+                {isDeckCompleted && (
+                  <div className="max-w-2xl mx-auto bg-emerald-500/10 border border-emerald-500/20 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-center justify-between gap-4 animate-fade-in shadow-xs">
+                    <div className="flex items-center gap-3.5">
+                      <div className="w-10 h-10 rounded-xl bg-emerald-500 text-white flex items-center justify-center shrink-0 shadow-xs">
+                        <Award className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-bold text-text-heading flex items-center gap-2">
+                          <span>Deck Cycle Completed! 🎉</span>
+                          <span className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full">
+                            Continuous Loop
+                          </span>
+                        </h4>
+                        <p className="text-xs text-text-muted mt-0.5">
+                          You reached the end of the deck. Continue practicing card-by-card or explore all {cards.length} cards together.
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <span className="text-2xl font-bold text-emerald-500">{reviewedCount}</span>
-                      <p className="text-[11px] font-semibold text-text-muted">Reviewed</p>
-                    </div>
-                    <div>
-                      <span className="text-2xl font-bold text-amber-500">{starredCount}</span>
-                      <p className="text-[11px] font-semibold text-text-muted">Starred</p>
-                    </div>
-                  </div>
-
-                  {/* Options */}
-                  <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
-                    <button
-                      onClick={() => {
-                        setCurrentCardIndex(0);
-                        setIsDeckCompleted(false);
-                      }}
-                      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-white text-xs font-bold hover:bg-primary-hover transition-all shadow-md"
-                    >
-                      <RotateCcw className="w-4 h-4" />
-                      <span>Restart Deck</span>
-                    </button>
-                    {starredCount > 0 && (
+                    <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
                       <button
-                        onClick={() => {
-                          setStarredOnly(true);
-                          setCurrentCardIndex(0);
-                          setIsDeckCompleted(false);
-                        }}
-                        className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-amber-400 text-white text-xs font-bold hover:bg-amber-500 transition-all"
+                        onClick={() => setViewMode('grid')}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-bg-card border border-border-medium hover:border-primary text-text-heading hover:text-primary text-xs font-bold transition-all shadow-xs cursor-pointer"
                       >
-                        <Star className="w-4 h-4" fill="currentColor" />
-                        <span>Study Starred Only ({starredCount})</span>
+                        <Grid className="w-3.5 h-3.5" />
+                        <span>All Cards ({displayCards.length})</span>
                       </button>
-                    )}
-                    <Link
-                      to={`/documents/${documentId}`}
-                      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl border border-border-medium bg-bg-card text-text-heading text-xs font-bold hover:bg-border-light transition-all"
-                    >
-                      <ArrowLeft className="w-4 h-4" />
-                      <span>Back to Document</span>
-                    </Link>
+                      <button
+                        onClick={() => setIsDeckCompleted(false)}
+                        className="p-1.5 rounded-lg text-text-muted hover:text-text-heading hover:bg-border-light transition-colors cursor-pointer"
+                        title="Dismiss banner"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
-                </div>
-              ) : (
-                /* 3D Study Stack View */
-                <div className="space-y-6">
-                  {/* Card Container */}
-                  <div className="max-w-2xl mx-auto">
+                )}
+
+                {/* Card Container */}
+                <div className="max-w-2xl mx-auto">
                     {displayCards[currentCardIndex] ? (
                       <Flashcard
+                        key={displayCards[currentCardIndex]._id || currentCardIndex}
                         flashcard={displayCards[currentCardIndex]}
                         onToggleStar={handleToggleStar}
                         onReview={(cardId, isCorrect) => handleReviewCard(cardId, isCorrect)}
+                        isFlipped={isCardFlipped}
+                        onFlip={setIsCardFlipped}
+                        isSpeaking={isSpeaking}
+                        onToggleSpeak={handleToggleSpeak}
                       />
                     ) : (
                       <div className="p-8 text-center text-text-muted">No cards found for this filter.</div>
@@ -542,7 +600,6 @@ const FlashcardPage = () => {
                     </div>
                   </div>
                 </div>
-              )
             ) : (
               /* Multi-Card Grid View Mode */
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -632,42 +689,11 @@ const FlashcardPage = () => {
         </div>
       </Modal>
 
-      {/* Keyboard Shortcuts Guide Modal */}
-      <Modal
+      {/* Global Comprehensive Keyboard Shortcuts Guide Modal */}
+      <GlobalShortcutsModal
         isOpen={isKeyboardModalOpen}
         onClose={() => setIsKeyboardModalOpen(false)}
-        title="Keyboard Shortcuts Guide ⌨️"
-      >
-        <div className="space-y-4 p-1">
-          <div className="space-y-2 text-xs">
-            <div className="flex items-center justify-between p-3 bg-border-light/40 rounded-xl">
-              <span className="font-semibold text-text-heading">Flip Flashcard</span>
-              <kbd className="px-2 py-1 bg-bg-card rounded border border-border-medium font-mono font-bold text-text-heading">Space</kbd>
-            </div>
-            <div className="flex items-center justify-between p-3 bg-border-light/40 rounded-xl">
-              <span className="font-semibold text-text-heading">Next Flashcard</span>
-              <kbd className="px-2 py-1 bg-bg-card rounded border border-border-medium font-mono font-bold text-text-heading">→</kbd>
-            </div>
-            <div className="flex items-center justify-between p-3 bg-border-light/40 rounded-xl">
-              <span className="font-semibold text-text-heading">Previous Flashcard</span>
-              <kbd className="px-2 py-1 bg-bg-card rounded border border-border-medium font-mono font-bold text-text-heading">←</kbd>
-            </div>
-            <div className="flex items-center justify-between p-3 bg-border-light/40 rounded-xl">
-              <span className="font-semibold text-text-heading">Toggle Star Status</span>
-              <kbd className="px-2 py-1 bg-bg-card rounded border border-border-medium font-mono font-bold text-text-heading">S</kbd>
-            </div>
-          </div>
-
-          <div className="flex justify-end pt-2">
-            <button
-              onClick={() => setIsKeyboardModalOpen(false)}
-              className="px-4 py-2 bg-primary text-white rounded-xl text-xs font-bold"
-            >
-              Got it!
-            </button>
-          </div>
-        </div>
-      </Modal>
+      />
 
     </>
   );

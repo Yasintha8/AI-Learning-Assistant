@@ -1,5 +1,27 @@
 import { useState } from 'react';
 import { X, Sparkles, Plus, Briefcase, Target, Clock, Calendar, BookOpen } from 'lucide-react';
+import Select from '../common/Select';
+
+const EDUCATION_LEVEL_OPTIONS = [
+  { value: 'High School / Self-taught', label: 'High School / Self-taught' },
+  { value: 'Undergraduate Student', label: 'Undergraduate Student' },
+  { value: "Postgraduate / Master's", label: "Postgraduate / Master's" },
+  { value: 'Junior Professional (0-2 yrs)', label: 'Junior Professional (0-2 yrs)' },
+  { value: 'Experienced Professional (3+ yrs)', label: 'Experienced Professional (3+ yrs)' },
+];
+
+const LEARNING_STYLE_OPTIONS = [
+  { value: 'hands-on', label: 'Hands-On Projects & Code' },
+  { value: 'structured-theory', label: 'Structured Reading & Documentation' },
+  { value: 'video-based', label: 'Video Tutorials & Guided Labs' },
+  { value: 'fast-track', label: 'Fast-Track / Interview Prep Intensive' },
+];
+
+const PROFICIENCY_OPTIONS = [
+  { value: 'beginner', label: 'Beginner' },
+  { value: 'intermediate', label: 'Intermediate' },
+  { value: 'advanced', label: 'Advanced' },
+];
 
 const CareerIntakeModal = ({ isOpen, onClose, onSubmit, initialProfile, isLoading }) => {
   const [currentRole, setCurrentRole] = useState(initialProfile?.currentRole || '');
@@ -123,35 +145,30 @@ const CareerIntakeModal = ({ isOpen, onClose, onSubmit, initialProfile, isLoadin
                 <BookOpen className="w-3.5 h-3.5 text-sky-500" />
                 <span>Education / Experience Level</span>
               </label>
-              <select
+              <Select
                 id="educationLevel"
                 value={educationLevel}
                 onChange={(e) => setEducationLevel(e.target.value)}
-                className="w-full px-4 py-2.5 bg-bg-main border border-border-light rounded-xl text-xs text-text-heading focus:outline-none focus:border-primary transition-colors"
-              >
-                <option value="High School / Self-taught">High School / Self-taught</option>
-                <option value="Undergraduate Student">Undergraduate Student</option>
-                <option value="Postgraduate / Master's">Postgraduate / Master's</option>
-                <option value="Junior Professional (0-2 yrs)">Junior Professional (0-2 yrs)</option>
-                <option value="Experienced Professional (3+ yrs)">Experienced Professional (3+ yrs)</option>
-              </select>
+                options={EDUCATION_LEVEL_OPTIONS}
+                autoWidth={false}
+                size="md"
+                ariaLabel="Education or experience level"
+              />
             </div>
 
             <div>
               <label htmlFor="preferredLearningStyle" className="block text-xs font-bold text-text-heading uppercase tracking-wider mb-2">
                 Learning Style Preference
               </label>
-              <select
+              <Select
                 id="preferredLearningStyle"
                 value={preferredLearningStyle}
                 onChange={(e) => setPreferredLearningStyle(e.target.value)}
-                className="w-full px-4 py-2.5 bg-bg-main border border-border-light rounded-xl text-xs text-text-heading focus:outline-none focus:border-primary transition-colors"
-              >
-                <option value="hands-on">Hands-On Projects & Code</option>
-                <option value="structured-theory">Structured Reading & Documentation</option>
-                <option value="video-based">Video Tutorials & Guided Labs</option>
-                <option value="fast-track">Fast-Track / Interview Prep Intensive</option>
-              </select>
+                options={LEARNING_STYLE_OPTIONS}
+                autoWidth={false}
+                size="md"
+                ariaLabel="Learning style preference"
+              />
             </div>
           </div>
 
@@ -240,15 +257,14 @@ const CareerIntakeModal = ({ isOpen, onClose, onSubmit, initialProfile, isLoadin
                 placeholder="Add a skill (e.g. React, SQL, Python)"
                 className="flex-1 px-3.5 py-2 bg-bg-main border border-border-light rounded-xl text-xs text-text-heading placeholder-text-placeholder focus:outline-none focus:border-primary"
               />
-              <select
+              <Select
                 value={newSkillProficiency}
                 onChange={(e) => setNewSkillProficiency(e.target.value)}
-                className="px-3 py-2 bg-bg-main border border-border-light rounded-xl text-xs text-text-heading focus:outline-none focus:border-primary"
-              >
-                <option value="beginner">Beginner</option>
-                <option value="intermediate">Intermediate</option>
-                <option value="advanced">Advanced</option>
-              </select>
+                options={PROFICIENCY_OPTIONS}
+                size="md"
+                autoWidth={true}
+                ariaLabel="Skill proficiency level"
+              />
               <button
                 type="button"
                 onClick={handleAddSkill}

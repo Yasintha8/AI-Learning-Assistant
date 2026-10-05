@@ -40,6 +40,7 @@ import EmptyState from '../../components/common/EmptyState';
 import Button from '../../components/common/Button';
 import Modal from '../../components/common/Modal';
 import MarkdownRenderer from '../../components/common/MarkdownRenderer';
+import Select from '../../components/common/Select';
 import { getStatusStyle, getKnowledgeLevelStyle, getProgressBandStyle, getSkillCategoryStyle } from '../../utils/learningPathStatus';
 import { generateLearningPathReportPdf } from '../../utils/learningPathReport';
 
@@ -63,6 +64,20 @@ const ACTION_META = {
   'retake-quiz': { label: 'Retake Quiz', icon: BrainCircuit, type: 'link' },
   'ask-ai-explain': { label: 'Ask AI to Explain', icon: Lightbulb, type: 'inline' },
 };
+
+const TOPIC_DIFFICULTY_OPTIONS = [
+  { value: 'all', label: 'All Difficulties' },
+  { value: 'easy', label: 'Easy' },
+  { value: 'medium', label: 'Medium' },
+  { value: 'hard', label: 'Hard' },
+];
+
+const TOPIC_SORT_OPTIONS = [
+  { value: 'default', label: 'Default Order' },
+  { value: 'score-asc', label: 'Mastery: Low to High' },
+  { value: 'score-desc', label: 'Mastery: High to Low' },
+  { value: 'alphabetical', label: 'Alphabetical (A-Z)' },
+];
 
 // Persists across page visits so the floating outline button's attention-pulse only shows
 // until the user discovers it once, not every time they open a learning path
@@ -1092,37 +1107,23 @@ const LearningPathPage = () => {
                     )}
                   </div>
 
-                  {/* Dropdowns */}
-                  <div className="flex items-center gap-2.5 flex-wrap sm:flex-nowrap">
-                    {/* Difficulty */}
-                    <div className="flex items-center gap-1.5 min-w-32 flex-1 sm:flex-initial">
-                      <select
-                        value={topicDifficultyFilter}
-                        onChange={(e) => setTopicDifficultyFilter(e.target.value)}
-                        className="w-full px-3 py-2 bg-bg-main border border-border-medium rounded-xl text-xs font-semibold text-text-heading focus:outline-none focus-visible:ring-2 focus-visible:ring-primary cursor-pointer"
-                        aria-label="Filter by difficulty"
-                      >
-                        <option value="all">All Difficulties</option>
-                        <option value="easy">Easy</option>
-                        <option value="medium">Medium</option>
-                        <option value="hard">Hard</option>
-                      </select>
-                    </div>
+                  {/* Dropdowns with tight, proportional chevron icon gap */}
+                  <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap shrink-0">
+                    <Select
+                      value={topicDifficultyFilter}
+                      onChange={(e) => setTopicDifficultyFilter(e.target.value)}
+                      options={TOPIC_DIFFICULTY_OPTIONS}
+                      ariaLabel="Filter by difficulty"
+                      size="md"
+                    />
 
-                    {/* Sort By */}
-                    <div className="flex items-center gap-1.5 min-w-36 flex-1 sm:flex-initial">
-                      <select
-                        value={topicSortBy}
-                        onChange={(e) => setTopicSortBy(e.target.value)}
-                        className="w-full px-3 py-2 bg-bg-main border border-border-medium rounded-xl text-xs font-semibold text-text-heading focus:outline-none focus-visible:ring-2 focus-visible:ring-primary cursor-pointer"
-                        aria-label="Sort topics"
-                      >
-                        <option value="default">Default Order</option>
-                        <option value="score-asc">Mastery: Low to High</option>
-                        <option value="score-desc">Mastery: High to Low</option>
-                        <option value="alphabetical">Alphabetical (A-Z)</option>
-                      </select>
-                    </div>
+                    <Select
+                      value={topicSortBy}
+                      onChange={(e) => setTopicSortBy(e.target.value)}
+                      options={TOPIC_SORT_OPTIONS}
+                      ariaLabel="Sort topics"
+                      size="md"
+                    />
                   </div>
                 </div>
 

@@ -3,6 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { Search, SearchX, Trash2, X, BookOpen, Brain, Sparkles, Filter, Plus, ArrowRight } from "lucide-react";
 import flashcardService from "../../services/flashcardService";
 import Spinner from "../../components/common/Spinner";
+import Select from "../../components/common/Select";
 import FlashcardSetCard from "../../components/flashcards/FlashcardSetCard";
 import toast from '../../utils/toast';
 
@@ -196,15 +197,13 @@ const FlashcardsListPage = () => {
               {/* Sort Selector */}
               <div className="flex items-center gap-2 shrink-0 self-start lg:self-auto">
                 <span className="text-xs font-semibold text-text-muted hidden sm:inline">Sort:</span>
-                <select
+                <Select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value)}
-                  className="h-11 px-3.5 rounded-xl border border-border-light bg-bg-main text-xs font-bold text-text-heading focus:outline-none focus:ring-2 focus:ring-primary/20 cursor-pointer"
-                >
-                  {SORT_OPTIONS.map((opt) => (
-                    <option key={opt.value} value={opt.value}>{opt.label}</option>
-                  ))}
-                </select>
+                  options={SORT_OPTIONS}
+                  size="lg"
+                  ariaLabel="Sort flashcards"
+                />
               </div>
             </div>
 

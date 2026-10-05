@@ -8,6 +8,7 @@ import toast from '../../utils/toast';
 import documentService from "../../services/documentService";
 import Spinner from "../../components/common/Spinner";
 import Button from "../../components/common/Button";
+import Select from "../../components/common/Select";
 import DocumentCard from "../../components/documents/DocumentCard";
 import { getProgressBandStyle } from '../../utils/learningPathStatus';
 import moment from "moment";
@@ -256,15 +257,13 @@ const DocumentListPage = () => {
                 {/* Sort Dropdown */}
                 <div className="flex items-center gap-2">
                   <span className="text-xs font-semibold text-text-muted hidden sm:inline">Sort:</span>
-                  <select
+                  <Select
                     value={sortBy}
                     onChange={(e) => setSortBy(e.target.value)}
-                    className="h-11 px-3.5 rounded-xl border border-border-light bg-bg-main text-xs font-bold text-text-heading focus:outline-none focus:ring-2 focus:ring-primary/20 cursor-pointer"
-                  >
-                    {SORT_OPTIONS.map((opt) => (
-                      <option key={opt.value} value={opt.value}>{opt.label}</option>
-                    ))}
-                  </select>
+                    options={SORT_OPTIONS}
+                    size="lg"
+                    ariaLabel="Sort documents"
+                  />
                 </div>
 
                 {/* View Mode Toggle */}

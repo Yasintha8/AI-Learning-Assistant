@@ -8,6 +8,9 @@ import {
     Sparkles,
     Brain,
     TrendingUp,
+    Grid,
+    Layers,
+    Star,
 } from "lucide-react";
 import toast from '../../utils/toast';
 import moment from "moment";
@@ -25,6 +28,7 @@ const FlashcardManager = ({ documentId }) => {
     const [loading, setLoading] = useState(true);
     const [generating, setGenerating] = useState(false);
     const [currentCardIndex, setCurrentCardIndex] = useState(0);
+    const [viewMode, setViewMode] = useState('study'); // 'study' | 'grid'
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [deleting, setDeleting] = useState(false);
     const [setToDelete, setSetToDelete] = useState(null);
@@ -64,8 +68,7 @@ const FlashcardManager = ({ documentId }) => {
     };
 
     const handleNextCard = () => {
-        if (selectedSet) {
-            handleReview(currentCardIndex);
+        if (selectedSet && selectedSet.cards.length > 0) {
             setCurrentCardIndex(
                 (prevIndex) => (prevIndex + 1) % selectedSet.cards.length
             );
@@ -73,8 +76,7 @@ const FlashcardManager = ({ documentId }) => {
     };
 
     const handlePrevCard = () => {
-        if (selectedSet) {
-            handleReview(currentCardIndex);
+        if (selectedSet && selectedSet.cards.length > 0) {
             setCurrentCardIndex(
                 (prevIndex) =>
                     (prevIndex - 1 + selectedSet.cards.length) % selectedSet.cards.length
@@ -139,6 +141,7 @@ const FlashcardManager = ({ documentId }) => {
     const handleSelectSet = (set) => {
         setSelectedSet(set);
         setCurrentCardIndex(0);
+        setViewMode('study');
     };
 
     const handleShuffleSelectedSet = () => {
@@ -166,8 +169,30 @@ const FlashcardManager = ({ documentId }) => {
                         Back to Flashcard Sets
                     </button>
 
-                    <div className="flex items-center gap-3">
-                        <span className="text-xs font-bold text-primary bg-primary/10 px-2.5 py-1 rounded-full">
+                    <div className="flex flex-wrap items-center gap-3">
+                        {/* View Mode Toggle: One by One vs All Cards */}
+                        <div className="flex items-center p-1 bg-border-light rounded-xl text-xs font-semibold">
+                            <button
+                                onClick={() => setViewMode('study')}
+                                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
+                                    viewMode === 'study' ? 'bg-bg-card text-primary shadow-xs font-bold' : 'text-text-muted hover:text-text-heading'
+                                }`}
+                            >
+                                <Layers className="w-3.5 h-3.5" />
+                                <span>One by One</span>
+                            </button>
+                            <button
+                                onClick={() => setViewMode('grid')}
+                                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
+                                    viewMode === 'grid' ? 'bg-bg-card text-primary shadow-xs font-bold' : 'text-text-muted hover:text-text-heading'
+                                }`}
+                            >
+                                <Grid className="w-3.5 h-3.5" />
+                                <span>All Cards ({selectedSet.cards.length})</span>
+                            </button>
+                        </div>
+
+                        <span className="text-xs font-bold text-primary bg-primary/10 px-2.5 py-1.5 rounded-full">
                             {progressPct}% Mastered ({reviewedCount}/{selectedSet.cards.length})
                         </span>
 
@@ -181,76 +206,131 @@ const FlashcardManager = ({ documentId }) => {
                     </div>
                 </div>
 
-                {/* Flashcard Display */}
-                <div className="flex flex-col items-center space-y-6">
-                    <div className="w-full max-w-2xl">
-                        <Flashcard
-                            flashcard={currentCard}
-                            onToggleStar={handleToggleStar}
-                            onReview={async (cardId, isCorrect) => {
-                                await handleReview(currentCardIndex);
-                                if (currentCardIndex < selectedSet.cards.length - 1) {
-                                    setCurrentCardIndex(prev => prev + 1);
-                                }
-                            }}
-                        />
-                    </div>
-
-                    {/* Navigation Controls */}
-                    <div className="flex items-center justify-between w-full max-w-2xl gap-4 px-2">
-                        <button
-                            onClick={handlePrevCard}
-                            disabled={selectedSet.cards.length <= 1}
-                            className="inline-flex items-center gap-2 py-2.5 px-5 rounded-2xl border border-border-medium bg-bg-card text-xs font-bold text-text-heading hover:bg-border-light transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer shadow-xs"
-                        >
-                            <ChevronLeft className="w-4 h-4" strokeWidth={2.5} />
-                            Previous
-                        </button>
-
-                        <div className="flex items-center gap-2 bg-bg-card border border-border-light px-4 py-2 rounded-2xl shadow-xs text-xs font-extrabold text-text-heading">
-                            <span>Card {currentCardIndex + 1}</span>
-                            <span className="text-text-muted">/</span>
-                            <span>{selectedSet.cards.length}</span>
+                {/* Flashcard Content View */}
+                {viewMode === 'study' ? (
+                    <div className="flex flex-col items-center space-y-6">
+                        <div className="w-full max-w-2xl">
+                            <Flashcard
+                                key={currentCard?._id || currentCardIndex}
+                                flashcard={currentCard}
+                                onToggleStar={handleToggleStar}
+                                onReview={async (cardId, isCorrect) => {
+                                    await handleReview(currentCardIndex);
+                                    if (selectedSet.cards.length > 0) {
+                                        setCurrentCardIndex(prev => (prev + 1) % selectedSet.cards.length);
+                                    }
+                                }}
+                            />
                         </div>
 
-                        <button
-                            onClick={handleNextCard}
-                            disabled={selectedSet.cards.length <= 1}
-                            className="inline-flex items-center gap-2 py-2.5 px-5 rounded-2xl bg-primary text-white text-xs font-bold hover:bg-primary-hover transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer shadow-md shadow-primary/20"
-                        >
-                            Next
-                            <ChevronRight className="w-4 h-4" strokeWidth={2.5} />
-                        </button>
-                    </div>
+                        {/* Navigation Controls */}
+                        <div className="flex items-center justify-between w-full max-w-2xl gap-4 px-2">
+                            <button
+                                onClick={handlePrevCard}
+                                disabled={selectedSet.cards.length <= 1}
+                                className="inline-flex items-center gap-2 py-2.5 px-5 rounded-2xl border border-border-medium bg-bg-card text-xs font-bold text-text-heading hover:bg-border-light transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer shadow-xs"
+                            >
+                                <ChevronLeft className="w-4 h-4" strokeWidth={2.5} />
+                                Previous
+                            </button>
 
-                    {/* Quick Jump Strip */}
-                    <div className="w-full max-w-2xl bg-bg-card border border-border-light rounded-2xl p-3 shadow-xs">
-                        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-thin">
-                            {selectedSet.cards.map((card, idx) => {
-                                const isActive = idx === currentCardIndex;
-                                const isReviewed = !!card.lastReviewed || card.reviewCount > 0;
+                            <div className="flex items-center gap-2 bg-bg-card border border-border-light px-4 py-2 rounded-2xl shadow-xs text-xs font-extrabold text-text-heading">
+                                <span>Card {currentCardIndex + 1}</span>
+                                <span className="text-text-muted">/</span>
+                                <span>{selectedSet.cards.length}</span>
+                            </div>
 
-                                return (
-                                    <button
-                                        key={card._id || idx}
-                                        onClick={() => setCurrentCardIndex(idx)}
-                                        className={`shrink-0 w-8 h-8 rounded-xl text-xs font-bold flex items-center justify-center transition-all cursor-pointer relative ${isActive
-                                                ? 'bg-primary text-white shadow-md shadow-primary/30 scale-105'
-                                                : isReviewed
-                                                    ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20'
-                                                    : 'bg-border-light text-text-muted hover:bg-border-medium hover:text-text-heading'
+                            <button
+                                onClick={handleNextCard}
+                                disabled={selectedSet.cards.length <= 1}
+                                className="inline-flex items-center gap-2 py-2.5 px-5 rounded-2xl bg-primary text-white text-xs font-bold hover:bg-primary-hover transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer shadow-md shadow-primary/20"
+                            >
+                                Next
+                                <ChevronRight className="w-4 h-4" strokeWidth={2.5} />
+                            </button>
+                        </div>
+
+                        {/* Quick Jump Strip */}
+                        <div className="w-full max-w-2xl bg-bg-card border border-border-light rounded-2xl p-3 shadow-xs">
+                            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-thin">
+                                {selectedSet.cards.map((card, idx) => {
+                                    const isActive = idx === currentCardIndex;
+                                    const isReviewed = !!card.lastReviewed || card.reviewCount > 0;
+
+                                    return (
+                                        <button
+                                            key={card._id || idx}
+                                            onClick={() => setCurrentCardIndex(idx)}
+                                            className={`shrink-0 w-8 h-8 rounded-xl text-xs font-bold flex items-center justify-center transition-all cursor-pointer relative ${
+                                                isActive
+                                                    ? 'bg-primary text-white shadow-md shadow-primary/30 scale-105'
+                                                    : isReviewed
+                                                        ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20'
+                                                        : 'bg-border-light text-text-muted hover:bg-border-medium hover:text-text-heading'
                                             }`}
-                                    >
-                                        <span>{idx + 1}</span>
-                                        {card.isStarred && (
-                                            <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-amber-400" />
-                                        )}
-                                    </button>
-                                );
-                            })}
+                                        >
+                                            <span>{idx + 1}</span>
+                                            {card.isStarred && (
+                                                <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-amber-400" />
+                                            )}
+                                        </button>
+                                    );
+                                })}
+                            </div>
                         </div>
                     </div>
-                </div>
+                ) : (
+                    /* All Cards Grid View */
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                        {selectedSet.cards.map((card, index) => (
+                            <div
+                                key={card._id || index}
+                                className="bg-bg-card border border-border-light hover:border-primary/40 rounded-2xl p-5 shadow-xs flex flex-col justify-between space-y-4 transition-all"
+                            >
+                                <div className="flex items-start justify-between gap-2">
+                                    <span className="text-xs font-bold text-text-muted bg-border-light px-2.5 py-1 rounded-lg">
+                                        Card #{index + 1}
+                                    </span>
+                                    <button
+                                        onClick={() => handleToggleStar(card._id)}
+                                        className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+                                            card.isStarred ? 'text-amber-400' : 'text-text-muted hover:text-amber-400'
+                                        }`}
+                                    >
+                                        <Star className="w-4 h-4" fill={card.isStarred ? 'currentColor' : 'none'} />
+                                    </button>
+                                </div>
+
+                                <div className="space-y-3">
+                                    <div>
+                                        <span className="text-[10px] font-bold uppercase tracking-wider text-primary">Question</span>
+                                        <p className="text-sm font-bold text-text-heading mt-0.5 leading-snug">{card.question}</p>
+                                    </div>
+                                    <div className="pt-2 border-t border-border-light">
+                                        <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-500">Answer</span>
+                                        <p className="text-xs font-medium text-text-body mt-0.5 leading-relaxed">{card.answer}</p>
+                                    </div>
+                                </div>
+
+                                <div className="pt-2 flex items-center justify-between">
+                                    <span className="text-[10px] font-semibold text-text-muted capitalize">
+                                        Difficulty: {card.difficulty || 'Medium'}
+                                    </span>
+                                    <button
+                                        onClick={() => {
+                                            setCurrentCardIndex(index);
+                                            setViewMode('study');
+                                        }}
+                                        className="text-xs font-bold text-primary hover:text-primary-hover inline-flex items-center gap-1 cursor-pointer"
+                                    >
+                                        <span>Study This Card</span>
+                                        <ChevronRight className="w-3.5 h-3.5" />
+                                    </button>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
             </div>
         );
     };
