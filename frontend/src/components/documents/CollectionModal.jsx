@@ -46,7 +46,7 @@ const CollectionModal = ({ isOpen, onClose, onSubmit, initialCollection = null, 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs px-4 animate-fade-in">
       <div className="relative w-full max-w-md bg-bg-card rounded-3xl shadow-xl border border-border-light p-6 sm:p-8 flex flex-col gap-5">
-        
+
         {/* Close Button */}
         <button
           type="button"
@@ -73,7 +73,7 @@ const CollectionModal = ({ isOpen, onClose, onSubmit, initialCollection = null, 
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
-          
+
           {/* Collection Name */}
           <div className="space-y-1.5">
             <label htmlFor="collection-name" className="text-xs font-bold text-text-heading uppercase tracking-wider flex items-center justify-between">
@@ -107,12 +107,11 @@ const CollectionModal = ({ isOpen, onClose, onSubmit, initialCollection = null, 
                     type="button"
                     onClick={() => setColor(c.value)}
                     title={c.name}
-                    className={`w-7 h-7 rounded-full transition-all flex items-center justify-center cursor-pointer ${
-                      isSelected ? 'ring-2 ring-offset-2 ring-primary scale-110 shadow-sm' : 'hover:scale-105 opacity-80 hover:opacity-100'
-                    }`}
+                    className={`w-7 h-7 rounded-full transition-all flex items-center justify-center cursor-pointer ${isSelected ? 'ring-2 ring-offset-2 ring-primary scale-110 shadow-sm' : 'hover:scale-105 opacity-80 hover:opacity-100'
+                      }`}
                     style={{ backgroundColor: c.value }}
                   >
-                    {isSelected && <Check className="w-3.5 h-3.5 text-white stroke-[3]" />}
+                    {isSelected && <Check className="w-3.5 h-3.5 text-white stroke-3" />}
                   </button>
                 );
               })}

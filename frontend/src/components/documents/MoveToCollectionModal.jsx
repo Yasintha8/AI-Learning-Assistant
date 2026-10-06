@@ -17,7 +17,7 @@ const MoveToCollectionModal = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs px-4 animate-fade-in">
       <div className="relative w-full max-w-md bg-bg-card rounded-3xl shadow-xl border border-border-light p-6 sm:p-7 flex flex-col gap-4 overflow-hidden">
-        
+
         {/* Loading Overlay */}
         {isLoading && (
           <div className="absolute inset-0 bg-bg-card/75 backdrop-blur-xs rounded-3xl flex items-center justify-center z-20">
@@ -54,17 +54,16 @@ const MoveToCollectionModal = ({
 
         {/* Collection Options List */}
         <div className="space-y-2 max-h-64 overflow-y-auto custom-scrollbar pr-1 pt-1">
-          
+
           {/* Option: Uncategorized */}
           <button
             type="button"
             onClick={() => onSelectCollection(null)}
             disabled={isLoading}
-            className={`w-full p-3 rounded-2xl border text-left flex items-center justify-between transition-all cursor-pointer ${
-              !currentCollectionId
+            className={`w-full p-3 rounded-2xl border text-left flex items-center justify-between transition-all cursor-pointer ${!currentCollectionId
                 ? 'bg-primary-light border-primary/40 shadow-2xs'
                 : 'bg-bg-main hover:bg-border-light/60 border-border-light'
-            }`}
+              }`}
           >
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded-xl bg-border-light text-text-muted flex items-center justify-center shrink-0">
@@ -77,7 +76,7 @@ const MoveToCollectionModal = ({
             </div>
             {!currentCollectionId && (
               <span className="p-1 rounded-full bg-primary text-white">
-                <Check className="w-3.5 h-3.5 stroke-[3]" />
+                <Check className="w-3.5 h-3.5 stroke-3" />
               </span>
             )}
           </button>
@@ -93,11 +92,10 @@ const MoveToCollectionModal = ({
                 type="button"
                 onClick={() => onSelectCollection(col._id)}
                 disabled={isLoading}
-                className={`w-full p-3 rounded-2xl border text-left flex items-center justify-between transition-all cursor-pointer ${
-                  isCurrent
+                className={`w-full p-3 rounded-2xl border text-left flex items-center justify-between transition-all cursor-pointer ${isCurrent
                     ? 'bg-primary-light border-primary/40 shadow-2xs'
                     : 'bg-bg-main hover:bg-border-light/60 border-border-light'
-                }`}
+                  }`}
               >
                 <div className="flex items-center gap-3 min-w-0">
                   <div
@@ -121,7 +119,7 @@ const MoveToCollectionModal = ({
 
                 {isCurrent && (
                   <span className="p-1 rounded-full bg-primary text-white shrink-0">
-                    <Check className="w-3.5 h-3.5 stroke-[3]" />
+                    <Check className="w-3.5 h-3.5 stroke-3" />
                   </span>
                 )}
               </button>
