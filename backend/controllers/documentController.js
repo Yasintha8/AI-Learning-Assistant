@@ -1,4 +1,5 @@
 import Document from '../models/Document.js';
+import Collection from '../models/Collection.js';
 import Flashcard from '../models/Flashcard.js';
 import Quiz from '../models/Quiz.js';
 import LearningPath from '../models/LearningPath.js';
@@ -45,7 +46,7 @@ export const uploadDocument = async (req, res, next) => {
             })
         }
 
-        const { title } = req.body;
+        const { title, collectionId } = req.body;
 
         if (!title) {
             //Delete uploaded file if no title provided
@@ -62,6 +63,10 @@ export const uploadDocument = async (req, res, next) => {
         const ext = path.extname(req.file.originalname).toLowerCase();
         const fileType = EXTENSION_TO_FILE_TYPE[ext] || 'pdf';
 
+        const validCollectionId = collectionId && mongoose.Types.ObjectId.isValid(collectionId)
+            ? collectionId
+            : null;
+
         //Create document record
         const document = await Document.create({
             userId: req.user._id,
@@ -70,6 +75,7 @@ export const uploadDocument = async (req, res, next) => {
             filePath: fileUrl,//Store the URL instead of the local path
             fileSize: req.file.size,
             fileType,
+            collectionId: validCollectionId,
             status: 'processing'
         })
 
@@ -99,7 +105,7 @@ export const uploadDocument = async (req, res, next) => {
 // @access Private
 export const addUrlDocument = async (req, res, next) => {
     try {
-        const { url, title } = req.body;
+        const { url, title, collectionId } = req.body;
 
         if (!url || !url.trim()) {
             return res.status(400).json({
@@ -140,6 +146,10 @@ export const addUrlDocument = async (req, res, next) => {
 
         const chunks = chunkText(text, 500, 50);
 
+        const validCollectionId = collectionId && mongoose.Types.ObjectId.isValid(collectionId)
+            ? collectionId
+            : null;
+
         const document = await Document.create({
             userId: req.user._id,
             title: finalTitle,
@@ -148,6 +158,7 @@ export const addUrlDocument = async (req, res, next) => {
             fileType,
             extractedText: text,
             chunks,
+            collectionId: validCollectionId,
             status: 'ready',
         });
 
@@ -205,6 +216,14 @@ export const getDocuments = async (req, res, next) => {
             },
             {
                 $lookup: {
+                    from: 'collections',
+                    localField: 'collectionId',
+                    foreignField: '_id',
+                    as: 'collectionInfo'
+                }
+            },
+            {
+                $lookup: {
                     from: 'flashcards',
                     localField: '_id',
                     foreignField: 'documentId',
@@ -229,6 +248,23 @@ export const getDocuments = async (req, res, next) => {
             },
             {
                 $addFields: {
+                    collection: {
+                        $let: {
+                            vars: { col: { $arrayElemAt: ["$collectionInfo", 0] } },
+                            in: {
+                                $cond: [
+                                    { $gt: [{ $size: "$collectionInfo" }, 0] },
+                                    {
+                                        _id: "$$col._id",
+                                        name: "$$col.name",
+                                        color: "$$col.color",
+                                        icon: "$$col.icon"
+                                    },
+                                    null
+                                ]
+                            }
+                        }
+                    },
                     flashcardCount: { $size: "$flashcardSets" },
                     quizCount: { $size: "$quizzes" },
                     // Overall document progress: average mastery score across every topic in
@@ -256,6 +292,7 @@ export const getDocuments = async (req, res, next) => {
                     flashcardSets: 0,
                     quizzes: 0,
                     learningPaths: 0,
+                    collectionInfo: 0,
                 }
             },
             {
@@ -281,7 +318,7 @@ export const getDocument = async (req, res, next) => {
         const document = await Document.findOne({
             _id: req.params.id,
             userId: req.user._id
-        });
+        }).populate('collectionId', 'name color icon description');
 
         if (!document) {
             return res.status(404).json({
@@ -307,6 +344,7 @@ export const getDocument = async (req, res, next) => {
 
         //Combine document data with counts
         const documentData = document.toObject();
+        documentData.collection = documentData.collectionId || null;
         documentData.flashcardCount = flashcardCount;
         documentData.quizCount = quizCount;
         documentData.learningPathProgress = learningPathProgress;
@@ -314,6 +352,62 @@ export const getDocument = async (req, res, next) => {
         res.status(200).json({
             success: true,
             data: documentData
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+// @desc Move / assign document to a collection
+// @route PATCH /api/documents/:id/collection
+// @access Private
+export const updateDocumentCollection = async (req, res, next) => {
+    try {
+        const { id } = req.params;
+        const { collectionId } = req.body;
+
+        const document = await Document.findOne({
+            _id: id,
+            userId: req.user._id
+        });
+
+        if (!document) {
+            return res.status(404).json({
+                success: false,
+                error: "Document not found",
+                statusCode: 404,
+            });
+        }
+
+        let validatedCollectionId = null;
+        if (collectionId && mongoose.Types.ObjectId.isValid(collectionId)) {
+            const collectionExists = await Collection.findOne({
+                _id: collectionId,
+                userId: req.user._id
+            });
+            if (!collectionExists) {
+                return res.status(404).json({
+                    success: false,
+                    error: "Collection not found",
+                    statusCode: 404
+                });
+            }
+            validatedCollectionId = collectionId;
+        }
+
+        document.collectionId = validatedCollectionId;
+        await document.save();
+
+        const updatedDoc = await Document.findById(document._id)
+            .populate('collectionId', 'name color icon description');
+
+        const resultObj = updatedDoc.toObject();
+        resultObj.collection = resultObj.collectionId || null;
+
+        res.status(200).json({
+            success: true,
+            data: resultObj,
+            message: validatedCollectionId ? "Document moved to collection" : "Document removed from collection"
         });
     } catch (error) {
         next(error);

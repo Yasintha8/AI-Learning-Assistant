@@ -58,12 +58,18 @@ const documentSchema = new mongoose.Schema({
         enum: ['pending', 'processing', 'ready', 'error'],
         default: 'processing'
     },
+    collectionId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Collection',
+        default: null,
+    },
 }, {
     timestamps: true,
 });
 
 // Index for faster queries
 documentSchema.index({ userId: 1, uploadDate: -1 });
+documentSchema.index({ userId: 1, collectionId: 1 });
 
 const Document = mongoose.model('Document', documentSchema);
 

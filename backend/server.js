@@ -22,6 +22,7 @@ import searchRoutes from './routes/searchRoutes.js';
 import resourceRoutes from './routes/resourceRoutes.js';
 import notificationRoutes from './routes/notificationRoutes.js';
 import careerRoutes from './routes/careerRoutes.js';
+import collectionRoutes from './routes/collectionRoutes.js';
 
 // ES6 module __dirname alternative
 const __filename = fileURLToPath(import.meta.url);
@@ -48,7 +49,7 @@ app.use(
 app.use(
     cors({
         origin: '*',
-        methods: ["GET", "POST", "PUT", "DELETE"],
+        methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
         allowedHeaders: ['Content-Type', 'Authorization'],
         credentials: true,
     })
@@ -95,6 +96,7 @@ app.use('/api/search', searchRoutes);
 app.use('/api/resources', resourceRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/career', careerRoutes);
+app.use('/api/collections', collectionRoutes);
 
 app.use(errorHandler);
 
