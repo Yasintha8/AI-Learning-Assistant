@@ -149,30 +149,35 @@ const CareerCounselorChat = ({ chatHistory = [], onSendMessage, isLoading, targe
       </div>
 
       {/* Message Input Form */}
-      <form onSubmit={handleSubmit} className="p-4 bg-bg-card border-t border-border-light flex items-center gap-2">
-        <input
-          type="text"
-          value={inputMessage}
-          onChange={(e) => setInputMessage(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-              e.preventDefault();
-              handleSubmit(e);
-            }
-          }}
-          placeholder={`Ask your AI Career Counselor about ${targetRole || 'your target role'}...`}
-          disabled={isLoading}
-          className="flex-1 px-4 py-2.5 bg-bg-main border border-border-light rounded-xl text-xs text-text-heading placeholder-text-placeholder focus:outline-none focus:border-primary transition-colors disabled:opacity-50 font-body"
-        />
-        <button
-          type="submit"
-          disabled={isLoading || !inputMessage.trim()}
-          className="px-4 py-2.5 bg-primary hover:bg-primary-hover text-white rounded-xl text-xs font-bold transition-all disabled:opacity-50 flex items-center gap-1.5 cursor-pointer shadow-2xs"
-        >
-          <Send className="w-3.5 h-3.5" />
-          <span>Send</span>
-        </button>
-      </form>
+      <div className="p-4 bg-bg-card border-t border-border-light flex flex-col gap-2">
+        <form onSubmit={handleSubmit} className="flex items-center gap-2">
+          <input
+            type="text"
+            value={inputMessage}
+            onChange={(e) => setInputMessage(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                handleSubmit(e);
+              }
+            }}
+            placeholder={`Ask your AI Career Counselor about ${targetRole || 'your target role'}...`}
+            disabled={isLoading}
+            className="flex-1 px-4 py-2.5 bg-bg-main border border-border-light rounded-xl text-xs text-text-heading placeholder-text-placeholder focus:outline-none focus:border-primary transition-colors disabled:opacity-50 font-body"
+          />
+          <button
+            type="submit"
+            disabled={isLoading || !inputMessage.trim()}
+            className="px-4 py-2.5 bg-primary hover:bg-primary-hover text-white rounded-xl text-xs font-bold transition-all disabled:opacity-50 flex items-center gap-1.5 cursor-pointer shadow-2xs"
+          >
+            <Send className="w-3.5 h-3.5" />
+            <span>Send</span>
+          </button>
+        </form>
+        <p className="text-[11px] text-text-muted text-center select-none pt-0.5">
+          AI Assistant can make mistakes. Check important info.
+        </p>
+      </div>
 
     </div>
   );

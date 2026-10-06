@@ -225,7 +225,7 @@ const ChatInterface = () => {
             </div>
 
             {/* Input Area */}
-            <div className="p-4 border-t border-border-medium bg-bg-card w-full">
+            <div className="p-4 border-t border-border-medium bg-bg-card w-full flex flex-col gap-2">
                 <form onSubmit={handleSendMessage} className="flex items-center gap-2 w-full">
                     <input
                         type="text"
@@ -243,6 +243,9 @@ const ChatInterface = () => {
                         <Send className="w-5 h-5" strokeWidth={2} />
                     </button>
                 </form>
+                <p className="text-[11px] text-text-muted text-center select-none pt-0.5">
+                    AI Assistant can make mistakes. Check important info.
+                </p>
             </div>
         </div>
     )

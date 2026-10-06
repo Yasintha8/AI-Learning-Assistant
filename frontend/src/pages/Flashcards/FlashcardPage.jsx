@@ -535,6 +535,8 @@ const FlashcardPage = () => {
                         onFlip={setIsCardFlipped}
                         isSpeaking={isSpeaking}
                         onToggleSpeak={handleToggleSpeak}
+                        onNext={handleNextCard}
+                        onPrev={handlePrevCard}
                       />
                     ) : (
                       <div className="p-8 text-center text-text-muted">No cards found for this filter.</div>

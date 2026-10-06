@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { Star, RotateCcw, CheckCircle, XCircle, Volume2, VolumeX } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { Star, RotateCcw, CheckCircle, XCircle, Volume2, VolumeX, Smartphone } from "lucide-react";
 
 const Flashcard = ({
     flashcard,
@@ -9,14 +9,26 @@ const Flashcard = ({
     onFlip,
     isSpeaking: controlledSpeaking,
     onToggleSpeak: controlledToggleSpeak,
+    onNext,
+    onPrev,
 }) => {
     const [internalFlipped, setInternalFlipped] = useState(false);
     const [internalSpeaking, setInternalSpeaking] = useState(false);
+
+    // Touch gesture tracking for mobile swipe navigation
+    const touchStartRef = useRef({ x: 0, y: 0, time: 0 });
+    const swipedRef = useRef(false);
 
     const isFlipped = controlledFlipped !== undefined ? controlledFlipped : internalFlipped;
     const isSpeaking = controlledSpeaking !== undefined ? controlledSpeaking : internalSpeaking;
 
     const handleFlip = () => {
+        // If user just performed a swipe gesture, ignore the synthetic click
+        if (swipedRef.current) {
+            swipedRef.current = false;
+            return;
+        }
+
         // Stop audio when flipping
         if ('speechSynthesis' in window) {
             window.speechSynthesis.cancel();
@@ -32,6 +44,45 @@ const Flashcard = ({
         } else {
             setInternalFlipped(!isFlipped);
         }
+    };
+
+    const handleTouchStart = (e) => {
+        if (e.touches && e.touches.length === 1) {
+            touchStartRef.current = {
+                x: e.touches[0].clientX,
+                y: e.touches[0].clientY,
+                time: Date.now()
+            };
+            swipedRef.current = false;
+        }
+    };
+
+    const handleTouchEnd = (e) => {
+        if (!touchStartRef.current.time) return;
+        const touch = e.changedTouches?.[0];
+        if (!touch) return;
+
+        const deltaX = touch.clientX - touchStartRef.current.x;
+        const deltaY = touch.clientY - touchStartRef.current.y;
+        const timeDiff = Date.now() - touchStartRef.current.time;
+
+        const minSwipeDistance = 45;
+        // Check if fast/clear horizontal swipe
+        if (
+            Math.abs(deltaX) > minSwipeDistance &&
+            Math.abs(deltaX) > Math.abs(deltaY) * 1.3 &&
+            timeDiff < 500
+        ) {
+            swipedRef.current = true;
+            if (deltaX < 0) {
+                // Swiped Left -> Go to Next
+                if (onNext) onNext();
+            } else {
+                // Swiped Right -> Go to Prev
+                if (onPrev) onPrev();
+            }
+        }
+        touchStartRef.current = { x: 0, y: 0, time: 0 };
     };
 
     const handleSpeakInternal = (e, text) => {
@@ -82,12 +133,14 @@ const Flashcard = ({
     return (
         <div className="relative w-full h-85 sm:h-95 font-body" style={{ perspective: '1200px' }}>
             <div
-                className="relative w-full h-full transition-transform duration-500 transform-gpu cursor-pointer"
+                className="relative w-full h-full transition-transform duration-500 transform-gpu cursor-pointer select-none touch-pan-y"
                 style={{
                     transformStyle: 'preserve-3d',
                     transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)'
                 }}
                 onClick={handleFlip}
+                onTouchStart={handleTouchStart}
+                onTouchEnd={handleTouchEnd}
             >
                 {/* Front of the card (Question) */}
                 <div
@@ -157,7 +210,7 @@ const Flashcard = ({
                     {/* Bottom Flip Bar */}
                     <div className="flex items-center justify-center gap-2 px-6 py-3.5 border-t border-border-light bg-border-light/30 text-text-muted text-xs font-semibold">
                         <RotateCcw className="w-4 h-4 text-primary animate-pulse" />
-                        <span>Click card or press <kbd className="px-1.5 py-0.5 bg-bg-card rounded border border-border-medium text-[10px] font-mono">Space</kbd> to reveal answer</span>
+                        <span>Click or swipe <span className="font-bold text-text-heading">↔</span> · Press <kbd className="px-1.5 py-0.5 bg-bg-card rounded border border-border-medium text-[10px] font-mono">Space</kbd> to reveal</span>
                     </div>
                 </div>
 
@@ -251,7 +304,7 @@ const Flashcard = ({
                         ) : (
                             <div className="w-full flex items-center justify-center gap-2 text-xs font-medium text-white/80">
                                 <RotateCcw className="w-4 h-4" />
-                                <span>Click card or press <kbd className="px-1.5 py-0.5 bg-black/30 rounded border border-white/20 text-[10px] font-mono">Space</kbd> to flip back</span>
+                                <span>Click or swipe <span className="font-bold text-white">↔</span> · Press <kbd className="px-1.5 py-0.5 bg-black/30 rounded border border-white/20 text-[10px] font-mono">Space</kbd> to flip back</span>
                             </div>
                         )}
                     </div>

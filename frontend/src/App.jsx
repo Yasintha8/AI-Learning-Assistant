@@ -17,6 +17,8 @@ import LearningPathsOverviewPage from './pages/LearningPath/LearningPathsOvervie
 import ProfilePage from './pages/Profile/ProfilePage'
 import CareerPage from './pages/Career/CareerPage'
 import ProtectedRoute from './components/auth/ProtectedRoute'
+import ErrorBoundary from './components/common/ErrorBoundary'
+import OfflineBanner from './components/common/OfflineBanner'
 import { useAuth } from './context/AuthContext'
 
 const App = () => {
@@ -24,39 +26,42 @@ const App = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <p>Loading...</p>
+      <div className="flex items-center justify-center h-screen bg-bg-main text-text-heading">
+        <p className="font-semibold text-sm">Loading...</p>
       </div>
     )
   }
 
   return (
-    <Router>
-      <Routes>
-        <Route path="/" element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <LandingPage />} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage />} />
+    <ErrorBoundary>
+      <OfflineBanner />
+      <Router>
+        <Routes>
+          <Route path="/" element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <LandingPage />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
 
-        {/* Protected Routes */}
-        <Route element={<ProtectedRoute />}>
-          <Route path="/dashboard" element={<DashboardPage />} />
-          <Route path="/documents" element={<DocumentListPage />} />
-          <Route path="/documents/:id" element={<DocumentDetailPage />} />
-          <Route path="/documents/:id/preview" element={<DocumentPreviewPage />} />
-          <Route path="/flashcards" element={<FlashcardsListPage />} />
-          <Route path="/documents/:id/flashcards" element={<FlashcardPage />} />
-          <Route path="/quizzes/:quizId" element={<QuizTakePage />} />
-          <Route path="/quizzes/:quizId/results" element={<QuizResultPage />} />
-          <Route path="/learning-paths" element={<LearningPathsOverviewPage />} />
-          <Route path="/documents/:id/learning-path" element={<LearningPathPage />} />
-          <Route path="/career" element={<CareerPage />} />
-          <Route path="/profile" element={<ProfilePage />} />
-        </Route>
+          {/* Protected Routes */}
+          <Route element={<ProtectedRoute />}>
+            <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/documents" element={<DocumentListPage />} />
+            <Route path="/documents/:id" element={<DocumentDetailPage />} />
+            <Route path="/documents/:id/preview" element={<DocumentPreviewPage />} />
+            <Route path="/flashcards" element={<FlashcardsListPage />} />
+            <Route path="/documents/:id/flashcards" element={<FlashcardPage />} />
+            <Route path="/quizzes/:quizId" element={<QuizTakePage />} />
+            <Route path="/quizzes/:quizId/results" element={<QuizResultPage />} />
+            <Route path="/learning-paths" element={<LearningPathsOverviewPage />} />
+            <Route path="/documents/:id/learning-path" element={<LearningPathPage />} />
+            <Route path="/career" element={<CareerPage />} />
+            <Route path="/profile" element={<ProfilePage />} />
+          </Route>
 
-        <Route path="*" element={<NotFoundPage />} />
-      </Routes>
-    </Router>
+          <Route path="*" element={<NotFoundPage />} />
+        </Routes>
+      </Router>
+    </ErrorBoundary>
   )
 }
 
-export default App
+export default App
