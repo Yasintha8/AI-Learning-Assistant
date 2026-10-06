@@ -55,7 +55,7 @@ export const getQuizById = async (req, res, next) => {
 // @access   Private
 export const submitQuiz = async (req, res, next) => {
     try {
-        const { answers } = req.body;
+        const { answers, retake, isRetake } = req.body;
 
         if (!Array.isArray(answers)) {
             return res.status(400).json({
@@ -78,7 +78,7 @@ export const submitQuiz = async (req, res, next) => {
             });
         }
 
-        if (quiz.completedAt) {
+        if (quiz.completedAt && !retake && !isRetake) {
             return res.status(400).json({
                 success: false,
                 error: 'Quiz already completed',

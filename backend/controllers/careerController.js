@@ -1,6 +1,6 @@
 import UserCareerProfile from '../models/UserCareerProfile.js';
 import CareerPath from '../models/CareerPath.js';
-import { generateCareerRoadmap, chatWithCareerCounselor } from '../utils/geminiService.js';
+import { generateCareerRoadmap, chatWithCareerCounselor } from '../utils/claudeService.js';
 
 // Helper to convert title to slug ID
 const slugify = (title) => {
@@ -293,10 +293,10 @@ export const sendCounselorMessage = async (req, res, next) => {
                 careerPath
             );
         } catch (aiError) {
-            console.error('Gemini Career Chat Error:', aiError);
-            aiResponse = aiError.message && aiError.message.includes('rate limit')
-                ? "Gemini AI's free-tier rate limit was reached. Please wait a few seconds and try asking again!"
-                : "I encountered a brief connection issue with Gemini AI. Please try asking your question again in a moment.";
+            console.error('Claude Career Chat Error:', aiError);
+            aiResponse = aiError.message && aiError.message.includes('busy')
+                ? "Claude AI is experiencing high traffic right now. Please wait a moment and try asking again!"
+                : "I encountered a brief connection issue with Claude AI. Please try asking your question again in a moment.";
         }
 
         // Push AI response

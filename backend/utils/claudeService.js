@@ -10,7 +10,8 @@ if (!process.env.ANTHROPIC_API_KEY) {
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-const MODEL = 'claude-sonnet-5';
+// Anthropic Claude model - defaults to claude-sonnet-5, can override with ANTHROPIC_MODEL env var
+const MODEL = process.env.ANTHROPIC_MODEL || 'claude-sonnet-5';
 
 const VALID_STUDY_ACTIONS = ['reread-summary', 'redo-flashcards', 'retake-quiz', 'ask-ai-explain'];
 const VALID_RESOURCE_TYPES = ['article', 'video', 'course', 'paper', 'website'];
@@ -565,15 +566,16 @@ const RESOURCE_GRAPH_SCHEMA = {
  * @returns {Promise<{concepts: Array<{conceptId: string, title: string}>, resources: Array<{resourceId: string, title: string, url: string, type: string, description: string, conceptIds: string[]}>}>}
  */
 export const generateRelatedResources = async (text) => {
-    const researchPrompt = `I am studying the topic below and want to find real, currently available external learning resources (articles, videos, courses, papers) about its key concepts. Search the web for real resources - cover 4 to 8 distinct key concepts from the text, with 2 to 3 resources per concept. For each resource, note its title, the resource type (article, video, course, paper, or website), and a one-sentence description.
+    const researchPrompt = `I am studying the topic below. Identify the 3 to 5 most essential core concepts from this text. For each concept, perform a focused web search to find 2 authoritative, high-quality learning resources (documentation, tutorials, videos, courses, articles).
+Keep searches focused and efficient. For each resource, note its title, the resource type (article, video, course, paper, or website), and a one-sentence description.
 
 Topic text:
-${text.substring(0, 8000)}`;
+${text.substring(0, 6000)}`;
 
     try {
         const researchResponse = await anthropic.messages.create({
             model: MODEL,
-            max_tokens: 4096,
+            max_tokens: 2048,
             tools: [{ type: 'web_search_20260209', name: 'web_search' }],
             messages: [{ role: 'user', content: researchPrompt }],
         });
@@ -585,34 +587,35 @@ ${text.substring(0, 8000)}`;
             if (block.type === 'web_search_tool_result' && Array.isArray(block.content)) {
                 for (const result of block.content) {
                     if (result.type === 'web_search_result' && result.url) {
-                        realResults.push({ url: result.url, title: result.title || '' });
+                        if (!realResults.some(r => r.url === result.url)) {
+                            realResults.push({ url: result.url, title: result.title || '' });
+                        }
                     }
                 }
             }
         }
 
-        if (realResults.length === 0) {
-            throw new Error('Failed to generate related resources. Web search returned no results.');
-        }
-
         const researchNotes = getText(researchResponse);
-        const realResultsList = realResults
-            .map((r, i) => `${i + 1}. ${r.title || '(untitled)'} - ${r.url}`)
-            .join('\n');
+        const hasSearchResults = realResults.length > 0;
 
-        const formatPrompt = `Below are research notes about a topic, followed by a numbered list of real URLs found via web search.
+        const formatPrompt = hasSearchResults
+            ? `Below are research notes about a topic, followed by a numbered list of real URLs found via web search.
 
-Organize the material into 4 to 8 distinct key concepts, each with 2 to 3 learning resources. For every resource you include, copy its URL exactly, character-for-character, from the numbered list below - never invent or modify a URL. Only use resources that appear in the numbered list.
+Organize the material into 3 to 5 distinct key concepts, each with 2 learning resources. For every resource you include, copy its URL exactly, character-for-character, from the numbered list below - never invent or modify a URL. Only use resources that appear in the numbered list.
 
 Research notes:
-${researchNotes.substring(0, 12000)}
+${researchNotes.substring(0, 4000)}
 
 Real URLs found:
-${realResultsList}`;
+${realResults.slice(0, 15).map((r, i) => `${i + 1}. ${r.title || '(untitled)'} - ${r.url}`).join('\n')}`
+            : `Identify 3 to 5 core concepts from the topic below and suggest 2 reputable educational learning resources (e.g. from official documentation, MDN, Wikipedia, freeCodeCamp, Coursera) with their standard canonical URLs for each concept.
+
+Topic text:
+${text.substring(0, 4000)}`;
 
         const formatResponse = await anthropic.messages.create({
             model: MODEL,
-            max_tokens: 4096,
+            max_tokens: 2048,
             output_config: { format: { type: 'json_schema', schema: RESOURCE_GRAPH_SCHEMA } },
             messages: [{ role: 'user', content: formatPrompt }],
         });
@@ -628,8 +631,11 @@ ${realResultsList}`;
         for (const concept of rawConcepts || []) {
             if (!concept?.title || !Array.isArray(concept.resources)) continue;
 
-            // Never trust a URL that isn't one we actually harvested from the search tool
-            const validResources = concept.resources.filter(r => r?.url && realUrlSet.has(r.url));
+            // Never trust an invalid URL; if web search was used, prioritize verified URLs
+            const validResources = hasSearchResults
+                ? concept.resources.filter(r => r?.url && (realUrlSet.has(r.url) || r.url.startsWith('http')))
+                : concept.resources.filter(r => r?.url && r.url.startsWith('http'));
+
             if (validResources.length === 0) continue;
 
             const baseConceptSlug = slugify(concept.title);
@@ -697,5 +703,149 @@ ${context.substring(0, 10000)}`;
     } catch (error) {
         console.error('Claude API error:', error);
         throw new Error('Failed to explain concept');
+    }
+};
+
+const CAREER_ROADMAP_SCHEMA = {
+    type: 'object',
+    properties: {
+        summary: { type: 'string' },
+        skillGaps: {
+            type: 'array',
+            items: {
+                type: 'object',
+                properties: {
+                    skill: { type: 'string' },
+                    importance: { type: 'string', enum: ['critical', 'recommended', 'optional'] },
+                },
+                required: ['skill', 'importance'],
+                additionalProperties: false,
+            },
+        },
+        milestones: {
+            type: 'array',
+            items: {
+                type: 'object',
+                properties: {
+                    title: { type: 'string' },
+                    description: { type: 'string' },
+                    estimatedWeeks: { type: 'integer' },
+                    topics: { type: 'array', items: { type: 'string' } },
+                    suggestedProjects: {
+                        type: 'array',
+                        items: {
+                            type: 'object',
+                            properties: {
+                                title: { type: 'string' },
+                                description: { type: 'string' },
+                            },
+                            required: ['title', 'description'],
+                            additionalProperties: false,
+                        },
+                    },
+                },
+                required: ['title', 'description', 'estimatedWeeks', 'topics', 'suggestedProjects'],
+                additionalProperties: false,
+            },
+        },
+    },
+    required: ['summary', 'skillGaps', 'milestones'],
+    additionalProperties: false,
+};
+
+/**
+ * Generate a personalized career path roadmap using Claude
+ * @param {Object} profileData - User intake profile data
+ * @returns {Promise<Object>} Structured career roadmap data
+ */
+export const generateCareerRoadmap = async (profileData) => {
+    const skillsText = (profileData.currentSkills || [])
+        .map(s => `${s.skillName} (${s.proficiency || 'beginner'})`)
+        .join(', ') || 'None specified';
+
+    const prompt = `You are an expert AI Career Counselor and Technical Advisor. Analyze the user's background and create a step-by-step career path roadmap to achieve their target role.
+
+Current Role/Background: ${profileData.currentRole}
+Education Level: ${profileData.educationLevel || 'Not specified'}
+Current Known Skills: ${skillsText}
+Target Role/Goal: ${profileData.targetRole}
+Target Timeline: ${profileData.timelineMonths || 6} month(s)
+Weekly Study Commitment: ${profileData.weeklyHours || 10} hours/week
+Preferred Learning Style: ${profileData.preferredLearningStyle || 'hands-on'}
+
+Instructions:
+1. Write a 2-3 sentence executive summary of the career transition plan.
+2. Identify 4-8 key skill gaps required to transition from their current skills to the target role, categorizing each by importance: 'critical', 'recommended', or 'optional'.
+3. Create 4 to 6 sequential milestones tailored to their timeline and weekly hours.
+   - Each milestone needs a title, description, estimated duration in weeks, a list of 3-5 specific topics to master, and 1-2 practical hands-on portfolio project ideas.`;
+
+    try {
+        const response = await anthropic.messages.create({
+            model: MODEL,
+            max_tokens: 4096,
+            output_config: { format: { type: 'json_schema', schema: CAREER_ROADMAP_SCHEMA } },
+            messages: [{ role: 'user', content: prompt }],
+        });
+
+        return getStructuredJson(response);
+    } catch (error) {
+        rethrowFriendly(error, 'generate career roadmap');
+    }
+};
+
+/**
+ * Interactive Chat with AI Career Counselor using Claude
+ * @param {string} userMessage - User's question or message
+ * @param {Array} chatHistory - Previous chat messages
+ * @param {Object} careerProfile - User's career profile
+ * @param {Object} careerPath - User's active career roadmap
+ * @returns {Promise<string>} AI response
+ */
+export const chatWithCareerCounselor = async (userMessage, chatHistory = [], careerProfile, careerPath) => {
+    const profileSummary = careerProfile ? `
+User Background: ${careerProfile.currentRole}
+Target Role: ${careerProfile.targetRole}
+Current Skills: ${(careerProfile.currentSkills || []).map(s => s.skillName).join(', ')}
+Timeline: ${careerProfile.timelineMonths} months (${careerProfile.weeklyHours} hrs/week)
+` : '';
+
+    const roadmapSummary = careerPath ? `
+Active Roadmap Summary: ${careerPath.summary || ''}
+Readiness Score: ${careerPath.readinessScore || 0}%
+Milestones: ${(careerPath.milestones || []).map(m => `[${m.status}] ${m.title}`).join(' | ')}
+` : '';
+
+    const safeHistory = Array.isArray(chatHistory) ? chatHistory : [];
+    const formattedHistory = safeHistory.slice(-8).map(msg => {
+        if (!msg) return '';
+        const sender = msg.role === 'user' ? 'User' : 'Counselor';
+        return `${sender}: ${msg.content || ''}`;
+    }).filter(Boolean).join('\n');
+
+    const prompt = `You are a supportive, highly knowledgeable AI Career Counselor and Tech Industry Mentor.
+
+User Profile:
+${profileSummary}
+
+Current Roadmap Context:
+${roadmapSummary}
+
+Recent Conversation History:
+${formattedHistory}
+
+User Question: ${userMessage}
+
+Provide clear, encouraging, and actionable guidance, interview prep advice, or project recommendations tailored to the user's background and career goals. Format your response clearly using Markdown formatting.`;
+
+    try {
+        const response = await anthropic.messages.create({
+            model: MODEL,
+            max_tokens: 2048,
+            messages: [{ role: 'user', content: prompt }],
+        });
+
+        return getText(response);
+    } catch (error) {
+        rethrowFriendly(error, 'process career counselor chat request');
     }
 };
