@@ -11,14 +11,30 @@ export const useAuth = () => {
 };
 
 export const AuthProvider = ({ children }) => {
-    const [user, setUser] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [isAuthenticated, setIsAuthenticated] = useState(false);
+    const [user, setUser] = useState(() => {
+        try {
+            const token = localStorage.getItem('token');
+            const userStr = localStorage.getItem('user');
+            if (token && userStr) {
+                return JSON.parse(userStr);
+            }
+        } catch (error) {
+            console.error('Auth state initialization failed:', error);
+        }
+        return null;
+    });
 
+    const [isAuthenticated, setIsAuthenticated] = useState(() => {
+        try {
+            const token = localStorage.getItem('token');
+            const userStr = localStorage.getItem('user');
+            return Boolean(token && userStr);
+        } catch {
+            return false;
+        }
+    });
 
-    useEffect(() => {
-        checkAuthStatus();
-    }, []);
+    const [loading, setLoading] = useState(false);
 
     const checkAuthStatus = async () => {
         try {
@@ -29,6 +45,9 @@ export const AuthProvider = ({ children }) => {
                 const userData = JSON.parse(userStr);
                 setUser(userData);
                 setIsAuthenticated(true);
+            } else {
+                setUser(null);
+                setIsAuthenticated(false);
             }
         } catch (error) {
             console.error('Auth check failed:', error);
