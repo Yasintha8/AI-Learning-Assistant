@@ -73,8 +73,9 @@ const QuizTakePage = () => {
         return { questionIndex, selectedAnswer };
       });
 
-      const response = await quizService.submitQuiz(quizId, formattedAnswers);
-      toast.success('Quiz submitted successfully!');
+      const isRetake = Boolean(quiz?.completedAt);
+      const response = await quizService.submitQuiz(quizId, formattedAnswers, isRetake);
+      toast.success(isRetake ? 'Quiz retake submitted successfully!' : 'Quiz submitted successfully!');
       if (response.masteryUpdated) {
         toast.success("Mastery updated for this document's learning path!", { icon: '🎯' });
       }
@@ -221,7 +222,7 @@ const QuizTakePage = () => {
       {/* Header Section */}
       <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <PageHeader title={quiz.title || 'Take Quiz'} />
-        
+
         {/* Keyboard shortcut hint banner */}
         <div className="hidden sm:inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-bg-card border border-border-medium text-xs text-text-muted self-start sm:self-auto shadow-2xs">
           <Keyboard className="w-4 h-4 text-primary shrink-0" />
@@ -282,13 +283,12 @@ const QuizTakePage = () => {
                   type="button"
                   onClick={() => setCurrentQuestionIndex(idx)}
                   disabled={submitting}
-                  className={`relative shrink-0 w-9 h-9 rounded-xl font-mono text-xs font-bold transition-all duration-150 flex items-center justify-center cursor-pointer select-none ${
-                    isCurrent
-                      ? 'bg-primary text-white shadow-md shadow-primary-shadow/50 scale-105 ring-2 ring-primary ring-offset-2 ring-offset-bg-card'
+                  className={`relative shrink-0 w-9 h-9 rounded-xl font-mono text-xs font-bold transition-all duration-150 flex items-center justify-center cursor-pointer select-none ${isCurrent
+                      ? 'bg-primary text-white shadow-md shadow-primary-shadow/40 scale-105 border-2 border-primary'
                       : isAnsweredQ
-                      ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/20'
-                      : 'bg-bg-main text-text-muted border border-border-medium hover:border-text-muted hover:text-text-heading'
-                  } disabled:opacity-40 disabled:cursor-not-allowed`}
+                        ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/20'
+                        : 'bg-bg-main text-text-muted border border-border-medium hover:border-text-muted hover:text-text-heading'
+                    } disabled:opacity-40 disabled:cursor-not-allowed`}
                   title={`Question ${idx + 1}${isAnsweredQ ? ' (Answered)' : ' (Unanswered)'}`}
                   aria-label={`Jump to question ${idx + 1}`}
                 >
@@ -337,11 +337,10 @@ const QuizTakePage = () => {
             return (
               <label
                 key={index}
-                className={`group relative flex items-center justify-between p-4 border-2 rounded-2xl cursor-pointer transition-all duration-200 select-none ${
-                  isSelected
+                className={`group relative flex items-center justify-between p-4 border-2 rounded-2xl cursor-pointer transition-all duration-200 select-none ${isSelected
                     ? 'border-primary bg-primary-light/40 shadow-sm shadow-primary-shadow'
                     : 'border-border-medium bg-bg-main/60 hover:border-primary-hover hover:bg-primary-light/10'
-                }`}
+                  }`}
               >
                 {/* Hidden Native Radio Input */}
                 <input
@@ -357,31 +356,28 @@ const QuizTakePage = () => {
                 <div className="flex items-center gap-3.5 flex-1 min-w-0">
                   {/* Keyboard Shortcut Key Pill */}
                   <kbd
-                    className={`w-6 h-6 rounded-lg text-xs font-mono font-bold flex items-center justify-center shrink-0 border transition-all ${
-                      isSelected
+                    className={`w-6 h-6 rounded-lg text-xs font-mono font-bold flex items-center justify-center shrink-0 border transition-all ${isSelected
                         ? 'bg-primary text-white border-primary shadow-xs'
                         : 'bg-bg-card border-border-medium text-text-muted group-hover:border-primary/50 group-hover:text-primary'
-                    }`}
+                      }`}
                   >
                     {keyLabel}
                   </kbd>
 
                   {/* Custom Radio Button */}
                   <div
-                    className={`shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all duration-200 ${
-                      isSelected
+                    className={`shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all duration-200 ${isSelected
                         ? 'border-primary bg-primary'
                         : 'border-border-medium bg-bg-card group-hover:border-primary-hover'
-                    }`}
+                      }`}
                   >
                     {isSelected && <div className="w-2 h-2 rounded-full bg-white animate-fade-in" />}
                   </div>
 
                   {/* Option Text */}
                   <span
-                    className={`text-sm sm:text-base font-medium transition-colors duration-200 ${
-                      isSelected ? 'text-text-heading font-semibold' : 'text-text-body group-hover:text-text-heading'
-                    }`}
+                    className={`text-sm sm:text-base font-medium transition-colors duration-200 ${isSelected ? 'text-text-heading font-semibold' : 'text-text-body group-hover:text-text-heading'
+                      }`}
                   >
                     {option}
                   </span>
@@ -410,7 +406,6 @@ const QuizTakePage = () => {
           >
             <ChevronLeft className="w-4 h-4 text-text-muted" strokeWidth={2.5} />
             <span>Previous</span>
-            <kbd className="hidden sm:inline px-1 py-0.5 bg-bg-main border border-border-light rounded text-[10px] font-mono text-text-muted">←</kbd>
           </Button>
 
           {/* Next or Submit Button */}
@@ -430,7 +425,6 @@ const QuizTakePage = () => {
                 <>
                   <CheckCircle2 className="w-4 h-4 text-white" strokeWidth={2.5} />
                   <span>Finish & Submit</span>
-                  <kbd className="hidden sm:inline px-1.5 py-0.5 bg-white/20 rounded text-[10px] font-mono">↵</kbd>
                 </>
               )}
             </button>
@@ -441,7 +435,6 @@ const QuizTakePage = () => {
               className="flex items-center gap-2 px-6 py-2.5 text-xs sm:text-sm font-bold text-white bg-primary hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed rounded-xl shadow-md shadow-primary-shadow/40 hover:shadow-lg transition-all duration-200 cursor-pointer"
             >
               <span>Next</span>
-              <kbd className="hidden sm:inline px-1.5 py-0.5 bg-white/20 rounded text-[10px] font-mono">→</kbd>
               <ChevronRight className="w-4 h-4 text-white" strokeWidth={2.5} />
             </Button>
           )}

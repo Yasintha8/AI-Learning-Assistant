@@ -44,6 +44,12 @@ import Select from '../../components/common/Select';
 import { getStatusStyle, getKnowledgeLevelStyle, getProgressBandStyle, getSkillCategoryStyle } from '../../utils/learningPathStatus';
 import { generateLearningPathReportPdf } from '../../utils/learningPathReport';
 
+const LEARNING_PATH_STAGES = [
+  'Analyzing document structure & syllabus topics...',
+  'Extracting core concepts, subtopics & difficulty tiers...',
+  'Structuring progressive learning milestones & mastery metrics...'
+];
+
 const SOURCE_LABELS = {
   quiz: 'Quiz results',
   flashcard: 'Flashcard reviews',
@@ -99,6 +105,7 @@ const LearningPathPage = () => {
   const [recentQuizResults, setRecentQuizResults] = useState([]);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
+  const [generationStage, setGenerationStage] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
   const [refreshingStudyPlan, setRefreshingStudyPlan] = useState(false);
   const [selectedTopic, setSelectedTopic] = useState(null);
@@ -366,6 +373,12 @@ const LearningPathPage = () => {
 
   const handleGenerate = async () => {
     setGenerating(true);
+    setGenerationStage(0);
+
+    const stageInterval = setInterval(() => {
+      setGenerationStage((prev) => (prev < LEARNING_PATH_STAGES.length - 1 ? prev + 1 : prev));
+    }, 7000);
+
     try {
       const response = await learningPathService.generateLearningPath(documentId);
       setLearningPath(response.data);
@@ -374,6 +387,7 @@ const LearningPathPage = () => {
     } catch (error) {
       toast.error(error.message || 'Failed to generate learning path.');
     } finally {
+      clearInterval(stageInterval);
       setGenerating(false);
     }
   };
@@ -498,13 +512,51 @@ const LearningPathPage = () => {
       );
     }
 
+    if (generating) {
+      return (
+        <div className="flex items-center justify-center py-16 px-6 border-2 border-dashed border-border-medium rounded-3xl bg-bg-card/50">
+          <div className="flex flex-col items-center text-center gap-5 max-w-md animate-fade-in py-6">
+            <div className="relative flex items-center justify-center">
+              <div className="w-16 h-16 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shadow-sm shadow-primary-shadow/30">
+                <BrainCircuit className="w-8 h-8 animate-pulse text-primary" strokeWidth={2} />
+              </div>
+              <span className="absolute -top-1 -right-1 flex h-4 w-4">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-4 w-4 bg-primary"></span>
+              </span>
+            </div>
+
+            <div className="space-y-2">
+              <h3 className="text-base font-bold text-text-heading tracking-tight">
+                Building Your Personalized Learning Path
+              </h3>
+              <p className="text-xs font-semibold text-primary transition-all duration-300">
+                {LEARNING_PATH_STAGES[generationStage]}
+              </p>
+              <p className="text-xs text-text-muted leading-relaxed max-w-xs mx-auto">
+                Claude AI is analyzing your document, extracting core concepts, and structuring progressive milestones. This usually takes ~15–25 seconds.
+              </p>
+            </div>
+
+            {/* Progress Bar */}
+            <div className="w-full bg-bg-main rounded-full h-1.5 overflow-hidden border border-border-light">
+              <div
+                className="bg-primary h-full transition-all duration-1000 ease-out rounded-full"
+                style={{ width: `${((generationStage + 1) / LEARNING_PATH_STAGES.length) * 90}%` }}
+              />
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     if (!learningPath || !learningPath.topics || learningPath.topics.length === 0) {
       return (
         <EmptyState
           title="No Learning Path Yet"
           description="Generate a topic breakdown from this document to start tracking your mastery."
-          buttonText={generating ? 'Generating Topics...' : 'Generate Learning Path'}
-          onActionClick={generating ? undefined : handleGenerate}
+          buttonText="Generate Learning Path"
+          onActionClick={handleGenerate}
         />
       );
     }

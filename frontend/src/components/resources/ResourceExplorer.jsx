@@ -26,36 +26,67 @@ const Legend = () => (
     </div>
 );
 
+const STAGES = [
+    'Scanning key topics & concepts...',
+    'Searching live web resources via Claude AI...',
+    'Synthesizing concept connections & assembling interactive mesh...'
+];
+
 const ResourceExplorer = ({ documentId, documentTitle }) => {
     const [loading, setLoading] = useState(true);
     const [generating, setGenerating] = useState(false);
+    const [generationStage, setGenerationStage] = useState(0);
     const [graph, setGraph] = useState(null);
     const [selectedNode, setSelectedNode] = useState(null);
 
     useEffect(() => {
+        let isMounted = true;
         const fetchGraph = async () => {
             try {
                 const response = await resourceService.getResourceGraph(documentId);
-                setGraph(response?.data || null);
+                if (isMounted) setGraph(response?.data || null);
             } catch (error) {
-                toast.error(error.message || 'Failed to load related resources.');
+                // If it's a 404 (no resources generated yet), do not show an error toast
+                if (error?.statusCode !== 404 && error?.status !== 404 && isMounted) {
+                    toast.error(error.message || 'Failed to load related resources.');
+                }
             } finally {
-                setLoading(false);
+                if (isMounted) setLoading(false);
             }
         };
 
         fetchGraph();
+        return () => { isMounted = false; };
     }, [documentId]);
 
     const handleGenerate = async (force) => {
         setGenerating(true);
+        setGenerationStage(0);
         setSelectedNode(null);
+
+        // Progress stage ticker every 9 seconds
+        const stageInterval = setInterval(() => {
+            setGenerationStage((prev) => (prev < STAGES.length - 1 ? prev + 1 : prev));
+        }, 9000);
+
         try {
             const response = await resourceService.generateResourceGraph(documentId, force);
             setGraph(response.data);
+            toast.success('Related resources generated successfully!');
         } catch (error) {
+            // Self-healing: check if backend actually completed and saved into MongoDB
+            try {
+                const check = await resourceService.getResourceGraph(documentId);
+                if (check?.data) {
+                    setGraph(check.data);
+                    toast.success('Related resources generated successfully!');
+                    return;
+                }
+            } catch (_) {}
+
             toast.error(error.message || 'Failed to generate related resources.');
         } finally {
+            clearInterval(stageInterval);
             setGenerating(false);
         }
     };
@@ -80,31 +111,56 @@ const ResourceExplorer = ({ documentId, documentTitle }) => {
 
     if (!graph) {
         return (
-            <div className="flex items-center justify-center py-16 px-6 border-2 border-dashed border-neutral-300 rounded-2xl">
-                <div className="flex flex-col items-center text-center gap-4 max-w-sm">
-                    <div className="w-14 h-14 rounded-2xl bg-linear-to-br from-primary to-blue-400 flex items-center justify-center shadow-sm shadow-primary-shadow">
-                        <Network className="w-6 h-6 text-white" strokeWidth={2} />
+            <div className="flex items-center justify-center py-12 px-6 border-2 border-dashed border-border-medium rounded-2xl bg-bg-card/50">
+                {generating ? (
+                    <div className="flex flex-col items-center text-center gap-5 max-w-md animate-fade-in py-6">
+                        <div className="relative flex items-center justify-center">
+                            <div className="w-16 h-16 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shadow-sm shadow-primary-shadow/30">
+                                <Network className="w-8 h-8 animate-pulse text-primary" strokeWidth={2} />
+                            </div>
+                            <span className="absolute -top-1 -right-1 flex h-4 w-4">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                                <span className="relative inline-flex rounded-full h-4 w-4 bg-primary"></span>
+                            </span>
+                        </div>
+
+                        <div className="space-y-2">
+                            <h3 className="text-base font-bold text-text-heading tracking-tight">
+                                Generating Related Resources Mesh
+                            </h3>
+                            <p className="text-xs font-semibold text-primary transition-all duration-300">
+                                {STAGES[generationStage]}
+                            </p>
+                            <p className="text-xs text-text-muted leading-relaxed max-w-xs mx-auto">
+                                Claude is performing live web searches to find verified citations and interactive connections. This takes ~25–35 seconds.
+                            </p>
+                        </div>
+
+                        {/* Progress Bar */}
+                        <div className="w-full bg-bg-main rounded-full h-1.5 overflow-hidden border border-border-light">
+                            <div
+                                className="bg-primary h-full transition-all duration-1000 ease-out rounded-full"
+                                style={{ width: `${((generationStage + 1) / STAGES.length) * 90}%` }}
+                            />
+                        </div>
                     </div>
-                    <div className="space-y-1.5">
-                        <h3 className="text-base font-bold text-text-heading tracking-tight">Discover Related Resources</h3>
-                        <p className="text-sm text-text-muted leading-relaxed">
-                            Let AI search the web for articles, videos, and courses related to this document, and explore how they connect as a mesh.
-                        </p>
+                ) : (
+                    <div className="flex flex-col items-center text-center gap-4 max-w-sm">
+                        <div className="w-14 h-14 rounded-2xl bg-linear-to-br from-primary to-blue-400 flex items-center justify-center shadow-sm shadow-primary-shadow">
+                            <Network className="w-6 h-6 text-white" strokeWidth={2} />
+                        </div>
+                        <div className="space-y-1.5">
+                            <h3 className="text-base font-bold text-text-heading tracking-tight">Discover Related Resources</h3>
+                            <p className="text-sm text-text-muted leading-relaxed">
+                                Let AI search the web for articles, videos, and courses related to this document, and explore how they connect as a mesh.
+                            </p>
+                        </div>
+                        <Button onClick={() => handleGenerate(false)}>
+                            <Sparkles className="w-4 h-4" strokeWidth={2.5} />
+                            Discover Related Resources
+                        </Button>
                     </div>
-                    <Button onClick={() => handleGenerate(false)} disabled={generating}>
-                        {generating ? (
-                            <>
-                                <Loader2 className="w-4 h-4 animate-spin" />
-                                Searching the web...
-                            </>
-                        ) : (
-                            <>
-                                <Sparkles className="w-4 h-4" strokeWidth={2.5} />
-                                Discover Related Resources
-                            </>
-                        )}
-                    </Button>
-                </div>
+                )}
             </div>
         );
     }

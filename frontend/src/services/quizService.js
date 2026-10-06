@@ -19,9 +19,9 @@ const getQuizById = async (quizId) => {
     }
 };
 
-const submitQuiz = async (quizId, answers) => {
+const submitQuiz = async (quizId, answers, retake = false) => {
     try {
-        const response = await axiosInstance.post(API_PATHS.QUIZZES.SUBMIT_QUIZ(quizId), { answers });
+        const response = await axiosInstance.post(API_PATHS.QUIZZES.SUBMIT_QUIZ(quizId), { answers, retake });
         return response.data;
     } catch (error) {
         throw error.response?.data || { message: 'Failed to submit quiz' };

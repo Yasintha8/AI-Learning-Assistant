@@ -20,7 +20,10 @@ import {
   TrendingUp,
   Clock,
   Briefcase,
-  Target
+  Target,
+  CheckCircle2,
+  AlertCircle,
+  FolderGit2
 } from 'lucide-react';
 
 const CareerPage = () => {
@@ -31,6 +34,15 @@ const CareerPage = () => {
   const [isSendingChat, setIsSendingChat] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('roadmap'); // 'roadmap' | 'chat'
+
+  // Computed metrics for real-time progress tracking
+  const totalMilestones = careerPath?.milestones?.length || 0;
+  const completedMilestones = careerPath?.milestones?.filter(m => m.status === 'completed').length || 0;
+  const totalTopics = careerPath?.milestones?.reduce((acc, m) => acc + (m.topics?.length || 0), 0) || 0;
+  const completedTopics = careerPath?.milestones?.reduce((acc, m) => acc + (m.topics?.filter(t => t.isCompleted)?.length || 0), 0) || 0;
+  const topicProgressPercent = totalTopics > 0 ? Math.round((completedTopics / totalTopics) * 100) : 0;
+  const skillGapsCount = careerPath?.skillGaps?.length || 0;
+  const portfolioCount = careerPath?.portfolioProjects?.length || 0;
 
   const fetchCareerData = async () => {
     try {
@@ -156,71 +168,143 @@ const CareerPage = () => {
         <div className="absolute top-0 right-0 -mt-12 -mr-12 w-80 h-80 bg-linear-to-br from-primary/10 via-purple-500/10 to-transparent rounded-full blur-3xl pointer-events-none" />
         <div className="absolute bottom-0 left-1/4 -mb-12 w-60 h-60 bg-emerald-500/5 rounded-full blur-2xl pointer-events-none" />
 
-        <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+        <div className="relative z-10 space-y-6">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
 
-          {/* Role Header & Subtitle */}
-          <div className="space-y-3 max-w-2xl">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-primary-light border border-primary/20 rounded-full text-primary text-xs font-semibold shadow-2xs">
-              <Compass className="w-3.5 h-3.5" />
-              <span>AI Career Navigator & Strategic Planning</span>
+            {/* Role Header & Subtitle */}
+            <div className="space-y-3 max-w-2xl">
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-primary-light border border-primary/20 rounded-full text-primary text-xs font-semibold shadow-2xs">
+                <Compass className="w-3.5 h-3.5" />
+                <span>AI Career Navigator & Strategic Planning</span>
+              </div>
+
+              <div>
+                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-text-heading tracking-tight font-display">
+                  {profile ? profile.targetRole : 'Personalized Career Path & Guidance'}
+                </h1>
+
+                {profile ? (
+                  <div className="mt-2.5 flex items-center gap-2 flex-wrap text-xs sm:text-sm text-text-muted font-body">
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-bg-main border border-border-light rounded-xl font-medium text-text-body">
+                      <Briefcase className="w-3.5 h-3.5 text-text-muted" />
+                      <span>{profile.currentRole}</span>
+                    </span>
+                    <ArrowRight className="w-4 h-4 text-primary shrink-0" />
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-primary-light border border-primary/20 rounded-xl font-bold text-primary">
+                      <Target className="w-3.5 h-3.5 text-primary" />
+                      <span>{profile.targetRole}</span>
+                    </span>
+                    <span className="inline-flex items-center gap-1 px-3 py-1 bg-bg-main border border-border-light rounded-xl text-xs font-mono font-bold text-text-muted">
+                      <Clock className="w-3.5 h-3.5 text-amber-500" />
+                      {profile.timelineMonths} mos • {profile.weeklyHours} hrs/wk
+                    </span>
+                  </div>
+                ) : (
+                  <p className="mt-2 text-sm text-text-muted font-body leading-relaxed">
+                    Define your current background and target role to generate a step-by-step career path roadmap with AI-curated skill gaps and portfolio project ideas.
+                  </p>
+                )}
+              </div>
             </div>
 
-            <div>
-              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-text-heading tracking-tight font-display">
-                {profile ? profile.targetRole : 'Personalized Career Path & Guidance'}
-              </h1>
-
-              {profile ? (
-                <div className="mt-2.5 flex items-center gap-2 flex-wrap text-xs sm:text-sm text-text-muted font-body">
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-bg-main border border-border-light rounded-xl font-medium text-text-body">
-                    <Briefcase className="w-3.5 h-3.5 text-text-muted" />
-                    <span>{profile.currentRole}</span>
-                  </span>
-                  <ArrowRight className="w-4 h-4 text-primary shrink-0" />
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-primary-light border border-primary/20 rounded-xl font-bold text-primary">
-                    <Target className="w-3.5 h-3.5 text-primary" />
-                    <span>{profile.targetRole}</span>
-                  </span>
-                  <span className="inline-flex items-center gap-1 px-3 py-1 bg-bg-main border border-border-light rounded-xl text-xs font-mono font-bold text-text-muted">
-                    <Clock className="w-3.5 h-3.5 text-amber-500" />
-                    {profile.timelineMonths} mos • {profile.weeklyHours} hrs/wk
-                  </span>
+            {/* Job Readiness Metric Card & Action */}
+            <div className="flex items-center gap-4 shrink-0 flex-wrap sm:flex-nowrap">
+              {profile && careerPath && (
+                <div className="flex items-center gap-3.5 px-5 py-3.5 bg-bg-main/80 backdrop-blur-sm border border-border-medium rounded-2xl shadow-2xs">
+                  <div className="p-3 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-2xl border border-emerald-500/20 shadow-2xs">
+                    <Award className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <div className="text-[10px] uppercase font-bold text-text-muted tracking-wider mb-0.5">
+                      Job Readiness Score
+                    </div>
+                    <div className="text-2xl font-black text-emerald-600 dark:text-emerald-400 font-mono tracking-tight flex items-center gap-1">
+                      <span>{careerPath.readinessScore || 0}%</span>
+                      <TrendingUp className="w-4 h-4 text-emerald-500" />
+                    </div>
+                  </div>
                 </div>
-              ) : (
-                <p className="mt-2 text-sm text-text-muted font-body leading-relaxed">
-                  Define your current background and target role to generate a step-by-step career path roadmap with AI-curated skill gaps and portfolio project ideas.
-                </p>
               )}
+
+              <button
+                onClick={() => setIsModalOpen(true)}
+                className="px-5 py-3.5 bg-primary hover:bg-primary-hover text-white rounded-2xl text-xs font-bold shadow-sm hover:shadow-md transition-all flex items-center gap-2 cursor-pointer"
+              >
+                <Edit3 className="w-4 h-4" />
+                <span>{profile ? 'Edit Career Goal' : 'Start Intake Wizard'}</span>
+              </button>
             </div>
+
           </div>
 
-          {/* Job Readiness Metric Card & Action */}
-          <div className="flex items-center gap-4 shrink-0 flex-wrap sm:flex-nowrap">
-            {profile && careerPath && (
-              <div className="flex items-center gap-3.5 px-5 py-3.5 bg-bg-main/80 backdrop-blur-sm border border-border-medium rounded-2xl shadow-2xs">
-                <div className="p-3 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-2xl border border-emerald-500/20 shadow-2xs">
-                  <Award className="w-6 h-6" />
-                </div>
-                <div>
-                  <div className="text-[10px] uppercase font-bold text-text-muted tracking-wider mb-0.5">
-                    Job Readiness Score
+          {/* Quick Metrics & Progress Strip */}
+          {profile && careerPath && (
+            <div className="pt-5 border-t border-border-light/70 space-y-3">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {/* Milestones count */}
+                <div className="p-3.5 rounded-2xl bg-bg-main/70 border border-border-light flex items-center gap-3">
+                  <div className="p-2 rounded-xl bg-primary-light text-primary border border-primary/20 shrink-0">
+                    <Layers className="w-4 h-4" />
                   </div>
-                  <div className="text-2xl font-black text-emerald-600 dark:text-emerald-400 font-mono tracking-tight flex items-center gap-1">
-                    <span>{careerPath.readinessScore || 0}%</span>
-                    <TrendingUp className="w-4 h-4 text-emerald-500" />
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-bold text-text-muted uppercase tracking-wider truncate">Milestones</p>
+                    <p className="text-sm font-bold text-text-heading font-mono">
+                      {completedMilestones} <span className="text-xs text-text-muted font-normal">/ {totalMilestones} done</span>
+                    </p>
+                  </div>
+                </div>
+
+                {/* Topics Progress */}
+                <div className="p-3.5 rounded-2xl bg-bg-main/70 border border-border-light flex items-center gap-3">
+                  <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 shrink-0">
+                    <CheckCircle2 className="w-4 h-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-bold text-text-muted uppercase tracking-wider truncate">Curriculum</p>
+                    <p className="text-sm font-bold text-emerald-600 dark:text-emerald-400 font-mono">
+                      {topicProgressPercent}% <span className="text-xs text-text-muted font-normal">({completedTopics}/{totalTopics})</span>
+                    </p>
+                  </div>
+                </div>
+
+                {/* Skill Gaps identified */}
+                <div className="p-3.5 rounded-2xl bg-bg-main/70 border border-border-light flex items-center gap-3">
+                  <div className="p-2 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 shrink-0">
+                    <AlertCircle className="w-4 h-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-bold text-text-muted uppercase tracking-wider truncate">Skill Gaps</p>
+                    <p className="text-sm font-bold text-text-heading font-mono">
+                      {skillGapsCount} <span className="text-xs text-text-muted font-normal">focus areas</span>
+                    </p>
+                  </div>
+                </div>
+
+                {/* Portfolio Projects */}
+                <div className="p-3.5 rounded-2xl bg-bg-main/70 border border-border-light flex items-center gap-3">
+                  <div className="p-2 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20 shrink-0">
+                    <FolderGit2 className="w-4 h-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-bold text-text-muted uppercase tracking-wider truncate">Projects</p>
+                    <p className="text-sm font-bold text-text-heading font-mono">
+                      {portfolioCount} <span className="text-xs text-text-muted font-normal">blueprints</span>
+                    </p>
                   </div>
                 </div>
               </div>
-            )}
 
-            <button
-              onClick={() => setIsModalOpen(true)}
-              className="px-5 py-3.5 bg-primary hover:bg-primary-hover text-white rounded-2xl text-xs font-bold shadow-sm hover:shadow-md transition-all flex items-center gap-2 cursor-pointer"
-            >
-              <Edit3 className="w-4 h-4" />
-              <span>{profile ? 'Edit Career Goal' : 'Start Intake Wizard'}</span>
-            </button>
-          </div>
+              {/* Progress Bar */}
+              {totalTopics > 0 && (
+                <div className="w-full bg-border-light/60 h-2 rounded-full overflow-hidden">
+                  <div
+                    className="bg-linear-to-r from-primary via-indigo-500 to-emerald-500 h-full rounded-full transition-all duration-500"
+                    style={{ width: `${topicProgressPercent}%` }}
+                  />
+                </div>
+              )}
+            </div>
+          )}
 
         </div>
       </div>
@@ -302,6 +386,15 @@ const CareerPage = () => {
             >
               <MessageSquare className="w-4 h-4" />
               <span>AI Counselor Chat</span>
+              {careerPath?.chatHistory?.length > 0 && (
+                <span
+                  className={`px-2 py-0.5 text-[10px] rounded-full font-mono font-bold transition-colors ${
+                    activeTab === 'chat' ? 'bg-white/20 text-white' : 'bg-primary-light text-primary'
+                  }`}
+                >
+                  {careerPath.chatHistory.length}
+                </span>
+              )}
             </button>
           </div>
 

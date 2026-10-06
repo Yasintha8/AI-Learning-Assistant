@@ -188,7 +188,7 @@ const QuizResultPage = () => {
         {/* Quick Retake Action from Hero Card */}
         <div className="pt-2">
           <Link
-            to={`/quizzes/${quizId}/take`}
+            to={`/quizzes/${quizId}`}
             className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl border border-primary text-primary hover:bg-primary-light/40 text-xs font-bold transition-all duration-150 cursor-pointer shadow-2xs hover:shadow-xs"
           >
             <RotateCcw className="w-3.5 h-3.5" strokeWidth={2.25} />
@@ -373,7 +373,7 @@ const QuizResultPage = () => {
       {/* Bottom Action Buttons */}
       <div className="flex flex-wrap justify-center gap-3 pt-4 border-t border-border-light">
         <Link
-          to={`/quizzes/${quizId}/take`}
+          to={`/quizzes/${quizId}`}
           className="relative inline-flex items-center gap-2 h-11 px-6 rounded-xl border border-primary text-primary hover:bg-primary-light/50 text-sm font-semibold transition-all duration-200 shadow-xs cursor-pointer"
         >
           <RotateCcw className="w-4 h-4" strokeWidth={2} />

@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { X, Sparkles, Plus, Briefcase, Target, Clock, Calendar, BookOpen } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { X, Sparkles, Plus, Briefcase, Target, Clock, Calendar, BookOpen, Compass } from 'lucide-react';
 import Select from '../common/Select';
 
 const EDUCATION_LEVEL_OPTIONS = [
@@ -23,6 +23,21 @@ const PROFICIENCY_OPTIONS = [
   { value: 'advanced', label: 'Advanced' },
 ];
 
+const POPULAR_SKILLS = [
+  'React', 'Node.js', 'Python', 'TypeScript', 'SQL', 'Docker', 'Git', 'AWS', 'Tailwind CSS', 'MongoDB'
+];
+
+const TARGET_ROLE_SUGGESTIONS = [
+  'Full-Stack Developer', 'Frontend Engineer', 'Backend Engineer', 'AI/ML Engineer', 'DevOps Specialist', 'Data Analyst'
+];
+
+const CAREER_GENERATION_STAGES = [
+  'Benchmarking your background against target role requirements...',
+  'Analyzing industry skill gaps & prerequisites...',
+  'Architecting progressive milestone phases & timelines...',
+  'Curating tailored portfolio project blueprints...'
+];
+
 const CareerIntakeModal = ({ isOpen, onClose, onSubmit, initialProfile, isLoading }) => {
   const [currentRole, setCurrentRole] = useState(initialProfile?.currentRole || '');
   const [educationLevel, setEducationLevel] = useState(initialProfile?.educationLevel || 'Undergraduate Student');
@@ -30,6 +45,18 @@ const CareerIntakeModal = ({ isOpen, onClose, onSubmit, initialProfile, isLoadin
   const [timelineMonths, setTimelineMonths] = useState(initialProfile?.timelineMonths || 6);
   const [weeklyHours, setWeeklyHours] = useState(initialProfile?.weeklyHours || 10);
   const [preferredLearningStyle, setPreferredLearningStyle] = useState(initialProfile?.preferredLearningStyle || 'hands-on');
+  const [generationStage, setGenerationStage] = useState(0);
+
+  useEffect(() => {
+    if (!isLoading) {
+      setGenerationStage(0);
+      return;
+    }
+    const interval = setInterval(() => {
+      setGenerationStage((prev) => (prev < CAREER_GENERATION_STAGES.length - 1 ? prev + 1 : prev));
+    }, 5500);
+    return () => clearInterval(interval);
+  }, [isLoading]);
 
   // Skills list state
   const [skills, setSkills] = useState(
@@ -100,8 +127,45 @@ const CareerIntakeModal = ({ isOpen, onClose, onSubmit, initialProfile, isLoadin
           </button>
         </div>
 
-        {/* Form Container */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-5 max-h-[75vh] overflow-y-auto custom-scrollbar font-body">
+        {/* Modal Body: Active Generation State or Intake Form */}
+        {isLoading ? (
+          <div className="p-8 sm:p-12 flex flex-col items-center text-center gap-6 animate-fade-in">
+            <div className="relative flex items-center justify-center">
+              <div className="w-20 h-20 rounded-3xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shadow-lg shadow-primary-shadow/30">
+                <Compass className="w-10 h-10 animate-pulse text-primary" strokeWidth={2} />
+              </div>
+              <span className="absolute -top-1 -right-1 flex h-5 w-5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-5 w-5 bg-primary"></span>
+              </span>
+            </div>
+
+            <div className="space-y-2 max-w-md">
+              <h3 className="text-lg font-bold text-text-heading tracking-tight font-display">
+                Crafting Your Custom Career Roadmap
+              </h3>
+              <p className="text-xs font-semibold text-primary transition-all duration-300">
+                {CAREER_GENERATION_STAGES[generationStage]}
+              </p>
+              <p className="text-xs text-text-muted leading-relaxed font-body">
+                Claude AI is evaluating your competencies and structuring progressive milestone phases toward{' '}
+                <strong className="text-text-heading font-semibold">{targetRole || 'your target role'}</strong>.
+              </p>
+            </div>
+
+            {/* Progress Bar */}
+            <div className="w-full max-w-md bg-bg-main rounded-full h-2 overflow-hidden border border-border-light">
+              <div
+                className="bg-primary h-full transition-all duration-1000 ease-out rounded-full"
+                style={{ width: `${((generationStage + 1) / CAREER_GENERATION_STAGES.length) * 92}%` }}
+              />
+            </div>
+            <p className="text-[11px] text-text-muted font-mono">
+              Estimated duration: ~15–25 seconds
+            </p>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="p-6 space-y-5 max-h-[75vh] overflow-y-auto custom-scrollbar font-body">
 
           {/* Current Role & Target Role */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -135,6 +199,24 @@ const CareerIntakeModal = ({ isOpen, onClose, onSubmit, initialProfile, isLoadin
                 required
                 className="w-full px-4 py-2.5 bg-bg-main border border-border-light rounded-xl text-xs text-text-heading placeholder-text-placeholder focus:outline-none focus:border-primary transition-colors"
               />
+              {/* Target Role Quick Picks */}
+              <div className="flex flex-wrap items-center gap-1.5 pt-1.5">
+                <span className="text-[10px] font-bold text-text-muted uppercase tracking-wider">Quick Pick:</span>
+                {TARGET_ROLE_SUGGESTIONS.map((role) => (
+                  <button
+                    key={role}
+                    type="button"
+                    onClick={() => setTargetRole(role)}
+                    className={`px-2 py-0.5 rounded-lg text-[10px] font-semibold transition-all cursor-pointer ${
+                      targetRole === role
+                        ? 'bg-primary text-white shadow-2xs'
+                        : 'bg-bg-main hover:bg-primary-light border border-border-light hover:border-primary/40 text-text-muted hover:text-primary'
+                    }`}
+                  >
+                    {role}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 
@@ -273,6 +355,22 @@ const CareerIntakeModal = ({ isOpen, onClose, onSubmit, initialProfile, isLoadin
                 <Plus className="w-4 h-4" /> <span>Add</span>
               </button>
             </div>
+
+            {/* Quick Add Popular Skills */}
+            <div className="flex flex-wrap items-center gap-1.5 pt-1">
+              <span className="text-[10px] font-bold text-text-muted uppercase tracking-wider">Suggestions:</span>
+              {POPULAR_SKILLS.filter(s => !skills.some(k => k.skillName.toLowerCase() === s.toLowerCase())).slice(0, 8).map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => setSkills([...skills, { skillName: s, proficiency: 'intermediate' }])}
+                  className="px-2 py-0.5 rounded-lg text-[10px] font-semibold bg-bg-main hover:bg-emerald-500/10 border border-border-light hover:border-emerald-500/30 text-text-muted hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors flex items-center gap-1 cursor-pointer"
+                >
+                  <Plus className="w-2.5 h-2.5" />
+                  <span>{s}</span>
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* Action Buttons */}
@@ -306,6 +404,7 @@ const CareerIntakeModal = ({ isOpen, onClose, onSubmit, initialProfile, isLoadin
           </div>
 
         </form>
+      )}
 
       </div>
     </div>

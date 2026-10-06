@@ -3,10 +3,16 @@ import { API_PATHS } from '../utils/apiPaths';
 
 const generateResourceGraph = async (documentId, force = false) => {
     try {
-        const response = await axiosInstance.post(API_PATHS.RESOURCES.GENERATE, { documentId, force });
+        const response = await axiosInstance.post(
+            API_PATHS.RESOURCES.GENERATE,
+            { documentId, force },
+            { timeout: 180000 }
+        );
         return response.data;
     } catch (error) {
-        throw error.response?.data || { message: 'Failed to generate related resources' };
+        const errorData = error.response?.data;
+        const message = errorData?.error || errorData?.message || error.message || 'Failed to generate related resources';
+        throw { message, ...errorData };
     }
 };
 

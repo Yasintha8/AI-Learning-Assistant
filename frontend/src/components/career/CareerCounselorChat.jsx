@@ -1,10 +1,12 @@
 import { useState, useRef, useEffect } from 'react';
-import { Sparkles, Send, User, Bot, RefreshCw, MessageSquare, Lightbulb } from 'lucide-react';
+import { Sparkles, Send, User, Bot, RefreshCw, MessageSquare, Lightbulb, Copy, Check } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import toast from '../../utils/toast';
 
 const CareerCounselorChat = ({ chatHistory = [], onSendMessage, isLoading, targetRole }) => {
   const [inputMessage, setInputMessage] = useState('');
+  const [copiedIndex, setCopiedIndex] = useState(null);
   const messagesEndRef = useRef(null);
 
   const suggestionChips = [
@@ -32,6 +34,13 @@ const CareerCounselorChat = ({ chatHistory = [], onSendMessage, isLoading, targe
   const handleChipClick = (suggestion) => {
     if (isLoading) return;
     onSendMessage(suggestion);
+  };
+
+  const handleCopyMessage = (idx, text) => {
+    navigator.clipboard.writeText(text);
+    setCopiedIndex(idx);
+    toast.success('Advice copied to clipboard!');
+    setTimeout(() => setCopiedIndex(null), 2000);
   };
 
   return (
@@ -106,10 +115,33 @@ const CareerCounselorChat = ({ chatHistory = [], onSendMessage, isLoading, targe
                   )}
 
                   <div
-                    className={`text-[10px] mt-1.5 font-mono ${isUser ? 'text-white/80 text-right' : 'text-text-muted'
-                      }`}
+                    className={`text-[10px] mt-2 pt-1.5 flex items-center justify-between gap-2 border-t border-border-light/40 font-mono ${
+                      isUser ? 'text-white/80 justify-end' : 'text-text-muted'
+                    }`}
                   >
-                    {msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
+                    {!isUser && (
+                      <button
+                        type="button"
+                        onClick={() => handleCopyMessage(idx, msg.content)}
+                        className="inline-flex items-center gap-1 text-[10px] text-text-muted hover:text-primary transition-colors cursor-pointer"
+                        title="Copy advice to clipboard"
+                      >
+                        {copiedIndex === idx ? (
+                          <>
+                            <Check className="w-3 h-3 text-emerald-500" />
+                            <span className="text-emerald-600 dark:text-emerald-400 font-sans">Copied</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="w-3 h-3" />
+                            <span className="font-sans">Copy Advice</span>
+                          </>
+                        )}
+                      </button>
+                    )}
+                    <span>
+                      {msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
+                    </span>
                   </div>
                 </div>
               </div>
