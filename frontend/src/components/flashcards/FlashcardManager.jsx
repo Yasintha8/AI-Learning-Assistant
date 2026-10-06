@@ -406,7 +406,7 @@ const FlashcardManager = ({ documentId }) => {
                         <div
                             key={set._id}
                             onClick={() => handleSelectSet(set)}
-                            className="group relative h-full flex flex-col gap-4 cursor-pointer rounded-2xl border border-border-medium/50 bg-bg-card p-5 shadow-sm hover:shadow-md hover:border-border-medium transition-all duration-200 overflow-hidden"
+                            className="group relative h-full flex flex-col gap-4 cursor-pointer rounded-2xl border border-border-medium/50 bg-bg-card p-5 shadow-xs hover:shadow-md hover:border-primary/50 transition-all duration-200 hover:-translate-y-0.5"
                         >
                             {/* Delete action, pinned to the card's corner */}
                             <button
@@ -455,9 +455,6 @@ const FlashcardManager = ({ documentId }) => {
                                     />
                                 </div>
                             </div>
-
-                            {/* Hover indicator */}
-                            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-linear-to-r from-primary to-blue-400 scale-x-0 group-hover:scale-x-100 transition-transform duration-200 origin-left" />
                         </div>
                     );
                 })}

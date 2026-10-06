@@ -24,7 +24,7 @@ const FlashcardSetCard = ({ flashcardSet, onDelete }) => {
     return (
         <div
             onClick={handleStudyNow}
-            className="group relative h-full flex flex-col justify-between gap-4 cursor-pointer rounded-2xl border border-border-light hover:border-primary/40 bg-bg-card p-5 shadow-xs hover:shadow-md transition-all duration-200 overflow-hidden hover:-translate-y-0.5"
+            className="group relative h-full flex flex-col justify-between gap-4 cursor-pointer rounded-2xl border border-border-light hover:border-primary/50 bg-bg-card p-5 shadow-xs hover:shadow-md hover:shadow-primary/5 transition-all duration-200 hover:-translate-y-0.5"
         >
             {/* Delete action pinned to card corner */}
             {onDelete && (
@@ -95,9 +95,6 @@ const FlashcardSetCard = ({ flashcardSet, onDelete }) => {
                     <ArrowRight className="w-3.5 h-3.5" />
                 </button>
             </div>
-
-            {/* Hover Indicator */}
-            <div className="absolute bottom-0 left-0 right-0 h-1 bg-linear-to-r from-violet-500 to-purple-600 scale-x-0 group-hover:scale-x-100 transition-transform duration-200 origin-left" />
         </div>
     );
 };

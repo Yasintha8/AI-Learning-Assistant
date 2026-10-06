@@ -23,9 +23,13 @@ const uploadDocument = async (formData) => {
     }
 };
 
-const addDocumentFromUrl = async ({ url, title }) => {
+const addDocumentFromUrl = async ({ url, title, collectionId }) => {
     try {
-        const response = await axiosInstance.post(API_PATHS.DOCUMENTS.UPLOAD_URL, { url, title });
+        const response = await axiosInstance.post(API_PATHS.DOCUMENTS.UPLOAD_URL, {
+            url,
+            title,
+            collectionId: collectionId || null,
+        });
         return response.data;
     } catch (error) {
         const errMessage =
@@ -36,6 +40,17 @@ const addDocumentFromUrl = async ({ url, title }) => {
         const err = new Error(errMessage);
         err.response = error.response;
         throw err;
+    }
+};
+
+const updateDocumentCollection = async (id, collectionId) => {
+    try {
+        const response = await axiosInstance.patch(API_PATHS.DOCUMENTS.UPDATE_COLLECTION(id), {
+            collectionId: collectionId || null,
+        });
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || { message: 'Failed to update document collection' };
     }
 };
 
@@ -61,6 +76,7 @@ const documentService = {
     getDocuments,
     uploadDocument,
     addDocumentFromUrl,
+    updateDocumentCollection,
     deleteDocument,
     getDocumentById,
 };

@@ -21,6 +21,14 @@ export const API_PATHS = {
         GET_DOCUMENT_BY_ID: (id) => `/api/documents/${id}`,
         UPDATE_DOCUMENT: (id) => `/api/documents/${id}`,
         DELETE_DOCUMENT: (id) => `/api/documents/${id}`,
+        UPDATE_COLLECTION: (id) => `/api/documents/${id}/collection`,
+    },
+
+    COLLECTIONS: {
+        GET_ALL: "/api/collections",
+        CREATE: "/api/collections",
+        UPDATE: (id) => `/api/collections/${id}`,
+        DELETE: (id) => `/api/collections/${id}`,
     },
 
     AI: {
